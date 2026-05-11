@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="topg.AppHost/topg.AppHost.csproj" />
+  <Project Path="topg.ServiceDefaults/topg.ServiceDefaults.csproj" />
+</Solution>
