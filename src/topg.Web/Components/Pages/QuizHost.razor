@@ -3,6 +3,7 @@
 @using topg.Web.Templating.DomainObjects
 @inject SessionHandler SessionHandler
 @inject NavigationManager NavigationManager
+@implements IAsyncDisposable
 
 <PageTitle>Topg</PageTitle>
 
@@ -22,6 +23,10 @@ else
                     <MudText Typo="Typo.h4">
                         @QuizSession.Quiz.Name
                     </MudText>
+                    <MudText Typo="Typo.h4">
+                        @QuizSession.SessionId.Key
+                    </MudText>
+                    <MudTextField T="string" Value="QuizSession.Input" Immediate="true" DebounceInterval="50" ValueChanged="v => QuizSession.UpdateInput(v)" />
                 </MudPaper>
             </MudItem>
 
@@ -71,8 +76,16 @@ else
         </MudGrid>
 
         @* Bottom row: players — 1/3 of screen height *@
-        <MudPaper Style="flex: 1; min-height: 0; width: 100%; padding: 16px 24px; overflow: hidden; box-sizing: border-box;" Elevation="4">
-            <MudText Typo="Typo.h6">Players</MudText>
+        <MudPaper Style="flex: 1; min-height: 0; width: 100%; padding: 8px; overflow: hidden; box-sizing: border-box; display: flex; align-items: center;" Elevation="4">
+            <MudStack Row="true" Style="height: 100%; width: 100%; justify-content: space-evenly; align-items: center;">
+                @foreach (var player in QuizSession.Players)
+                {
+                    <MudPaper Elevation="2" Style="aspect-ratio: 1 / 1; height: calc(100% - 16px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box;">
+                        <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">@player.Name</MudText>
+                        <MudText Typo="Typo.h3" Align="Align.Center">@player.Score</MudText>
+                    </MudPaper>
+                }
+            </MudStack>
         </MudPaper>
 
     </MudStack>
@@ -94,6 +107,7 @@ else
         if (sessionId != null && SessionHandler.Sessions.TryGetValue(sessionId, out var session))
         {
             QuizSession = session;
+            QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
             Columns = QuizSession.Quiz.Boards
                 .OrderBy(b => b.Order)
                 .First()
@@ -110,9 +124,23 @@ else
         return base.OnInitializedAsync();
     }
 
+    private async Task OnSessionStateChangedAsync(object sender, EventArgs e)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
     private void Callback(Question question)
     {
         CurrentQuestion = question;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        if (QuizSession != null)
+        {
+            QuizSession.SessionStateChanged -= OnSessionStateChangedAsync;
+        }
+        return ValueTask.CompletedTask;
     }
 
 }

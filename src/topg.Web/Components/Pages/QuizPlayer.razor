@@ -1,0 +1,61 @@
+﻿@page "/play/{sessionKey}"
+@using topg.Web.Quiz
+@inject NavigationManager NavigationManager
+@inject SessionHandler SessionHandler
+@implements IAsyncDisposable
+
+<PageTitle>Topg</PageTitle>
+
+@if (QuizSession == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <MudStack>
+        <MudText Typo="Typo.h4">
+            @QuizSession.Quiz.Name
+        </MudText>
+        <MudText Typo="Typo.h4">
+            @QuizSession.SessionId.Key
+        </MudText>
+        <MudTextField T="string" Value="QuizSession.Input" Immediate="true" DebounceInterval="50" ValueChanged="v => QuizSession.UpdateInput(v)" />
+    </MudStack>
+}
+
+
+@code {
+    [Parameter]
+    public string? SessionKey { get; set; }
+
+    public QuizSession? QuizSession;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sessionId = SessionKey != null ? new SessionId(SessionKey) : null;
+        if (sessionId != null && SessionHandler.Sessions.TryGetValue(sessionId, out var session))
+        {
+            QuizSession = session;
+            QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
+        }
+        else
+        {
+            NavigationManager.NavigateTo("");
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private async Task OnSessionStateChangedAsync(object sender, EventArgs e)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        if (QuizSession != null)
+        {
+            QuizSession.SessionStateChanged -= OnSessionStateChangedAsync;
+        }
+        return ValueTask.CompletedTask;
+    }
+}
