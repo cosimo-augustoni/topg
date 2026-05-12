@@ -12,43 +12,70 @@
 }
 else
 {
-    <h1>@QuizSession.Quiz.Name</h1>
+    <MudStack Style="height: 100dvh; overflow: hidden; padding: 16px; gap: 16px; box-sizing: border-box;">
 
-    <div style="display: grid; grid-template-columns: repeat(@Columns.Count, 1fr); gap: 8px;">
+        @* Top row: controls (left) + board (right) — 2/3 of screen height *@
+        <MudGrid Style="flex: 2; min-height: 0;" Spacing="4">
 
-        @foreach (var col in Columns)
-        {
-            <div style="text-align: center; font-weight: bold; padding: 8px;">
-                @col.Category
-            </div>
-        }
+            <MudItem xs="4" Style="min-height: 0; display: flex;">
+                <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
+                    <MudText Typo="Typo.h4">
+                        @QuizSession.Quiz.Name
+                    </MudText>
+                </MudPaper>
+            </MudItem>
 
-        @for (int row = 0; row < Columns.Max(c => c.Questions.Count); row++)
-        {
-            int rowCapture = row;
-            @foreach (var col in Columns)
-            {
-                var question = col.Questions.ElementAtOrDefault(rowCapture);
-                if (question != null)
-                {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Callback(question)" FullWidth="true">
-                        @question.Points
-                    </MudButton>
-                }
-                else
-                {
-                    <div></div>
-                }
-            }
-        }
+            <MudItem xs="8" Style="min-height: 0; display: flex;">
+                <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
 
-    </div>
+                    @* Category header row *@
+                    <MudGrid Spacing="3" Style="flex-shrink: 0; margin-bottom: 20px;">
+                        @foreach (var col in Columns)
+                        {
+                            <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box;">
+                                <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">
+                                    @col.Category
+                                </MudText>
+                            </MudItem>
+                        }
+                    </MudGrid>
 
-    @if (CurrentQuestion != null)
-    {
-        <h2>@CurrentQuestion</h2>
-    }
-    
+                    @* One MudGrid row per question row, each grows equally *@
+                    <MudStack Spacing="2" Style="flex: 1; min-height: 0;">
+                        @for (int row = 0; row < Columns.Max(c => c.Questions.Count); row++)
+                        {
+                            int rowCapture = row;
+                            <MudGrid Spacing="5" Style="flex: 1; min-height: 0; align-items: stretch;">
+                                @foreach (var col in Columns)
+                                {
+                                    var question = col.Questions.ElementAtOrDefault(rowCapture);
+                                    <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box; display: flex;">
+                                        @if (question != null)
+                                        {
+                                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                                       OnClick="() => Callback(question)"
+                                                       FullWidth="true"
+                                                       Style="flex: 1; min-height: 0; font-size: 1.6rem; font-weight: bold;">
+                                                @question.Points
+                                            </MudButton>
+                                        }
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                    </MudStack>
+
+                </MudPaper>
+            </MudItem>
+
+        </MudGrid>
+
+        @* Bottom row: players — 1/3 of screen height *@
+        <MudPaper Style="flex: 1; min-height: 0; width: 100%; padding: 16px 24px; overflow: hidden; box-sizing: border-box;" Elevation="4">
+            <MudText Typo="Typo.h6">Players</MudText>
+        </MudPaper>
+
+    </MudStack>
 }
 
 @code {
