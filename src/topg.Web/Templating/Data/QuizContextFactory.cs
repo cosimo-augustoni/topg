@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace topg.Web.Data;
+namespace topg.Web.Templating.Data;
 
 public class QuizContextFactory : IDesignTimeDbContextFactory<QuizContext>
 {

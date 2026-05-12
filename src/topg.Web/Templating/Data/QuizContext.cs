@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using topg.Web.Templating.DomainObjects;
 
-namespace topg.Web.Data
+namespace topg.Web.Templating.Data
 {
     public class QuizContext(DbContextOptions<QuizContext> options) : DbContext(options)
     {

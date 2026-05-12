@@ -1,5 +1,5 @@
 using topg.MigrationService;
-using topg.Web.Data;
+using topg.Web.Templating.Data;
 
 var builder = Host.CreateApplicationBuilder(args);
 

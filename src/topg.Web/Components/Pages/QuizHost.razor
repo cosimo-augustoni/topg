@@ -1,0 +1,40 @@
+﻿@page "/host/{sessionKey}"
+@using topg.Web.Quiz
+@inject SessionHandler SessionHandler
+@inject NavigationManager NavigationManager
+
+<PageTitle>Topg</PageTitle>
+
+@if (@QuizSession == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <h1>@QuizSession.Quiz.Name</h1>
+    <h2>@QuizSession.SessionId</h2>
+}
+
+@code {
+
+    [Parameter]
+    public string? SessionKey { get; set; }
+
+    public QuizSession? QuizSession;
+
+    protected override Task OnInitializedAsync()
+    {
+        var SessionId = SessionKey != null ? new SessionId(SessionKey) : null;
+        if (SessionId != null && SessionHandler.Sessions.TryGetValue(SessionId, out var session))
+        {
+            QuizSession = session;
+        }
+        else
+        {
+            NavigationManager.NavigateTo("");
+        }
+
+        return base.OnInitializedAsync();
+    }
+
+}

@@ -1,6 +1,6 @@
 ﻿namespace topg.Web.Templating
 {
-    public static class ServiceCollectionExtenion
+    public static class ServiceCollectionExtension
     {
         public static IServiceCollection AddTemplating(this IServiceCollection serviceCollection)
         {

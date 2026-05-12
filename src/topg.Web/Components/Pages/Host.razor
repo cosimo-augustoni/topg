@@ -1,7 +1,10 @@
 ﻿@page "/host"
+@using topg.Web.Quiz
 @using topg.Web.Templating
 @using topg.Web.Templating.DomainObjects
 @inject ITemplateService TemplateService
+@inject SessionHandler SessionHandler
+@inject NavigationManager NavigationManager
 
 <PageTitle>Host</PageTitle>
 
@@ -24,7 +27,7 @@ else
             {
                 <tr>
                     <td>@template.Name</td>
-                    <td><MudButton Variant="Variant.Filled" Color="Color.Primary">Host</MudButton></td>
+                    <td><MudButton Variant="Variant.Filled" OnClick="async () => await OnHostAsync(template)" Color="Color.Primary">Host</MudButton></td>
                 </tr>
             }
         </tbody>
@@ -41,5 +44,11 @@ else
         this.Templates = await TemplateService.GetAllTemplatesAsync();
 
         await base.OnInitializedAsync();
+    }
+
+    private async Task OnHostAsync(QuizTemplate template)
+    {
+        var sessionId = await SessionHandler.CreateSessionAsync(template);
+        NavigationManager.NavigateTo($"/host/{sessionId.Key}");
     }
 }
