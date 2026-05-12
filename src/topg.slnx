@@ -1,4 +1,6 @@
 <Solution>
   <Project Path="topg.AppHost/topg.AppHost.csproj" />
+  <Project Path="topg.MigrationService/topg.MigrationService.csproj" />
   <Project Path="topg.ServiceDefaults/topg.ServiceDefaults.csproj" />
+  <Project Path="topg.Web/topg.Web.csproj" />
 </Solution>

@@ -8,4 +8,13 @@
     <UserSecretsId>ac76bdca-d278-4207-b1c0-08a21e27212a</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\topg.MigrationService\topg.MigrationService.csproj" />
+    <ProjectReference Include="..\topg.Web\topg.Web.csproj" />
+  </ItemGroup>
+
 </Project>
