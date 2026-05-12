@@ -58,6 +58,7 @@ namespace topg.Web.Quiz
         public required QuizTemplate Quiz { get; init; }
         public string Input { get; private set; } = string.Empty;
         public List<Player> Players { get; } = [];
+        public bool IsInUse => this.SessionStateChanged?.GetInvocationList().Length > 0;
 
         public event AsyncEventHandler<SessionChangedEventArgs>? SessionStateChanged;
 

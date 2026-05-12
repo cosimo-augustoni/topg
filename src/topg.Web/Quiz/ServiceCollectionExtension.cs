@@ -1,4 +1,5 @@
-﻿using topg.Web.Templating;
+﻿using System.ComponentModel;
+using topg.Web.Templating;
 
 namespace topg.Web.Quiz
 {
@@ -7,6 +8,8 @@ namespace topg.Web.Quiz
         public static IServiceCollection AddQuiz(this IServiceCollection serviceCollection)
         {
             serviceCollection.AddSingleton<SessionHandler>();
+
+            serviceCollection.AddHostedService<SessionCleanupService>();
 
             return serviceCollection;
         }
