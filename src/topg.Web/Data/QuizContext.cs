@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using topg.Web.Domain.DomainObjects;
+using topg.Web.Templating.DomainObjects;
 
 namespace topg.Web.Data
 {

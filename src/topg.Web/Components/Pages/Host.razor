@@ -1,0 +1,45 @@
+﻿@page "/host"
+@using topg.Web.Templating
+@using topg.Web.Templating.DomainObjects
+@inject ITemplateService TemplateService
+
+<PageTitle>Host</PageTitle>
+
+
+@if (Templates == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <MudSimpleTable Style="overflow-x: auto;">
+        <thead>
+            <tr>
+                <th>Template</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var template in Templates)
+            {
+                <tr>
+                    <td>@template.Name</td>
+                    <td><MudButton Variant="Variant.Filled" Color="Color.Primary">Host</MudButton></td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+}
+
+
+
+@code {
+    public List<QuizTemplate>? Templates { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.Templates = await TemplateService.GetAllTemplatesAsync();
+
+        await base.OnInitializedAsync();
+    }
+}

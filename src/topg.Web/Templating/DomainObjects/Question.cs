@@ -1,4 +1,4 @@
-﻿namespace topg.Web.Domain.DomainObjects;
+﻿namespace topg.Web.Templating.DomainObjects;
 
 public abstract record Question
 {

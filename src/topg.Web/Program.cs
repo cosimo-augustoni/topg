@@ -1,6 +1,7 @@
 using MudBlazor.Services;
 using topg.Web.Components;
 using topg.Web.Data;
+using topg.Web.Templating;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.AddNpgsqlDbContext<QuizContext>("topg");
+builder.Services.AddTemplating();
 
 var app = builder.Build();
 
