@@ -1,18 +1,54 @@
 ﻿@page "/host/{sessionKey}"
 @using topg.Web.Quiz
+@using topg.Web.Templating.DomainObjects
 @inject SessionHandler SessionHandler
 @inject NavigationManager NavigationManager
 
 <PageTitle>Topg</PageTitle>
 
-@if (@QuizSession == null)
+@if (QuizSession == null)
 {
     <MudProgressCircular Color="Color.Default" Indeterminate="true" />
 }
 else
 {
     <h1>@QuizSession.Quiz.Name</h1>
-    <h2>@QuizSession.SessionId</h2>
+
+    <div style="display: grid; grid-template-columns: repeat(@Columns.Count, 1fr); gap: 8px;">
+
+        @foreach (var col in Columns)
+        {
+            <div style="text-align: center; font-weight: bold; padding: 8px;">
+                @col.Category
+            </div>
+        }
+
+        @for (int row = 0; row < Columns.Max(c => c.Questions.Count); row++)
+        {
+            int rowCapture = row;
+            @foreach (var col in Columns)
+            {
+                var question = col.Questions.ElementAtOrDefault(rowCapture);
+                if (question != null)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Callback(question)" FullWidth="true">
+                        @question.Points
+                    </MudButton>
+                }
+                else
+                {
+                    <div></div>
+                }
+            }
+        }
+
+    </div>
+
+    @if (CurrentQuestion != null)
+    {
+        <h2>@CurrentQuestion</h2>
+    }
+    
 }
 
 @code {
@@ -21,13 +57,23 @@ else
     public string? SessionKey { get; set; }
 
     public QuizSession? QuizSession;
+    public Question? CurrentQuestion;
+
+    public List<(string Category, List<Question> Questions)> Columns { get; private set; } = [];
 
     protected override Task OnInitializedAsync()
     {
-        var SessionId = SessionKey != null ? new SessionId(SessionKey) : null;
-        if (SessionId != null && SessionHandler.Sessions.TryGetValue(SessionId, out var session))
+        var sessionId = SessionKey != null ? new SessionId(SessionKey) : null;
+        if (sessionId != null && SessionHandler.Sessions.TryGetValue(sessionId, out var session))
         {
             QuizSession = session;
+            Columns = QuizSession.Quiz.Boards
+                .OrderBy(b => b.Order)
+                .First()
+                .Questions
+                .GroupBy(q => q.Category)
+                .Select(g => (Category: g.Key, Questions: g.OrderBy(q => q.Order).ToList()))
+                .ToList();
         }
         else
         {
@@ -35,6 +81,11 @@ else
         }
 
         return base.OnInitializedAsync();
+    }
+
+    private void Callback(Question question)
+    {
+        CurrentQuestion = question;
     }
 
 }
