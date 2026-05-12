@@ -16,9 +16,4 @@
     <PackageReference Include="MudBlazor" Version="9.*" />
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.3.0" />
   </ItemGroup>
-
-
-  <ItemGroup>
-    <Folder Include="Domain\" />
-  </ItemGroup>
 </Project>
