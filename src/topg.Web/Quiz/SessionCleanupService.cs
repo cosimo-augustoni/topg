@@ -12,7 +12,7 @@ public class SessionCleanupService(SessionHandler sessionHandler) : BackgroundSe
                 sessionHandler.Sessions.Remove(unusedSession.SessionId);
             }
 
-            await Task.Delay(120_000, stoppingToken);
+            await Task.Delay(600_000, stoppingToken);
 
         }
     }
