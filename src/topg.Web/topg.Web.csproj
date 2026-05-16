@@ -21,4 +21,9 @@
   <ItemGroup>
     <Folder Include="Data\" />
   </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\topg.ServiceDefaults\topg.ServiceDefaults.csproj" />
+  </ItemGroup>
 </Project>

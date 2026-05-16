@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using topg.Web.Components;
 using topg.Web.Quiz;
@@ -5,6 +6,8 @@ using topg.Web.Templating;
 using topg.Web.Templating.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddServiceDefaults();
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
@@ -18,6 +21,37 @@ builder.Services.AddTemplating();
 builder.Services.AddQuiz();
 
 var app = builder.Build();
+
+// In non-development environments (e.g. Docker Swarm), depends_on is not supported.
+// Wait here until the migration service has applied all pending migrations before serving traffic.
+if (!app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<QuizContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<QuizContext>>();
+    const int maxAttempts = 30;
+    const int delayMs = 3000;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++)
+    {
+        try
+        {
+            var pending = await db.Database.GetPendingMigrationsAsync();
+            if (!pending.Any())
+            {
+                logger.LogInformation("All migrations applied, starting web application.");
+                break;
+            }
+            logger.LogInformation("Waiting for migrations ({Attempt}/{Max})...", attempt, maxAttempts);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Could not reach database ({Attempt}/{Max}), retrying...", attempt, maxAttempts);
+        }
+        if (attempt == maxAttempts)
+            throw new TimeoutException("Database migrations did not complete in time.");
+        await Task.Delay(delayMs);
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

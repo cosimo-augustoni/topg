@@ -1,0 +1,54 @@
+services:
+  db:
+    image: "docker.io/library/postgres:17.6"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    expose:
+      - "5432"
+    volumes:
+      - type: "bind"
+        target: "/var/lib/postgresql/data"
+        source: "${DB_BINDMOUNT_0}"
+        read_only: false
+    networks:
+      - "topg_internal"
+  migrationservice:
+    image: "${MIGRATIONSERVICE_IMAGE}"
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      ConnectionStrings__topg: "Host=db;Port=5432;Username=postgres;Password=${DB_PASSWORD};Database=topg"
+      TOPG_HOST: "db"
+      TOPG_PORT: "5432"
+      TOPG_USERNAME: "postgres"
+      TOPG_PASSWORD: "${DB_PASSWORD}"
+      TOPG_URI: "postgresql://postgres:${DB_PASSWORD}@db:5432/topg"
+      TOPG_JDBCCONNECTIONSTRING: "jdbc:postgresql://db:5432/topg"
+      TOPG_DATABASENAME: "topg"
+    networks:
+      - "topg_internal"
+  web:
+    image: "${WEB_IMAGE}"
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      HTTP_PORTS: "${WEB_PORT}"
+      ConnectionStrings__topg: "Host=db;Port=5432;Username=postgres;Password=${DB_PASSWORD};Database=topg"
+      TOPG_HOST: "db"
+      TOPG_PORT: "5432"
+      TOPG_USERNAME: "postgres"
+      TOPG_PASSWORD: "${DB_PASSWORD}"
+      TOPG_URI: "postgresql://postgres:${DB_PASSWORD}@db:5432/topg"
+      TOPG_JDBCCONNECTIONSTRING: "jdbc:postgresql://db:5432/topg"
+      TOPG_DATABASENAME: "topg"
+    networks:
+      - "topg_internal, topg"
+networks:
+  topg_internal:
+    driver: "overlay"
+    external: false
+  topg:
+    driver: "overlay"
+    external: true

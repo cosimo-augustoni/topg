@@ -37,6 +37,21 @@ public class Worker(IServiceProvider serviceProvider,
         var strategy = dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
+            const int maxAttempts = 30;
+            const int delayMs = 3000;
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    await dbContext.Database.MigrateAsync(cancellationToken);
+                    return;
+                }
+                catch (Exception) when (attempt < maxAttempts)
+                {
+                    await Task.Delay(delayMs, cancellationToken);
+                }
+            }
+            // Final attempt — let any exception propagate naturally
             await dbContext.Database.MigrateAsync(cancellationToken);
         });
     }
