@@ -1,6 +1,8 @@
 ﻿@page "/play/{sessionKey}"
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using topg.Web.Quiz
 @inject NavigationManager NavigationManager
+@inject ProtectedLocalStorage ProtectedLocalStorage
 @inject SessionHandler SessionHandler
 @implements IAsyncDisposable
 
@@ -32,17 +34,33 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await SetSessionOrLeave();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task SetSessionOrLeave()
+    {
         var sessionId = SessionKey != null ? new SessionId(SessionKey) : null;
         if (sessionId != null && SessionHandler.Sessions.TryGetValue(sessionId, out var session))
         {
-            QuizSession = session;
-            QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
+            var playerSession = await ProtectedLocalStorage.GetAsync<string>(SessionHandler.PlayerSessionStorageId);
+            if (playerSession.Success && session.IsUserInSession(playerSession.Value))
+            {
+                QuizSession = session;
+                QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
+                StateHasChanged();
+                return;
+            }
         }
-        else
-        {
-            NavigationManager.NavigateTo("");
-        }
-        await base.OnInitializedAsync();
+        NavigationManager.NavigateTo($"?joinCode={SessionKey}");
     }
 
     private async Task OnSessionStateChangedAsync(object sender, EventArgs e)

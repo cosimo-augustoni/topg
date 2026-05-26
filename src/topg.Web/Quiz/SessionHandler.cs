@@ -1,4 +1,7 @@
-﻿using System.Security.Cryptography;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using topg.Web.Templating.DomainObjects;
 
 namespace topg.Web.Quiz
@@ -7,6 +10,8 @@ namespace topg.Web.Quiz
 
     public class SessionHandler
     {
+        public const string PlayerSessionStorageId = "playerSession";
+
         public Dictionary<SessionId, QuizSession> Sessions { get; } = new();
 
         public async Task<SessionId> CreateSessionAsync(QuizTemplate template)
@@ -31,12 +36,14 @@ namespace topg.Web.Quiz
         /// </summary>
         /// <param name="sessionId">Id of the session.</param>
         /// <param name="playerName">Name under which the player wants to join. Doubles as identifier.</param>
+        /// <param name="playerId">Id of the player when the Join was successful</param>
         /// <returns>Whether the join was successful.</returns>
-        public bool Join(SessionId sessionId, string playerName)
+        public bool Join(SessionId sessionId, string playerName, [NotNullWhen(true)] out string? playerId)
         {
             if (Sessions.TryGetValue(sessionId, out var session))
-                return session.AddPlayer(playerName);
+                return session.TryAddPlayer(playerName, out playerId);
 
+            playerId = null;
             return false;
         }
     }
@@ -54,6 +61,7 @@ namespace topg.Web.Quiz
 
     public class QuizSession
     {
+        private readonly byte[] sessionSecret = RandomNumberGenerator.GetBytes(32);
         public required SessionId SessionId { get; init; }
         public required QuizTemplate Quiz { get; init; }
         public string Input { get; private set; } = string.Empty;
@@ -66,12 +74,17 @@ namespace topg.Web.Quiz
         /// Adds a player to the session if no player with the same name exists.
         /// </summary>
         /// <returns>Whether the player was added.</returns>
-        public bool AddPlayer(string playerName)
+        public bool TryAddPlayer(string playerName, [NotNullWhen(true)] out string? playerId)
         {
+            playerId = null;
             if (Players.Any(p => p.Name == playerName))
                 return false;
 
-            var player = new Player { Name = playerName, Score = 0 };
+            var nameBytes = Encoding.UTF8.GetBytes(playerName);
+            var hmacBytes = HMACSHA256.HashData(sessionSecret, nameBytes);
+            playerId = playerName + "." + Convert.ToHexString(hmacBytes);
+
+            var player = new Player { Id = playerId, Name = playerName, Score = 0 };
             Players.Add(player);
             SessionStateChanged?.Invoke(this, new SessionChangedEventArgs(SessionId));
             return true;
@@ -85,12 +98,18 @@ namespace topg.Web.Quiz
             Input = value;
             SessionStateChanged?.Invoke(this, new SessionChangedEventArgs(SessionId));
         }
+
+        public bool IsUserInSession(string? playerSession)
+        {
+            return Players.Any(p => p.Id == playerSession);
+        }
     }
 
     public class SessionChangedEventArgs(SessionId sessionId) : EventArgs;
 
     public record Player
     {
+        public required string Id { get; init; }
         public required string Name { get; init; }
         public required int Score { get; set; }
     }

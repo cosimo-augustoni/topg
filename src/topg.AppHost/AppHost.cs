@@ -1,5 +1,4 @@
 using Aspire.Hosting.Docker.Resources.ComposeNodes;
-using Aspire.Hosting.Docker.Resources.ServiceNodes;
 using Microsoft.Extensions.Hosting;
 using Projects;
 
@@ -10,20 +9,7 @@ var registryRepository = builder.AddParameterFromConfiguration("registryReposito
 
 var registry = builder.AddContainerRegistry("kallisto", registryEndpoint, registryRepository);
 
-var postgresDataPath = builder.AddParameter("PostgresDataPath");
-var postgres = builder.AddPostgres("db")
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithDataBindMount(source: $"${{{postgresDataPath.Resource.Name}}}")
-    .PublishAsDockerComposeService((resource, service) =>
-    {
-        service.Networks = ["topg_internal"];
-    });
-
-if (builder.Environment.IsDevelopment())
-{
-    postgres.WithPgWeb();
-}
-
+var postgres = AddPostgres(builder);
 var db = postgres.AddDatabase("topg");
 
 var migrationService = builder.AddProject<topg_MigrationService>("migrationservice")
@@ -66,3 +52,25 @@ builder.AddDockerComposeEnvironment("docker-compose")
     .WithDashboard(false);
 
 builder.Build().Run();
+
+IResourceBuilder<PostgresServerResource> AddPostgres(IDistributedApplicationBuilder distributedApplicationBuilder)
+{
+    var resourceBuilder = distributedApplicationBuilder.AddPostgres("db")
+        .WithLifetime(ContainerLifetime.Persistent)
+        .PublishAsDockerComposeService((resource, service) =>
+        {
+            service.Networks = ["topg_internal"];
+        });
+
+    if (distributedApplicationBuilder.Environment.IsDevelopment())
+    {
+        resourceBuilder.WithPgWeb();
+    }
+    else
+    {
+        var postgresDataPath = distributedApplicationBuilder.AddParameter("PostgresDataPath");
+        resourceBuilder.WithDataBindMount(source: $"${{{postgresDataPath.Resource.Name}}}");
+    }
+
+    return resourceBuilder;
+}

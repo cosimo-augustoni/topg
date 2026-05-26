@@ -2,7 +2,7 @@
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using topg.Web.Quiz
 @inject NavigationManager NavigationManager
-@inject ProtectedSessionStorage ProtectedSessionStore
+@inject ProtectedLocalStorage ProtectedLocalStorage
 @inject SessionHandler SessionHandler
 
 <PageTitle>Topg</PageTitle>
@@ -14,18 +14,25 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery]
+    [Parameter]
     public string? JoinCode { get; set; }
     public string? Name { get; set; }
 
-    const string NameStorageId = "playerName";
+    const string PlayerNameStorageId = "playerName";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var playerName = await ProtectedSessionStore.GetAsync<string>(NameStorageId);
-        if (playerName.Success)
+        if (firstRender)
         {
-            Name = playerName.Value;
+            var playerName = await ProtectedLocalStorage.GetAsync<string>(PlayerNameStorageId);
+            if (playerName.Success)
+            {
+                Name = playerName.Value;
+                StateHasChanged();
+            }
         }
+        
         await base.OnAfterRenderAsync(firstRender);
     }
 
@@ -33,9 +40,10 @@
     {
         if (JoinCode is { Length: 4 } && !string.IsNullOrWhiteSpace(Name))
         {
-            if (SessionHandler.Join(new SessionId(JoinCode), Name))
+            if (SessionHandler.Join(new SessionId(JoinCode), Name, out var playerId))
             {
-                ProtectedSessionStore.SetAsync(NameStorageId, Name);
+                ProtectedLocalStorage.SetAsync(PlayerNameStorageId, Name);
+                ProtectedLocalStorage.SetAsync(SessionHandler.PlayerSessionStorageId, playerId);
                 NavigationManager.NavigateTo($"/play/{JoinCode}");
             }
         }

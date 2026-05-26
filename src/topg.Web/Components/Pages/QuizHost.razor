@@ -35,11 +35,11 @@ else
 
                     @* Category header row *@
                     <MudGrid Spacing="3" Style="flex-shrink: 0; margin-bottom: 20px;">
-                        @foreach (var col in Columns)
+                        @foreach (var categoryColumn in Board)
                         {
                             <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box;">
                                 <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">
-                                    @col.Category
+                                    @categoryColumn.Category
                                 </MudText>
                             </MudItem>
                         }
@@ -47,11 +47,11 @@ else
 
                     @* One MudGrid row per question row, each grows equally *@
                     <MudStack Spacing="2" Style="flex: 1; min-height: 0;">
-                        @for (int row = 0; row < Columns.Max(c => c.Questions.Count); row++)
+                        @for (int row = 0; row < Board.Max(c => c.Questions.Count); row++)
                         {
                             int rowCapture = row;
                             <MudGrid Spacing="5" Style="flex: 1; min-height: 0; align-items: stretch;">
-                                @foreach (var col in Columns)
+                                @foreach (var col in Board)
                                 {
                                     var question = col.Questions.ElementAtOrDefault(rowCapture);
                                     <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box; display: flex;">
@@ -99,7 +99,7 @@ else
     public QuizSession? QuizSession;
     public Question? CurrentQuestion;
 
-    public List<(string Category, List<Question> Questions)> Columns { get; private set; } = [];
+    public List<(string Category, List<Question> Questions)> Board { get; private set; } = [];
 
     protected override Task OnInitializedAsync()
     {
@@ -108,7 +108,7 @@ else
         {
             QuizSession = session;
             QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
-            Columns = QuizSession.Quiz.Boards
+            Board = QuizSession.Quiz.Boards
                 .OrderBy(b => b.Order)
                 .First()
                 .Questions
