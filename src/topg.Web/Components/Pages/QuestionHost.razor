@@ -1,0 +1,39 @@
+﻿@using topg.Web.Quiz
+@using topg.Web.Templating.DomainObjects
+<MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
+
+    @switch (QuizSession.Quiz.CurrentQuestion?.Template)
+    {
+        case ImageQuestion imageQuestion:
+            break;
+        case SoundQuestion soundQuestion:
+            break;
+        case TextQuestion textQuestion:
+            <MudStack>
+                <MudText Typo="Typo.h4" Align="Align.Center" Style="font-weight: bold;">@textQuestion.QuestionText</MudText>
+                <MudSpacer></MudSpacer>
+                <MudText Typo="Typo.h6" Align="Align.Center" Style="font-weight: bold;">@textQuestion.CorrectAnswer</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               OnClick="MarkAsAnswered"
+                               FullWidth="true"
+                               Style="flex: 1; min-height: 0; font-size: 1.6rem; font-weight: bold;">
+                        Weiter
+                    </MudButton>
+            </MudStack>
+            
+            break;
+    }
+
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public required QuizSession QuizSession { get; set; }
+
+    
+    private void MarkAsAnswered()
+    {
+        QuizSession.MarkCurrentQuestionAsAnswered();
+    }
+}

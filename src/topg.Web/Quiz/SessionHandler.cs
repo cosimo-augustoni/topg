@@ -1,7 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using topg.Web.Templating.DomainObjects;
 
 namespace topg.Web.Quiz
@@ -14,7 +14,7 @@ namespace topg.Web.Quiz
 
         public Dictionary<SessionId, QuizSession> Sessions { get; } = new();
 
-        public async Task<SessionId> CreateSessionAsync(QuizTemplate template)
+        public SessionId CreateSession(QuizTemplate template)
         {
             SessionId sessionId;
             do
@@ -25,7 +25,7 @@ namespace topg.Web.Quiz
             this.Sessions.Add(sessionId, new QuizSession
             {
                 SessionId = sessionId,
-                Quiz = template,
+                Quiz = new QuizExecution(template),
             });
 
             return sessionId;
@@ -48,6 +48,44 @@ namespace topg.Web.Quiz
         }
     }
 
+    public record QuizExecution
+    {
+        public string Name { get; }
+        private readonly List<Board> Boards;
+
+        public long? CurrentQuestionId { get; set; }
+        public Question? CurrentQuestion => CurrentQuestionId == null ? null : CurrentBoard.Questions.Single(q => q.Template.Id == CurrentQuestionId);
+
+        public int CurrentBoardId = 0;
+        public Board CurrentBoard => Boards[CurrentBoardId];
+
+        public QuizExecution(QuizTemplate template)
+        {
+            Name = template.Name;
+            Boards = template.Boards.Select(b => new Board
+            {
+                Order = b.Order,
+                Questions = b.Questions.Select(q => new Question
+                {
+                    Template = q,
+                    IsAnswered = false,
+                }).ToList()
+            }).ToList();
+        }
+    }
+
+    public class Board
+    {
+        public int Order { get; init; }
+        public required List<Question> Questions { get; init; }
+    }
+
+    public class Question
+    {
+        public required Templating.DomainObjects.Question Template { get; set; }
+        public bool IsAnswered { get; set; }
+    }
+
     public record SessionId(string Key)
     {
         public static SessionId Create()
@@ -63,7 +101,7 @@ namespace topg.Web.Quiz
     {
         private readonly byte[] sessionSecret = RandomNumberGenerator.GetBytes(32);
         public required SessionId SessionId { get; init; }
-        public required QuizTemplate Quiz { get; init; }
+        public required QuizExecution Quiz { get; init; }
         public string Input { get; private set; } = string.Empty;
         public List<Player> Players { get; } = [];
         public bool IsInUse => this.SessionStateChanged?.GetInvocationList().Length > 0;
@@ -86,7 +124,7 @@ namespace topg.Web.Quiz
 
             var player = new Player { Id = playerId, Name = playerName, Score = 0 };
             Players.Add(player);
-            SessionStateChanged?.Invoke(this, new SessionChangedEventArgs(SessionId));
+            SessionStateHasChanged();
             return true;
         }
 
@@ -96,6 +134,30 @@ namespace topg.Web.Quiz
         public void UpdateInput(string value)
         {
             Input = value;
+            SessionStateHasChanged();
+        }
+
+        public void SelectQuestion(Question question)
+        {
+            Quiz.CurrentQuestionId = question.Template.Id;
+            SessionStateHasChanged();
+        }
+
+        public void MarkCurrentQuestionAsAnswered()
+        {
+            Quiz.CurrentQuestion?.IsAnswered = true;
+            Quiz.CurrentQuestionId = null;
+            SessionStateHasChanged();
+        }
+
+        public void AdjustPlayerScore(Player player, int points)
+        {
+            player.Score += points;
+            SessionStateHasChanged();
+        }
+
+        private void SessionStateHasChanged()
+        {
             SessionStateChanged?.Invoke(this, new SessionChangedEventArgs(SessionId));
         }
 
@@ -103,6 +165,8 @@ namespace topg.Web.Quiz
         {
             return Players.Any(p => p.Id == playerSession);
         }
+
+        
     }
 
     public class SessionChangedEventArgs(SessionId sessionId) : EventArgs;

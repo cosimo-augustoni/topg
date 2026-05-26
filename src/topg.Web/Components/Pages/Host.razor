@@ -27,7 +27,7 @@ else
             {
                 <tr>
                     <td>@template.Name</td>
-                    <td><MudButton Variant="Variant.Filled" OnClick="async () => await OnHostAsync(template)" Color="Color.Primary">Host</MudButton></td>
+                    <td><MudButton Variant="Variant.Filled" OnClick="() => OnHost(template)" Color="Color.Primary">Host</MudButton></td>
                 </tr>
             }
         </tbody>
@@ -46,9 +46,9 @@ else
         await base.OnInitializedAsync();
     }
 
-    private async Task OnHostAsync(QuizTemplate template)
+    private void OnHost(QuizTemplate template)
     {
-        var sessionId = await SessionHandler.CreateSessionAsync(template);
+        var sessionId = SessionHandler.CreateSession(template);
         NavigationManager.NavigateTo($"/host/{sessionId.Key}");
     }
 }

@@ -31,46 +31,14 @@ else
             </MudItem>
 
             <MudItem xs="8" Style="min-height: 0; display: flex;">
-                <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
-
-                    @* Category header row *@
-                    <MudGrid Spacing="3" Style="flex-shrink: 0; margin-bottom: 20px;">
-                        @foreach (var categoryColumn in Board)
-                        {
-                            <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box;">
-                                <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">
-                                    @categoryColumn.Category
-                                </MudText>
-                            </MudItem>
-                        }
-                    </MudGrid>
-
-                    @* One MudGrid row per question row, each grows equally *@
-                    <MudStack Spacing="2" Style="flex: 1; min-height: 0;">
-                        @for (int row = 0; row < Board.Max(c => c.Questions.Count); row++)
-                        {
-                            int rowCapture = row;
-                            <MudGrid Spacing="5" Style="flex: 1; min-height: 0; align-items: stretch;">
-                                @foreach (var col in Board)
-                                {
-                                    var question = col.Questions.ElementAtOrDefault(rowCapture);
-                                    <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box; display: flex;">
-                                        @if (question != null)
-                                        {
-                                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                                                       OnClick="() => Callback(question)"
-                                                       FullWidth="true"
-                                                       Style="flex: 1; min-height: 0; font-size: 1.6rem; font-weight: bold;">
-                                                @question.Points
-                                            </MudButton>
-                                        }
-                                    </MudItem>
-                                }
-                            </MudGrid>
-                        }
-                    </MudStack>
-
-                </MudPaper>
+                @if (QuizSession.Quiz.CurrentQuestion == null)
+                {
+                    <Board QuizSession="QuizSession" IsReadOnly="false"></Board>
+                }
+                else
+                {
+                    <QuestionHost QuizSession="QuizSession"></QuestionHost>
+                }
             </MudItem>
 
         </MudGrid>
@@ -81,13 +49,19 @@ else
                 @foreach (var player in QuizSession.Players)
                 {
                     <MudPaper Elevation="2" Style="aspect-ratio: 1 / 1; height: calc(100% - 16px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box;">
+                        @if (@QuizSession.Quiz.CurrentQuestion != null)
+                        {
+                            <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                                <MudButton OnClick="() => AdjustPlayerScore(player, -(QuizSession.Quiz.CurrentQuestion.Template.Points / 2))">- @(QuizSession.Quiz.CurrentQuestion.Template.Points / 2)</MudButton>
+                                <MudButton OnClick="() => AdjustPlayerScore(player, QuizSession.Quiz.CurrentQuestion.Template.Points)">+ @QuizSession.Quiz.CurrentQuestion.Template.Points</MudButton>
+                            </MudButtonGroup>
+                        }
                         <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">@player.Name</MudText>
                         <MudText Typo="Typo.h3" Align="Align.Center">@player.Score</MudText>
                     </MudPaper>
                 }
             </MudStack>
         </MudPaper>
-
     </MudStack>
 }
 
@@ -97,9 +71,6 @@ else
     public string? SessionKey { get; set; }
 
     public QuizSession? QuizSession;
-    public Question? CurrentQuestion;
-
-    public List<(string Category, List<Question> Questions)> Board { get; private set; } = [];
 
     protected override Task OnInitializedAsync()
     {
@@ -108,17 +79,10 @@ else
         {
             QuizSession = session;
             QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
-            Board = QuizSession.Quiz.Boards
-                .OrderBy(b => b.Order)
-                .First()
-                .Questions
-                .GroupBy(q => q.Category)
-                .Select(g => (Category: g.Key, Questions: g.OrderBy(q => q.Order).ToList()))
-                .ToList();
         }
         else
         {
-            NavigationManager.NavigateTo("");
+            NavigationManager.NavigateTo("/host");
         }
 
         return base.OnInitializedAsync();
@@ -129,11 +93,6 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private void Callback(Question question)
-    {
-        CurrentQuestion = question;
-    }
-
     public ValueTask DisposeAsync()
     {
         if (QuizSession != null)
@@ -141,6 +100,11 @@ else
             QuizSession.SessionStateChanged -= OnSessionStateChangedAsync;
         }
         return ValueTask.CompletedTask;
+    }
+
+    private void AdjustPlayerScore(Player player, int points)
+    {
+        QuizSession?.AdjustPlayerScore(player, points);
     }
 
 }
