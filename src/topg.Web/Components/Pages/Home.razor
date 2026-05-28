@@ -8,11 +8,17 @@
 
 <PageTitle>Topg</PageTitle>
 
-<MudStack>
-    <MudTextField T="string" Required="true" @bind-Value="JoinCode" MaxLength="4"></MudTextField>
-    <MudTextField T="string" Required="true" @bind-Value="Name" MaxLength="25"></MudTextField>
-    <MudButton Variant="Variant.Filled" OnClick="Join" Color="Color.Primary">Join</MudButton>
-</MudStack>
+<MudGrid Justify="Justify.Center" Style="height: 100vh; align-items: center;">
+    <MudItem>
+        <MudPaper Class="pa-6" Elevation="4">
+            <MudStack Spacing="3">
+                <MudTextField T="string" Required="true" @bind-Value="JoinCode" MaxLength="4" Label="Join Code" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Tag"></MudTextField>
+                <MudTextField T="string" Required="true" @bind-Value="Name" MaxLength="25" Label="Name" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person"></MudTextField>
+                <MudButton Variant="Variant.Filled" OnClick="Join" Color="Color.Primary" FullWidth="true">Join</MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
     [SupplyParameterFromQuery]
