@@ -26,15 +26,13 @@
     public string? JoinCode { get; set; }
     public string? Name { get; set; }
 
-    const string PlayerNameStorageId = "playerName";
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             try
             {
-                var playerName = await ProtectedLocalStorage.GetAsync<string>(PlayerNameStorageId);
+                var playerName = await ProtectedLocalStorage.GetAsync<string>(SessionConstants.PlayerNameStorageId);
                 if (playerName.Success)
                 {
                     Name = playerName.Value;
@@ -43,23 +41,22 @@
             }
             catch (Exception e)
             {
-                Logger.LogInformation("Couldn't read Player Name from Local Storage");
-                await ProtectedLocalStorage.DeleteAsync(PlayerNameStorageId);
+                Logger.LogInformation(e, "Couldn't read Player Name from Local Storage.");
+                await ProtectedLocalStorage.DeleteAsync(SessionConstants.PlayerNameStorageId);
             }
-            
         }
-        
+
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    private void Join()
+    private async Task Join()
     {
         if (JoinCode is { Length: 4 } && !string.IsNullOrWhiteSpace(Name))
         {
             if (SessionHandler.Join(new SessionId(JoinCode), Name, out var playerId))
             {
-                ProtectedLocalStorage.SetAsync(PlayerNameStorageId, Name);
-                ProtectedLocalStorage.SetAsync(SessionHandler.PlayerSessionStorageId, playerId);
+                await ProtectedLocalStorage.SetAsync(SessionConstants.PlayerNameStorageId, Name);
+                await ProtectedLocalStorage.SetAsync(SessionConstants.PlayerSessionStorageId, playerId);
                 NavigationManager.NavigateTo($"/play/{JoinCode}");
             }
         }

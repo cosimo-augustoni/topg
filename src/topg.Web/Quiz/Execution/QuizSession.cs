@@ -13,7 +13,7 @@ public class QuizSession
     public BuzzerState BuzzerState { get; } = new();
     public SoundEffectManager SoundEffectManager { get; } = new();
     public List<Player> Players { get; } = [];
-    public bool IsInUse => this.SessionStateChanged?.GetInvocationList().Length > 0;
+    public bool IsInUse => SessionStateChanged?.GetInvocationList() is { Length: > 0 };
 
     public event AsyncEventHandler<SessionChangedEventArgs>? SessionStateChanged;
 

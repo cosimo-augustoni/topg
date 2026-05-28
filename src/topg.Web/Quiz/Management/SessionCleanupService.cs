@@ -6,14 +6,17 @@ public class SessionCleanupService(SessionHandler sessionHandler) : BackgroundSe
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var unusedSessions = sessionHandler.Sessions.Values.Where(s => !s.IsInUse);
-            foreach (var unusedSession in unusedSessions)
+            var unusedSessionIds = sessionHandler.Sessions
+                .Where(kvp => !kvp.Value.IsInUse)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var sessionId in unusedSessionIds)
             {
-                sessionHandler.Sessions.Remove(unusedSession.SessionId);
+                sessionHandler.Sessions.TryRemove(sessionId, out _);
             }
 
             await Task.Delay(600_000, stoppingToken);
-
         }
     }
 }

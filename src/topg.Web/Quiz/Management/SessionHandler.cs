@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using topg.Web.Quiz.Execution;
 using topg.Web.Templating.DomainObjects;
 
@@ -6,9 +7,7 @@ namespace topg.Web.Quiz.Management
 {
     public class SessionHandler
     {
-        public const string PlayerSessionStorageId = "playerSession";
-
-        public Dictionary<SessionId, QuizSession> Sessions { get; } = new();
+        public ConcurrentDictionary<SessionId, QuizSession> Sessions { get; } = new();
 
         public SessionId CreateSession(QuizTemplate template)
         {
@@ -16,13 +15,11 @@ namespace topg.Web.Quiz.Management
             do
             {
                 sessionId = SessionId.Create();
-            } while (this.Sessions.ContainsKey(sessionId));
-
-            this.Sessions.Add(sessionId, new QuizSession
+            } while (!Sessions.TryAdd(sessionId, new QuizSession
             {
                 SessionId = sessionId,
                 Quiz = new QuizExecution(template),
-            });
+            }));
 
             return sessionId;
         }

@@ -5,12 +5,11 @@
 @inject NavigationManager NavigationManager
 @inject ProtectedLocalStorage ProtectedLocalStorage
 @inject SessionHandler SessionHandler
-@inject IJSRuntime JS
-@implements IAsyncDisposable
+@inherits QuizSessionBase
 
 <PageTitle>Topg</PageTitle>
 
-@if (QuizSession == null)
+@if (Session == null)
 {
     <MudProgressCircular Color="Color.Default" Indeterminate="true" />
 }
@@ -24,29 +23,29 @@ else
             <MudItem xs="4" Style="min-height: 0; display: flex;">
                 <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
                     <MudText Typo="Typo.h5">
-                        @QuizSession.Quiz.Name
+                        @Session.Quiz.Name
                     </MudText>
 
                     <MudButton Variant="Variant.Filled"
-                               Color="@(QuizSession.BuzzerState.BuzzeredPlayer == Player ? Color.Success : Color.Default)"
-                               Disabled="@(QuizSession.BuzzerState.IsLocked && QuizSession.BuzzerState.BuzzeredPlayer != Player)"
+                               Color="@(Session.BuzzerState.BuzzeredPlayer == Player ? Color.Success : Color.Default)"
+                               Disabled="@(Session.BuzzerState.IsLocked && Session.BuzzerState.BuzzeredPlayer != Player)"
                                OnClick="BuzzerClicked"
                                Style="width: 120px; height: 120px; border-radius: 50%; min-width: unset; font-size: 1.1rem; font-weight: bold; align-self: center; margin-top: 16px;">
                         BUZZ!
                     </MudButton>
                 </MudPaper>
 
-                
+
             </MudItem>
 
             <MudItem xs="8" Style="min-height: 0; display: flex;">
-                @if (QuizSession.Quiz.CurrentQuestion == null)
+                @if (Session.Quiz.CurrentQuestion == null)
                 {
-                    <Board QuizSession="QuizSession" IsReadOnly="true"></Board>
+                    <Board QuizSession="Session" IsReadOnly="true"></Board>
                 }
                 else
                 {
-                    <Question QuizSession="QuizSession"></Question>
+                    <Question QuizSession="Session"></Question>
                 }
 
             </MudItem>
@@ -55,9 +54,9 @@ else
 
         <MudPaper Style="flex: 1; min-height: 0; width: 100%; padding: 8px; overflow: hidden; box-sizing: border-box; display: flex; align-items: center;" Elevation="4">
             <MudStack Row="true" Style="height: 100%; width: 100%; justify-content: space-evenly; align-items: center;">
-                @foreach (var player in QuizSession.Players)
+                @foreach (var player in Session.Players)
                 {
-                    var isBuzzered = QuizSession.BuzzerState.BuzzeredPlayer == player;
+                    var isBuzzered = Session.BuzzerState.BuzzeredPlayer == player;
                     var buzzerStyle = isBuzzered
                         ? "outline: 3px solid #4caf50; box-shadow: 0 0 12px 4px #4caf50;"
                         : "";
@@ -76,22 +75,11 @@ else
     [Parameter]
     public string? SessionKey { get; set; }
 
-    public QuizSession? QuizSession;
     public Player Player = null!;
 
     private void BuzzerClicked()
     {
-        QuizSession?.Buzz(Player);
-    }
-
-    private async Task PlaySoundAsync(object sender, SoundEffectArgs e)
-    {
-        await JS.InvokeVoidAsync("playSound", $"/sounds/{e.SoundEffect.DisplayName}");
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
+        Session?.Buzz(Player);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -110,13 +98,11 @@ else
         {
             try
             {
-                var playerSession = await ProtectedLocalStorage.GetAsync<string>(SessionHandler.PlayerSessionStorageId);
+                var playerSession = await ProtectedLocalStorage.GetAsync<string>(SessionConstants.PlayerSessionStorageId);
                 if (playerSession.Success && session.TryGetPlayer(playerSession.Value, out var player))
                 {
                     Player = player;
-                    QuizSession = session;
-                    QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
-                    QuizSession.SoundEffectManager.SoundEffectRequested += PlaySoundAsync;
+                    SubscribeToSession(session);
                     StateHasChanged();
                     return;
                 }
@@ -127,17 +113,5 @@ else
             }
         }
         NavigationManager.NavigateTo($"?joinCode={SessionKey}");
-    }
-
-    private async Task OnSessionStateChangedAsync(object sender, EventArgs e)
-    {
-        await InvokeAsync(StateHasChanged);
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        QuizSession?.SessionStateChanged -= OnSessionStateChangedAsync;
-        QuizSession?.SoundEffectManager.SoundEffectRequested -= PlaySoundAsync;
-        return ValueTask.CompletedTask;
     }
 }

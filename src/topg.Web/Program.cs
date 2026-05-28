@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using topg.Web.Components;
+using topg.Web.Extensions;
 using topg.Web.Quiz;
 using topg.Web.Templating;
 using topg.Web.Templating.Data;
@@ -28,31 +29,7 @@ var app = builder.Build();
 // Wait here until the migration service has applied all pending migrations before serving traffic.
 if (!app.Environment.IsDevelopment())
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<QuizContext>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<QuizContext>>();
-    const int maxAttempts = 30;
-    const int delayMs = 3000;
-    for (var attempt = 1; attempt <= maxAttempts; attempt++)
-    {
-        try
-        {
-            var pending = await db.Database.GetPendingMigrationsAsync();
-            if (!pending.Any())
-            {
-                logger.LogInformation("All migrations applied, starting web application.");
-                break;
-            }
-            logger.LogInformation("Waiting for migrations ({Attempt}/{Max})...", attempt, maxAttempts);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Could not reach database ({Attempt}/{Max}), retrying...", attempt, maxAttempts);
-        }
-        if (attempt == maxAttempts)
-            throw new TimeoutException("Database migrations did not complete in time.");
-        await Task.Delay(delayMs);
-    }
+    await app.WaitForMigrationsAsync();
 }
 
 // Configure the HTTP request pipeline.

@@ -2,7 +2,7 @@
 
 namespace topg.Web.Quiz.Execution;
 
-public record QuizExecution
+public class QuizExecution
 {
     public string Name { get; }
     private readonly List<Board> Boards;

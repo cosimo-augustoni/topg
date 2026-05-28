@@ -2,13 +2,12 @@
 @using topg.Web.Quiz.Execution
 @using topg.Web.Quiz.Management
 @inject SessionHandler SessionHandler
-@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
-@implements IAsyncDisposable
+@inherits QuizSessionBase
 
 <PageTitle>Topg</PageTitle>
 
-@if (QuizSession == null)
+@if (Session == null)
 {
     <MudProgressCircular Color="Color.Default" Indeterminate="true" />
 }
@@ -22,7 +21,7 @@ else
             <MudItem xs="4" Style="min-height: 0; display: flex;">
                 <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
                     <MudText Typo="Typo.h5">
-                        @QuizSession.Quiz.Name
+                        @Session.Quiz.Name
                     </MudText>
                     <MudPaper Class="pa-2 mb-2">
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -37,11 +36,11 @@ else
                     <MudPaper>
                         <MudStack>
                             <MudText Typo="Typo.h5" Align="Align.Start">Buzzer</MudText>
-                            <MudText Typo="Typo.body1" Align="Align.Start">Buzzer State: @(QuizSession.BuzzerState.IsLocked ? "Locked" : "Unlocked")</MudText>
-                            <MudText Typo="Typo.body1" Align="Align.Start">Buzzered Player: @(QuizSession.BuzzerState.BuzzeredPlayer?.Name)</MudText>
+                            <MudText Typo="Typo.body1" Align="Align.Start">Buzzer State: @(Session.BuzzerState.IsLocked ? "Locked" : "Unlocked")</MudText>
+                            <MudText Typo="Typo.body1" Align="Align.Start">Buzzered Player: @(Session.BuzzerState.BuzzeredPlayer?.Name)</MudText>
                             <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
-                                <MudButton Disabled="@QuizSession.BuzzerState.IsLocked" OnClick="() => QuizSession.LockBuzzer()">Lock</MudButton>
-                                <MudButton Disabled="@(!QuizSession.BuzzerState.IsLocked)" OnClick="() => QuizSession.UnlockBuzzer()">Unlock</MudButton>
+                                <MudButton Disabled="@Session.BuzzerState.IsLocked" OnClick="() => Session.LockBuzzer()">Lock</MudButton>
+                                <MudButton Disabled="@(!Session.BuzzerState.IsLocked)" OnClick="() => Session.UnlockBuzzer()">Unlock</MudButton>
                             </MudButtonGroup>
                         </MudStack>
                     </MudPaper>
@@ -50,13 +49,13 @@ else
             </MudItem>
 
             <MudItem xs="8" Style="min-height: 0; display: flex;">
-                @if (QuizSession.Quiz.CurrentQuestion == null)
+                @if (Session.Quiz.CurrentQuestion == null)
                 {
-                    <Board QuizSession="QuizSession" IsReadOnly="false"></Board>
+                    <Board QuizSession="Session" IsReadOnly="false"></Board>
                 }
                 else
                 {
-                    <QuestionHost QuizSession="QuizSession"></QuestionHost>
+                    <QuestionHost QuizSession="Session"></QuestionHost>
                 }
             </MudItem>
 
@@ -65,18 +64,18 @@ else
         @* Bottom row: players — 1/3 of screen height *@
         <MudPaper Style="flex: 1; min-height: 0; width: 100%; padding: 8px; overflow: hidden; box-sizing: border-box; display: flex; align-items: center;" Elevation="4">
             <MudStack Row="true" Style="height: 100%; width: 100%; justify-content: space-evenly; align-items: center;">
-                @foreach (var player in QuizSession.Players)
+                @foreach (var player in Session.Players)
                 {
-                    var isBuzzered = QuizSession.BuzzerState.BuzzeredPlayer == player;
+                    var isBuzzered = Session.BuzzerState.BuzzeredPlayer == player;
                     var buzzerStyle = isBuzzered
                         ? "outline: 3px solid #4caf50; box-shadow: 0 0 12px 4px #4caf50;"
                         : "";
                     <MudPaper Elevation="2" Style="@($"aspect-ratio: 1 / 1; height: calc(100% - 16px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; transition: box-shadow 0.2s, outline 0.2s; {buzzerStyle}")">
-                        @if (@QuizSession.Quiz.CurrentQuestion != null)
+                        @if (@Session.Quiz.CurrentQuestion != null)
                         {
                             <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
-                                <MudButton OnClick="() => AdjustPlayerScore(player, -(QuizSession.Quiz.CurrentQuestion.Template.Points / 2))">- @(QuizSession.Quiz.CurrentQuestion.Template.Points / 2)</MudButton>
-                                <MudButton OnClick="() => AdjustPlayerScore(player, QuizSession.Quiz.CurrentQuestion.Template.Points)">+ @QuizSession.Quiz.CurrentQuestion.Template.Points</MudButton>
+                                <MudButton OnClick="() => AdjustPlayerScore(player, -(Session.Quiz.CurrentQuestion.Template.Points / 2))">- @(Session.Quiz.CurrentQuestion.Template.Points / 2)</MudButton>
+                                <MudButton OnClick="() => AdjustPlayerScore(player, Session.Quiz.CurrentQuestion.Template.Points)">+ @Session.Quiz.CurrentQuestion.Template.Points</MudButton>
                             </MudButtonGroup>
                         }
                         <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">@player.Name</MudText>
@@ -93,9 +92,7 @@ else
     [Parameter]
     public string? SessionKey { get; set; }
 
-    public QuizSession? QuizSession;
-
-    private string JoinLink => $"{NavigationManager.BaseUri}play/{QuizSession?.SessionId.Key}";
+    private string JoinLink => $"{NavigationManager.BaseUri}play/{Session?.SessionId.Key}";
 
     private async Task CopyJoinLinkAsync()
     {
@@ -106,9 +103,7 @@ else
         var sessionId = SessionKey != null ? new SessionId(SessionKey) : null;
         if (sessionId != null && SessionHandler.Sessions.TryGetValue(sessionId, out var session))
         {
-            QuizSession = session;
-            QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
-            QuizSession.SoundEffectManager.SoundEffectRequested += PlaySoundAsync;
+            SubscribeToSession(session);
         }
         else
         {
@@ -118,29 +113,8 @@ else
         return base.OnInitializedAsync();
     }
 
-    private async Task OnSessionStateChangedAsync(object sender, EventArgs e)
-    {
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task PlaySoundAsync(object sender, SoundEffectArgs e)
-    {
-        await JS.InvokeVoidAsync("playSound", $"/sounds/{e.SoundEffect.DisplayName}");
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        if (QuizSession != null)
-        {
-            QuizSession.SessionStateChanged -= OnSessionStateChangedAsync;
-            QuizSession.SoundEffectManager.SoundEffectRequested -= PlaySoundAsync;
-        }
-        return ValueTask.CompletedTask;
-    }
-
     private void AdjustPlayerScore(Player player, int points)
     {
-        QuizSession?.AdjustPlayerScore(player, points);
+        Session?.AdjustPlayerScore(player, points);
     }
-
-}
+}}
