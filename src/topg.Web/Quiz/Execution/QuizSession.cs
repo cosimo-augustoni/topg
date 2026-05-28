@@ -53,6 +53,8 @@ public class QuizSession
     public void AdjustPlayerScore(Player player, int points)
     {
         player.Score += points;
+        var sound = points > 0 ? SoundEffect.Correct : SoundEffect.Incorrect;
+        SoundEffectManager.PlaySound(sound);
         SessionStateHasChanged();
     }
 

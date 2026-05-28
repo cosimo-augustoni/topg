@@ -4,4 +4,5 @@ public static class SessionConstants
 {
     public const string PlayerSessionStorageId = "playerSession";
     public const string PlayerNameStorageId = "playerName";
+    public const string VolumeStorageId = "volume";
 }

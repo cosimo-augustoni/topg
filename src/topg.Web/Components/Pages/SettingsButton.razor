@@ -1,0 +1,43 @@
+<MudIconButton Icon="@Icons.Material.Filled.Settings"
+               Size="Size.Small"
+               Title="Settings"
+               OnClick="() => _dialogVisible = true" />
+
+<MudDialog @bind-Visible="_dialogVisible" Options="new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true }">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Settings</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-1">Volume</MudText>
+        <MudSlider Value="Volume" ValueChanged="EventCallback.Factory.Create<double>(this, OnVolumeChanged)" Min="0.0" Max="1.0" Step="0.05" Color="Color.Primary">
+            @((int)(Volume * 100))%
+        </MudSlider>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="CloseAsync">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public double Volume { get; set; }
+
+    [Parameter]
+    public EventCallback<double> VolumeChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnClosed { get; set; }
+
+    private bool _dialogVisible;
+
+    private async Task OnVolumeChanged(double value)
+    {
+        await VolumeChanged.InvokeAsync(value);
+    }
+
+    private async Task CloseAsync()
+    {
+        _dialogVisible = false;
+        await OnClosed.InvokeAsync();
+    }
+}

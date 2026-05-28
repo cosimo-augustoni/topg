@@ -20,9 +20,10 @@ else
 
             <MudItem xs="4" Style="min-height: 0; display: flex;">
                 <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
-                    <MudText Typo="Typo.h5">
-                        @Session.Quiz.Name
-                    </MudText>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.h5">@Session.Quiz.Name</MudText>
+                        <SettingsButton @bind-Volume="Volume" OnClosed="SaveVolumeAsync" />
+                    </MudStack>
                     <MudPaper Class="pa-2 mb-2">
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                             <MudLink Href="@JoinLink" Target="_blank" Typo="Typo.body2" Style="word-break: break-all;">@JoinLink</MudLink>

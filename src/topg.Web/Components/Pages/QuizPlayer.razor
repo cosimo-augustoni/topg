@@ -22,9 +22,10 @@ else
 
             <MudItem xs="4" Style="min-height: 0; display: flex;">
                 <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
-                    <MudText Typo="Typo.h5">
-                        @Session.Quiz.Name
-                    </MudText>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.h5">@Session.Quiz.Name</MudText>
+                        <SettingsButton @bind-Volume="Volume" OnClosed="SaveVolumeAsync" />
+                    </MudStack>
 
                     <MudButton Variant="Variant.Filled"
                                Color="@(Session.BuzzerState.BuzzeredPlayer == Player ? Color.Success : Color.Default)"
