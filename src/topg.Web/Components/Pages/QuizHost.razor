@@ -21,12 +21,18 @@ else
 
             <MudItem xs="4" Style="min-height: 0; display: flex;">
                 <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
-                    <MudText Typo="Typo.h4">
+                    <MudText Typo="Typo.h5">
                         @QuizSession.Quiz.Name
                     </MudText>
-                    <MudText Typo="Typo.h4">
-                        @QuizSession.SessionId.Key
-                    </MudText>
+                    <MudPaper Class="pa-2 mb-2">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudLink Href="@JoinLink" Target="_blank" Typo="Typo.body2" Style="word-break: break-all;">@JoinLink</MudLink>
+                            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                           Size="Size.Small"
+                                           Title="Copy join link"
+                                           OnClick="CopyJoinLinkAsync" />
+                        </MudStack>
+                    </MudPaper>
 
                     <MudPaper>
                         <MudStack>
@@ -89,6 +95,12 @@ else
 
     public QuizSession? QuizSession;
 
+    private string JoinLink => $"{NavigationManager.BaseUri}play/{QuizSession?.SessionId.Key}";
+
+    private async Task CopyJoinLinkAsync()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", JoinLink);
+    }
     protected override Task OnInitializedAsync()
     {
         var sessionId = SessionKey != null ? new SessionId(SessionKey) : null;
