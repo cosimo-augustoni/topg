@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using topg.Web.Components;
@@ -8,6 +9,7 @@ using topg.Web.Templating.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.Services.AddDataProtection().PersistKeysToDbContext<QuizContext>().SetApplicationName("topg");
 
 // Add MudBlazor services
 builder.Services.AddMudServices();

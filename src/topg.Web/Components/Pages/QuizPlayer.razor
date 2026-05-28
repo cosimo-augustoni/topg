@@ -111,15 +111,22 @@ else
         var sessionId = SessionKey != null ? new SessionId(SessionKey) : null;
         if (sessionId != null && SessionHandler.Sessions.TryGetValue(sessionId, out var session))
         {
-            var playerSession = await ProtectedLocalStorage.GetAsync<string>(SessionHandler.PlayerSessionStorageId);
-            if (playerSession.Success && session.TryGetPlayer(playerSession.Value, out var player))
+            try
             {
-                Player = player;
-                QuizSession = session;
-                QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
-                QuizSession.SoundEffectManager.SoundEffectRequested += PlaySoundAsync;
-                StateHasChanged();
-                return;
+                var playerSession = await ProtectedLocalStorage.GetAsync<string>(SessionHandler.PlayerSessionStorageId);
+                if (playerSession.Success && session.TryGetPlayer(playerSession.Value, out var player))
+                {
+                    Player = player;
+                    QuizSession = session;
+                    QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
+                    QuizSession.SoundEffectManager.SoundEffectRequested += PlaySoundAsync;
+                    StateHasChanged();
+                    return;
+                }
+            }
+            catch
+            {
+                // When Player Session cant be established for whatever reason. Just move to the Join Screen
             }
         }
         NavigationManager.NavigateTo($"?joinCode={SessionKey}");

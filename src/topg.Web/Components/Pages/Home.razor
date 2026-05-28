@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @inject ProtectedLocalStorage ProtectedLocalStorage
 @inject SessionHandler SessionHandler
+@inject ILogger<Home> Logger
 
 <PageTitle>Topg</PageTitle>
 
@@ -25,12 +26,21 @@
     {
         if (firstRender)
         {
-            var playerName = await ProtectedLocalStorage.GetAsync<string>(PlayerNameStorageId);
-            if (playerName.Success)
+            try
             {
-                Name = playerName.Value;
-                StateHasChanged();
+                var playerName = await ProtectedLocalStorage.GetAsync<string>(PlayerNameStorageId);
+                if (playerName.Success)
+                {
+                    Name = playerName.Value;
+                    StateHasChanged();
+                }
             }
+            catch (Exception e)
+            {
+                Logger.LogInformation("Couldn't read Player Name from Local Storage");
+                await ProtectedLocalStorage.DeleteAsync(PlayerNameStorageId);
+            }
+            
         }
         
         await base.OnAfterRenderAsync(firstRender);
