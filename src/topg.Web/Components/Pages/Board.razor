@@ -30,7 +30,7 @@
                                        FullWidth="true"
                                        Disabled="question.IsAnswered"
                                        Style="flex: 1; min-height: 0; font-size: 1.6rem; font-weight: bold;">
-                                @question.Template.Points
+                                @question.Points
                             </MudButton>
                         }
                     </MudItem>
@@ -55,8 +55,8 @@
     {
         Columns = QuizSession.Quiz.CurrentBoard
             .Questions
-            .GroupBy(q => q.Template.Category)
-            .Select(g => (Category: g.Key, Questions: g.OrderBy(q => q.Template.Order).ToList()))
+            .GroupBy(q => q.Category)
+            .Select(g => (Category: g.Key, Questions: g.OrderBy(q => q.Order).ToList()))
             .ToList();
 
         return base.OnInitializedAsync();

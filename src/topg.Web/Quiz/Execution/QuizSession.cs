@@ -39,7 +39,13 @@ public class QuizSession
 
     public void SelectQuestion(Question question)
     {
-        Quiz.CurrentQuestionId = question.Template.Id;
+        Quiz.CurrentQuestionId = question.Id;
+        SessionStateHasChanged();
+    }
+
+    public void UpdateQuestion<T>(T question, Action<T> action)
+    {
+        action(question);
         SessionStateHasChanged();
     }
 

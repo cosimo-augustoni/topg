@@ -1,0 +1,31 @@
+﻿@using topg.Web.Quiz.Execution
+<MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
+    <MudStack Spacing="20">
+
+        @switch (QuizSession.Quiz.CurrentQuestion)
+        {
+            case ImageQuestion imageQuestion:
+                break;
+            case SoundQuestion soundQuestion:
+                break;
+            case TextQuestion textQuestion:
+                <SimpleTextQuestion QuizSession="QuizSession" TextQuestion="textQuestion"></SimpleTextQuestion>
+                break;
+        }
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="MarkAsAnswered">Weiter</MudButton>
+    </MudStack>
+
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public required QuizSession QuizSession { get; set; }
+
+    
+    private void MarkAsAnswered()
+    {
+        QuizSession.MarkCurrentQuestionAsAnswered();
+    }
+}

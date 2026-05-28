@@ -1,0 +1,22 @@
+﻿@using topg.Web.Quiz.Execution
+<MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden; justify-content: center" Elevation="4">
+
+    @switch (QuizSession.Quiz.CurrentQuestion)
+    {
+        case ImageQuestion imageQuestion:
+            break;
+        case SoundQuestion soundQuestion:
+            break;
+        case TextQuestion textQuestion:
+            <SimpleTextQuestion TextQuestion="textQuestion"></SimpleTextQuestion>
+            break;
+    }
+
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public required QuizSession QuizSession { get; set; }
+
+}

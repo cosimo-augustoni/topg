@@ -1,4 +1,5 @@
 ﻿@page "/host/{sessionKey}"
+@using topg.Web.Components.Pages.Questions.Host
 @using topg.Web.Quiz.Execution
 @using topg.Web.Quiz.Management
 @inject SessionHandler SessionHandler
@@ -75,8 +76,8 @@ else
                         @if (@Session.Quiz.CurrentQuestion != null)
                         {
                             <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
-                                <MudButton OnClick="() => AdjustPlayerScore(player, -(Session.Quiz.CurrentQuestion.Template.Points / 2))">- @(Session.Quiz.CurrentQuestion.Template.Points / 2)</MudButton>
-                                <MudButton OnClick="() => AdjustPlayerScore(player, Session.Quiz.CurrentQuestion.Template.Points)">+ @Session.Quiz.CurrentQuestion.Template.Points</MudButton>
+                                <MudButton OnClick="() => AdjustPlayerScore(player, -(Session.Quiz.CurrentQuestion.Points / 2))">- @(Session.Quiz.CurrentQuestion.Points / 2)</MudButton>
+                                <MudButton OnClick="() => AdjustPlayerScore(player, Session.Quiz.CurrentQuestion.Points)">+ @Session.Quiz.CurrentQuestion.Points</MudButton>
                             </MudButtonGroup>
                         }
                         <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">@player.Name</MudText>

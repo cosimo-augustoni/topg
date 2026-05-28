@@ -1,0 +1,13 @@
+﻿@using topg.Web.Quiz.Execution
+
+@if (TextQuestion.DisplayState.HasFlag(TextQuestionDisplayState.Question))
+{
+    <MudText Typo="Typo.h1" Align="Align.Center" Style="font-weight: bold;">@TextQuestion.QuestionText</MudText>
+}
+
+@code {
+
+    [Parameter]
+    public required TextQuestion TextQuestion { get; set; }
+
+}
