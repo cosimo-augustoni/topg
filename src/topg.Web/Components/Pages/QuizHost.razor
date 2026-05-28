@@ -1,7 +1,8 @@
 ﻿@page "/host/{sessionKey}"
-@using topg.Web.Quiz
-@using topg.Web.Templating.DomainObjects
+@using topg.Web.Quiz.Execution
+@using topg.Web.Quiz.Management
 @inject SessionHandler SessionHandler
+@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @implements IAsyncDisposable
 
@@ -26,7 +27,19 @@ else
                     <MudText Typo="Typo.h4">
                         @QuizSession.SessionId.Key
                     </MudText>
-                    <MudTextField T="string" Value="QuizSession.Input" Immediate="true" DebounceInterval="50" ValueChanged="v => QuizSession.UpdateInput(v)" />
+
+                    <MudPaper>
+                        <MudStack>
+                            <MudText Typo="Typo.h5" Align="Align.Start">Buzzer</MudText>
+                            <MudText Typo="Typo.body1" Align="Align.Start">Buzzer State: @(QuizSession.BuzzerState.IsLocked ? "Locked" : "Unlocked")</MudText>
+                            <MudText Typo="Typo.body1" Align="Align.Start">Buzzered Player: @(QuizSession.BuzzerState.BuzzeredPlayer?.Name)</MudText>
+                            <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                                <MudButton Disabled="@QuizSession.BuzzerState.IsLocked" OnClick="() => QuizSession.LockBuzzer()">Lock</MudButton>
+                                <MudButton Disabled="@(!QuizSession.BuzzerState.IsLocked)" OnClick="() => QuizSession.UnlockBuzzer()">Unlock</MudButton>
+                            </MudButtonGroup>
+                        </MudStack>
+                    </MudPaper>
+
                 </MudPaper>
             </MudItem>
 
@@ -48,7 +61,11 @@ else
             <MudStack Row="true" Style="height: 100%; width: 100%; justify-content: space-evenly; align-items: center;">
                 @foreach (var player in QuizSession.Players)
                 {
-                    <MudPaper Elevation="2" Style="aspect-ratio: 1 / 1; height: calc(100% - 16px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box;">
+                    var isBuzzered = QuizSession.BuzzerState.BuzzeredPlayer == player;
+                    var buzzerStyle = isBuzzered
+                        ? "outline: 3px solid #4caf50; box-shadow: 0 0 12px 4px #4caf50;"
+                        : "";
+                    <MudPaper Elevation="2" Style="@($"aspect-ratio: 1 / 1; height: calc(100% - 16px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; transition: box-shadow 0.2s, outline 0.2s; {buzzerStyle}")">
                         @if (@QuizSession.Quiz.CurrentQuestion != null)
                         {
                             <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
@@ -79,6 +96,7 @@ else
         {
             QuizSession = session;
             QuizSession.SessionStateChanged += OnSessionStateChangedAsync;
+            QuizSession.SoundEffectManager.SoundEffectRequested += PlaySoundAsync;
         }
         else
         {
@@ -93,11 +111,17 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
+    private async Task PlaySoundAsync(object sender, SoundEffectArgs e)
+    {
+        await JS.InvokeVoidAsync("playSound", $"/sounds/{e.SoundEffect.DisplayName}");
+    }
+
     public ValueTask DisposeAsync()
     {
         if (QuizSession != null)
         {
             QuizSession.SessionStateChanged -= OnSessionStateChangedAsync;
+            QuizSession.SoundEffectManager.SoundEffectRequested -= PlaySoundAsync;
         }
         return ValueTask.CompletedTask;
     }

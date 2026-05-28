@@ -1,4 +1,4 @@
-﻿@using topg.Web.Quiz
+﻿@using topg.Web.Quiz.Execution
 <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
 
     @* Category header row *@
@@ -49,7 +49,7 @@
     [Parameter]
     public required QuizSession QuizSession { get; set; }
 
-    public List<(string Category, List<Quiz.Question> Questions)> Columns { get; private set; } = [];
+    public List<(string Category, List<Quiz.Execution.Question> Questions)> Columns { get; private set; } = [];
 
     protected override Task OnInitializedAsync()
     {
@@ -62,7 +62,7 @@
         return base.OnInitializedAsync();
     }
 
-    private void Callback(Quiz.Question question)
+    private void Callback(Quiz.Execution.Question question)
     {
         if (IsReadOnly)
             return;

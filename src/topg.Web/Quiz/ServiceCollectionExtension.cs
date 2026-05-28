@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using topg.Web.Templating;
+﻿using topg.Web.Quiz.Management;
 
 namespace topg.Web.Quiz
 {

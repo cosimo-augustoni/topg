@@ -1,4 +1,4 @@
-﻿namespace topg.Web.Quiz;
+﻿namespace topg.Web.Quiz.Management;
 
 public class SessionCleanupService(SessionHandler sessionHandler) : BackgroundService
 {
