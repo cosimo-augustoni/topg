@@ -25,11 +25,12 @@
                     <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box; display: flex;">
                         @if (question != null)
                         {
+                            var buttonStyle = $"flex: 1; min-height: 0; font-size: 1.6rem; font-weight: bold; {(IsReadOnly ? "pointer-events: none;" : "")}";
                             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                        OnClick="() => Callback(question)"
                                        FullWidth="true"
                                        Disabled="question.IsAnswered"
-                                       Style="flex: 1; min-height: 0; font-size: 1.6rem; font-weight: bold;">
+                                       Style="@buttonStyle">
                                 @question.Points
                             </MudButton>
                         }
