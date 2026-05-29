@@ -1,10 +1,11 @@
 ﻿@using topg.Web.Quiz.Execution
 <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
-    <MudStack Spacing="20">
 
+    <div style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
         @switch (QuizSession.Quiz.CurrentQuestion)
         {
             case ImageQuestion imageQuestion:
+                <SimpleImageQuestion QuizSession="QuizSession" ImageQuestion="imageQuestion"></SimpleImageQuestion>
                 break;
             case SoundQuestion soundQuestion:
                 break;
@@ -12,11 +13,16 @@
                 <SimpleTextQuestion QuizSession="QuizSession" TextQuestion="textQuestion"></SimpleTextQuestion>
                 break;
         }
-
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="MarkAsAnswered">Weiter</MudButton>
+    </div>
+    <MudStack Row="true" Justify="Justify.FlexEnd">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   EndIcon="@Icons.Material.Filled.ArrowForward"
+                   OnClick="MarkAsAnswered">Weiter</MudButton>
     </MudStack>
-
+    
 </MudPaper>
+
 
 @code {
 

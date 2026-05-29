@@ -14,12 +14,12 @@
 }
 else
 {
-    <MudStack Style="height: 100dvh; overflow: hidden; padding: 16px; gap: 16px; box-sizing: border-box;">
+    <div style="height: 100dvh; overflow: hidden; padding: 16px; gap: 16px; box-sizing: border-box; display: flex; flex-direction: column;">
 
         @* Top row: controls (left) + board (right) — 2/3 of screen height *@
-        <MudGrid Style="flex: 2; min-height: 0;" Spacing="4">
+        <div style="flex: 2; min-height: 0; display: flex; flex-direction: row; gap: 16px;">
 
-            <MudItem xs="4" Style="min-height: 0; display: flex;">
+            <div style="flex: 0 0 33.333%; min-height: 0; display: flex;">
                 <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                         <MudText Typo="Typo.h5">@Session.Quiz.Name</MudText>
@@ -34,11 +34,9 @@ else
                         BUZZ!
                     </MudButton>
                 </MudPaper>
+            </div>
 
-
-            </MudItem>
-
-            <MudItem xs="8" Style="min-height: 0; display: flex;">
+            <div style="flex: 1; min-height: 0; display: flex;">
                 @if (Session.Quiz.CurrentQuestion == null)
                 {
                     <Board QuizSession="Session" IsReadOnly="true"></Board>
@@ -47,10 +45,9 @@ else
                 {
                     <Question QuizSession="Session"></Question>
                 }
+            </div>
 
-            </MudItem>
-
-        </MudGrid>
+        </div>
 
         <MudPaper Style="flex: 1; min-height: 0; width: 100%; padding: 8px; overflow: hidden; box-sizing: border-box; display: flex; align-items: center;" Elevation="4">
             <MudStack Row="true" Style="height: 100%; width: 100%; justify-content: space-evenly; align-items: center;">
@@ -67,7 +64,7 @@ else
                 }
             </MudStack>
         </MudPaper>
-    </MudStack>
+    </div>
 }
 
 

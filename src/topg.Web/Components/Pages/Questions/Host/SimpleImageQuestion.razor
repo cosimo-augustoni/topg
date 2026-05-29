@@ -1,0 +1,55 @@
+﻿@using topg.Web.Quiz.Execution
+
+<MudStack Spacing="0" Style="flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h6" Class="font-weight-bold">@ImageQuestion.QuestionText</MudText>
+        <MudToggleIconButton Icon="@Icons.Material.Filled.VisibilityOff"
+                             ToggledIcon="@Icons.Material.Filled.Visibility"
+                             Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))"
+                             Color="@Color.Error"
+                             ToggledChanged="ToggleQuestionVisibility"
+                             ToggledColor="@Color.Success"
+                             Title="Toggle question visibility" />
+    </MudStack>
+
+    <div style="flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: row; align-items: flex-start; overflow: hidden;">
+        <MudImage Src="@ImageQuestion.ImageUri.ToString()"
+                  Alt="Question Image"
+                  ObjectFit="ObjectFit.Contain"
+                  ObjectPosition="ObjectPosition.LeftTop"
+                  Style="flex: 1; min-width: 0; width: 100%; height: auto; max-height: 100%; aspect-ratio: 16 / 9; object-fit: contain; display: block;"
+                  Class="rounded-0"/>
+        <MudToggleIconButton Icon="@Icons.Material.Filled.VisibilityOff"
+                             ToggledIcon="@Icons.Material.Filled.Visibility"
+                             Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))"
+                             Color="@Color.Error"
+                             ToggledChanged="ToggleImageVisibility"
+                             ToggledColor="@Color.Success"
+                             Title="Toggle image visibility"/>
+    </div>
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-2 mb-1">
+        <MudText Typo="Typo.h5" Color="Color.Success" Class="font-weight-black">@ImageQuestion.CorrectAnswer</MudText>
+    </MudStack>
+
+</MudStack>
+
+@code {
+
+    [Parameter]
+    public required QuizSession QuizSession { get; set; }
+
+    [Parameter]
+    public required ImageQuestion ImageQuestion { get; set; }
+
+    private void ToggleImageVisibility()
+    {
+        QuizSession.UpdateQuestion(ImageQuestion, question => question.DisplayState ^= ImageQuestionDisplayState.Image);
+    }
+
+    private void ToggleQuestionVisibility()
+    {
+        QuizSession.UpdateQuestion(ImageQuestion, question => question.DisplayState ^= ImageQuestionDisplayState.Text);
+    }
+
+}

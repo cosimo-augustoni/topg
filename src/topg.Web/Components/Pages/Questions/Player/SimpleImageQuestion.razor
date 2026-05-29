@@ -1,0 +1,29 @@
+﻿@using topg.Web.Quiz.Execution
+
+<MudStack Spacing="4" Style="flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;">
+    @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))
+    {
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h4" Class="font-weight-bold">@ImageQuestion.QuestionText</MudText>
+        </MudStack>
+    }
+
+    @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))
+    {
+        <div style="flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: row; align-items: flex-start; overflow: hidden;">
+            <MudImage Src="@ImageQuestion.ImageUri.ToString()"
+                      Alt="Question Image"
+                      ObjectFit="ObjectFit.Contain"
+                      ObjectPosition="ObjectPosition.LeftTop"
+                      Style="flex: 1; min-width: 0; width: 100%; height: auto; max-height: 100%; aspect-ratio: 16 / 9; object-fit: contain; display: block;"
+                      Class="rounded-0" />
+        </div>
+    }
+
+</MudStack>
+@code {
+
+    [Parameter]
+    public required ImageQuestion ImageQuestion { get; set; }
+
+}

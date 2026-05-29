@@ -25,7 +25,19 @@ public class TextQuestion(Templating.DomainObjects.TextQuestion question) : Ques
 [method: SetsRequiredMembers]
 public class ImageQuestion(Templating.DomainObjects.ImageQuestion question) : Question(question)
 {
+    public required string QuestionText { get; init; } = question.QuestionText;
+    public required Uri ImageUri { get; init; } = new Uri(question.ImageUri);
+    public required string CorrectAnswer { get; init; } = question.CorrectAnswer;
+    public ImageQuestionDisplayState DisplayState { get; set; }
+}
 
+[Flags]
+public enum ImageQuestionDisplayState
+{
+    None = 0,
+    Image = 1,
+    Text = 2,
+    Answer = 4,
 }
 
 [method: SetsRequiredMembers]
