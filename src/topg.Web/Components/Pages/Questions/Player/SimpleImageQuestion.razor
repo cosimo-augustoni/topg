@@ -1,9 +1,9 @@
 ﻿@using topg.Web.Quiz.Execution
 
-<MudStack Spacing="4" Style="flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;">
+<MudStack Spacing="4" Style="flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; width: 100%; padding-top: 3rem">
     @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))
     {
-        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
             <MudText Typo="Typo.h4" Class="font-weight-bold">@ImageQuestion.QuestionText</MudText>
         </MudStack>
     }
@@ -16,7 +16,7 @@
                       ObjectFit="ObjectFit.Contain"
                       ObjectPosition="ObjectPosition.LeftTop"
                       Style="flex: 1; min-width: 0; width: 100%; height: auto; max-height: 100%; aspect-ratio: 16 / 9; object-fit: contain; display: block;"
-                      Class="rounded-0" />
+                      Class="rounded-0"/>
         </div>
     }
 

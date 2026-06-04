@@ -1,0 +1,16 @@
+﻿@using topg.Web.Quiz.Execution
+<!-- Category Banner - Top Left -->
+<div style="position: absolute; top: 0; left: 0; background-color: var(--mud-palette-default); color: var(--mud-palette-default-text); padding: 8px 16px; font-weight: bold; z-index: 10; font-size: 1.8rem">
+    @Question.Category
+</div>
+
+<!-- Points Banner - Top Right -->
+<div style="position: absolute; top: 0; right: 0; background-color: var(--mud-palette-primary); color: var(--mud-palette-primary-text); padding: 8px 16px; font-weight: bold; z-index: 10; font-size: 1.8rem">
+    @Question.Points
+</div>
+
+@code {
+
+    [Parameter]
+    public required Question Question { get; set; }
+}

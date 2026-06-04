@@ -1,20 +1,27 @@
 ﻿@using topg.Web.Quiz.Execution
-<MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden; justify-content: center" Elevation="4">
 
-    <div style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
-        @switch (QuizSession.Quiz.CurrentQuestion)
-        {
-            case ImageQuestion imageQuestion:
-                <SimpleImageQuestion ImageQuestion="imageQuestion"></SimpleImageQuestion>
-                break;
-            case SoundQuestion soundQuestion:
-                break;
-            case TextQuestion textQuestion:
-                <SimpleTextQuestion TextQuestion="textQuestion"></SimpleTextQuestion>
-                break;
-        }
-    </div>
-</MudPaper>
+@if (QuizSession.Quiz.CurrentQuestion != null)
+{
+    <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden; justify-content: center; position: relative;" Elevation="4">
+
+        <QuestionContextBanners Question="QuizSession.Quiz.CurrentQuestion"></QuestionContextBanners>
+
+        <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            @switch (QuizSession.Quiz.CurrentQuestion)
+            {
+                case ImageQuestion imageQuestion:
+                    <SimpleImageQuestion ImageQuestion="imageQuestion"></SimpleImageQuestion>
+                    break;
+                case SoundQuestion soundQuestion:
+                    break;
+                case TextQuestion textQuestion:
+                    <SimpleTextQuestion TextQuestion="textQuestion"></SimpleTextQuestion>
+                    break;
+            }
+        </div>
+    </MudPaper>
+
+}
 
 @code {
 
