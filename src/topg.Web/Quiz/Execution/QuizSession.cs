@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using MudBlazor;
 using topg.Web.Quiz.Management;
+using topg.Web.Templating.DomainObjects;
 
 namespace topg.Web.Quiz.Execution;
 
@@ -53,6 +54,17 @@ public class QuizSession
     public void SelectQuestion(Question question)
     {
         Quiz.CurrentQuestionId = question.Id;
+
+        switch (question.AnswerType)
+        {
+            case AnswerType.Buzzer:
+                ControlDisplayState = ControlDisplayState.Buzzer;
+                break;
+            case AnswerType.Text:
+                ControlDisplayState = ControlDisplayState.Text;
+                break;
+        }
+
         SessionStateHasChanged();
     }
 
@@ -66,6 +78,12 @@ public class QuizSession
     {
         Quiz.CurrentQuestion?.IsAnswered = true;
         Quiz.CurrentQuestionId = null;
+
+        ControlDisplayState = ControlDisplayState.None;
+        TextInputState.Clear();
+        TextInputState.IsRevealed = false;
+        BuzzerState.UnlockBuzzer();
+
         SessionStateHasChanged();
     }
 
