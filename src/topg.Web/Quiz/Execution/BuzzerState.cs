@@ -6,7 +6,6 @@ public class BuzzerState
     private int isLocked;
     public Player? BuzzeredPlayer => buzzeredPlayer;
     public bool IsLocked => isLocked == 1 || buzzeredPlayer != null;
-
     public bool TrySetBuzzered(Player player)
     {
         if (isLocked == 1)

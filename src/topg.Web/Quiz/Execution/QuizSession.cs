@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
+using MudBlazor;
 using topg.Web.Quiz.Management;
 
 namespace topg.Web.Quiz.Execution;
@@ -11,8 +12,20 @@ public class QuizSession
     public required SessionId SessionId { get; init; }
     public required QuizExecution Quiz { get; init; }
     public BuzzerState BuzzerState { get; } = new();
+    public TextInputState TextInputState { get; } = new();
     public SoundEffectManager SoundEffectManager { get; } = new();
     public List<Player> Players { get; } = [];
+
+    public ControlDisplayState ControlDisplayState
+    {
+        get;
+        set
+        {
+            field = value;
+            SessionStateHasChanged();
+        }
+    }
+
     public bool IsInUse => SessionStateChanged?.GetInvocationList() is { Length: > 0 };
 
     public event AsyncEventHandler<SessionChangedEventArgs>? SessionStateChanged;
@@ -64,6 +77,30 @@ public class QuizSession
         SessionStateHasChanged();
     }
 
+    public void RevealTextInput()
+    {
+        TextInputState.IsRevealed = true;
+        SessionStateHasChanged();
+    }
+
+    public void HideTextInput()
+    {
+        TextInputState.IsRevealed = false;
+        SessionStateHasChanged();
+    }
+
+    public void UpdateTextInput(Player player, string? text)
+    {
+        TextInputState.UpdateTextInput(player, text);
+        SessionStateHasChanged();
+    }
+
+    public void ClearTextInputs()
+    {
+        TextInputState.Clear();
+        SessionStateHasChanged();
+    }
+
     public void Buzz(Player player)
     {
         if (BuzzerState.TrySetBuzzered(player))
@@ -95,6 +132,4 @@ public class QuizSession
         player = Players.FirstOrDefault(p => p.Id == playerSession);
         return player != null;
     }
-
-    
 }

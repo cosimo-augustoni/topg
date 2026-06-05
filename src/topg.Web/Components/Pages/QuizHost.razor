@@ -21,31 +21,63 @@ else
 
             <div style="flex: 0 0 33.333%; min-height: 0; display: flex;">
                 <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                        <MudText Typo="Typo.h5">@Session.Quiz.Name</MudText>
-                        <SettingsButton @bind-Volume="Volume" OnClosed="SaveVolumeAsync" />
-                    </MudStack>
-                    <MudPaper Class="pa-2 mb-2">
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                            <MudLink Href="@JoinLink" Target="_blank" Typo="Typo.body2" Style="word-break: break-all;">@JoinLink</MudLink>
-                            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
-                                           Size="Size.Small"
-                                           Title="Copy join link"
-                                           OnClick="CopyJoinLinkAsync" />
-                        </MudStack>
-                    </MudPaper>
+                    <MudStack Spacing="5">
 
-                    <MudPaper>
-                        <MudStack>
-                            <MudText Typo="Typo.h5" Align="Align.Start">Buzzer</MudText>
-                            <MudText Typo="Typo.body1" Align="Align.Start">Buzzer State: @(Session.BuzzerState.IsLocked ? "Locked" : "Unlocked")</MudText>
-                            <MudText Typo="Typo.body1" Align="Align.Start">Buzzered Player: @(Session.BuzzerState.BuzzeredPlayer?.Name)</MudText>
-                            <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
-                                <MudButton Disabled="@Session.BuzzerState.IsLocked" OnClick="() => Session.LockBuzzer()">Lock</MudButton>
-                                <MudButton Disabled="@(!Session.BuzzerState.IsLocked)" OnClick="() => Session.UnlockBuzzer()">Unlock</MudButton>
-                            </MudButtonGroup>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.h5">@Session.Quiz.Name</MudText>
+                            <SettingsButton @bind-Volume="Volume" OnClosed="SaveVolumeAsync" />
                         </MudStack>
-                    </MudPaper>
+                        <MudPaper Class="pa-2 mb-2">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                <MudLink Href="@JoinLink" Target="_blank" Typo="Typo.body2" Style="word-break: break-all;">@JoinLink</MudLink>
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                               Size="Size.Small"
+                                               Title="Copy join link"
+                                               OnClick="CopyJoinLinkAsync" />
+                            </MudStack>
+                        </MudPaper>
+
+                        <MudPaper Style="position: relative; padding: 0.5em">
+                            <MudStack>
+                                <MudText Typo="Typo.h5" Align="Align.Start">Buzzer</MudText>
+                                <MudText Typo="Typo.body1" Align="Align.Start">Buzzer State: @(Session.BuzzerState.IsLocked ? "Locked" : "Unlocked")</MudText>
+                                <MudText Typo="Typo.body1" Align="Align.Start">Buzzered Player: @(Session.BuzzerState.BuzzeredPlayer?.Name)</MudText>
+                                <MudButtonGroup DropShadow="false" Color="Color.Primary" Variant="Variant.Filled">
+                                    <MudButton Disabled="@Session.BuzzerState.IsLocked" OnClick="() => Session.LockBuzzer()">Lock</MudButton>
+                                    <MudButton Disabled="@(!Session.BuzzerState.IsLocked)" OnClick="() => Session.UnlockBuzzer()">Unlock</MudButton>
+                                </MudButtonGroup>
+                            </MudStack>
+
+                            <MudToggleIconButton Icon="@Icons.Material.Filled.VisibilityOff"
+                                                 ToggledIcon="@Icons.Material.Filled.Visibility"
+                                                 Toggled="@(Session.ControlDisplayState.HasFlag(ControlDisplayState.Buzzer))"
+                                                 Color="@Color.Error"
+                                                 ToggledChanged="ToggleBuzzerVisibility"
+                                                 Style="position: absolute; top: 5px; right: 5px"
+                                                 ToggledColor="@Color.Success">
+                            </MudToggleIconButton>
+                        </MudPaper>
+
+                        <MudPaper Style="position: relative; padding: 0.5em">
+                            <MudStack>
+                                <MudText Typo="Typo.h5" Align="Align.Start">Text</MudText>
+                                <MudButtonGroup DropShadow="false" Color="Color.Primary" Variant="Variant.Filled" FullWidth="false">
+                                    <MudButton Disabled="@Session.TextInputState.IsRevealed" OnClick="() => Session.RevealTextInput()">Show</MudButton>
+                                    <MudButton Disabled="@(!Session.TextInputState.IsRevealed)" OnClick="() => Session.HideTextInput()">Hide</MudButton>
+                                </MudButtonGroup>
+                                <MudButton OnClick="() => Session.ClearTextInputs()">Clear Inputs</MudButton>
+                            </MudStack>
+
+                            <MudToggleIconButton Icon="@Icons.Material.Filled.VisibilityOff"
+                                                 ToggledIcon="@Icons.Material.Filled.Visibility"
+                                                 Toggled="@(Session.ControlDisplayState.HasFlag(ControlDisplayState.Text))"
+                                                 Color="@Color.Error"
+                                                 ToggledChanged="ToggleTextInputVisibility"
+                                                 Style="position: absolute; top: 5px; right: 5px"
+                                                 ToggledColor="@Color.Success">
+                            </MudToggleIconButton>
+                        </MudPaper>
+                    </MudStack>
 
                 </MudPaper>
             </div>
@@ -72,7 +104,10 @@ else
                     var buzzerStyle = isBuzzered
                         ? "outline: 3px solid #4caf50; box-shadow: 0 0 12px 4px #4caf50;"
                         : "";
-                    <MudPaper Elevation="2" Style="@($"aspect-ratio: 1 / 1; height: calc(100% - 16px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; transition: box-shadow 0.2s, outline 0.2s; {buzzerStyle}")">
+                    <MudPaper Elevation="2" Style="@($"aspect-ratio: 1 / 1; height: calc(100% - 16px); display: flex; flex-direction: column; align-items: center; position: relative; justify-content: center; padding: 8px; box-sizing: border-box; transition: box-shadow 0.2s, outline 0.2s; {buzzerStyle}")">
+                        <div style="width: 95%; position: absolute; top: 10px; overflow: hidden; flex-shrink: 0; display: flex; align-items: flex-start;">
+                            <MudText Align="Align.Center" Style="width: 100%; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">@Session.TextInputState.GetTextByPlayer(player)</MudText>
+                        </div>
                         @if (@Session.Quiz.CurrentQuestion != null)
                         {
                             <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
@@ -118,4 +153,14 @@ else
     {
         Session?.AdjustPlayerScore(player, points);
     }
-}}
+
+    private void ToggleBuzzerVisibility()
+    {
+        Session?.ControlDisplayState ^= ControlDisplayState.Buzzer;
+    }
+    private void ToggleTextInputVisibility()
+    {
+        Session?.ControlDisplayState ^= ControlDisplayState.Text;
+    }
+}
+}
