@@ -120,7 +120,11 @@ else
                         </div>
                         
                         <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">@player.Name</MudText>
-                        <MudText Typo="Typo.h3" Align="Align.Center">@player.Score</MudText>
+                        <MudStack Style="position: relative" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.h3" Align="Align.Center">@player.Score</MudText>
+                            <ScoreEditButton Player="player" OnScoreChanged="(score) => AdjustPlayerScoreManually(player, score)" />
+                        </MudStack>
+                        
                         
                         @if (@Session.Quiz.CurrentQuestion != null)
                         {
@@ -178,6 +182,11 @@ else
     private void TimerDurationChanged(int timerDuration)
     {
         Session?.SetTimerDuration(timerDuration);
+    }
+    
+    private void AdjustPlayerScoreManually(Player player, int points)
+    {
+        Session?.AdjustPlayerScore(player, points - player.Score);
     }
 
     }

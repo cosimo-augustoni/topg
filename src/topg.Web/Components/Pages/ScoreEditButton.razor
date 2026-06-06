@@ -1,0 +1,49 @@
+@using topg.Web.Quiz.Execution
+
+<MudIconButton Icon="@Icons.Material.Filled.Edit"
+               Size="Size.Medium"
+               Style="position: absolute; left: 100%"
+               Title="Edit Score"
+               OnClick="OpenDialog" />
+
+<MudDialog @bind-Visible="_dialogVisible" Options="new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true }">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit Score - @Player.Name</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-1">Score</MudText>
+        <MudNumericField T="int" @bind-Value="_editedScore" Variant="Variant.Filled" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseAsync">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SaveAsync">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public required Player Player { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnScoreChanged { get; set; }
+
+    private bool _dialogVisible;
+    private int _editedScore;
+
+    private void OpenDialog()
+    {
+        _editedScore = Player.Score;
+        _dialogVisible = true;
+    }
+
+    private void CloseAsync()
+    {
+        _dialogVisible = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        await OnScoreChanged.InvokeAsync(_editedScore);
+        _dialogVisible = false;
+    }
+}
