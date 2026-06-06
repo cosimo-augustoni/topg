@@ -53,6 +53,15 @@ public class QuizSession
         return true;
     }
 
+    public void SelectNextBoard()
+    {
+        if (Quiz.HasNextBoard)
+        {
+            Quiz.CurrentBoardId++;
+            SessionStateHasChanged();
+        }
+    }
+
     public void SelectQuestion(Question question)
     {
         Quiz.CurrentQuestionId = question.Id;
@@ -170,8 +179,6 @@ public class QuizSession
         player = Players.FirstOrDefault(p => p.Id == playerSession);
         return player != null;
     }
-
-    
 }
 
 public class TimerState

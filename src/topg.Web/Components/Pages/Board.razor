@@ -1,74 +1,89 @@
 ﻿@using topg.Web.Quiz.Execution
 <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
 
-    @* Category header row *@
-    <MudGrid Spacing="3" Style="flex-shrink: 0; margin-bottom: 20px;">
-        @foreach (var categoryColumn in Columns)
-        {
-            <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box;">
-                <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">
-                    @categoryColumn.Category
-                </MudText>
-            </MudItem>
-        }
-    </MudGrid>
+    @if (QuizSession.Quiz.CurrentBoard.IsCompleted && QuizSession.Quiz.HasNextBoard && !IsReadOnly)
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="SelectNextBoard"
+                   FullWidth="true">
+            Next Board
+        </MudButton>
+    }
+    else
+    {
+        @* Category header row *@
+        <MudGrid Spacing="3" Style="flex-shrink: 0; margin-bottom: 20px;">
+            @foreach (var categoryColumn in Columns)
+            {
+                <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box;">
+                    <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">
+                        @categoryColumn.Category
+                    </MudText>
+                </MudItem>
+            }
+        </MudGrid>
 
-    @* One MudGrid row per question row, each grows equally *@
-    <MudStack Spacing="2" Style="flex: 1; min-height: 0;">
-        @for (int row = 0; row < Columns.Max(c => c.Questions.Count); row++)
-        {
-            int rowCapture = row;
-            <MudGrid Spacing="5" Style="flex: 1; min-height: 0; align-items: stretch;">
-                @foreach (var col in Columns)
-                {
-                    var question = col.Questions.ElementAtOrDefault(rowCapture);
-                    <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box; display: flex;">
-                        @if (question != null)
-                        {
-                            var buttonStyle = $"flex: 1; min-height: 0; font-size: 1.6rem; font-weight: bold; {(IsReadOnly ? "pointer-events: none;" : "")}";
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                                       OnClick="() => Callback(question)"
-                                       FullWidth="true"
-                                       Disabled="question.IsAnswered"
-                                       Style="@buttonStyle">
-                                @question.Points
-                            </MudButton>
-                        }
-                    </MudItem>
-                }
-            </MudGrid>
-        }
-    </MudStack>
+        @* One MudGrid row per question row, each grows equally *@
+        <MudStack Spacing="2" Style="flex: 1; min-height: 0;">
+            @for (int row = 0; row < Columns.Max(c => c.Questions.Count); row++)
+            {
+                int rowCapture = row;
+                <MudGrid Spacing="5" Style="flex: 1; min-height: 0; align-items: stretch;">
+                    @foreach (var col in Columns)
+                    {
+                        var question = col.Questions.ElementAtOrDefault(rowCapture);
+                        <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box; display: flex;">
+                            @if (question != null)
+                            {
+                                var buttonStyle = $"flex: 1; min-height: 0; font-size: 1.6rem; font-weight: bold; {(IsReadOnly ? "pointer-events: none;" : "")}";
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                           OnClick="() => SelectQuestion(question)"
+                                           FullWidth="true"
+                                           Disabled="question.IsAnswered"
+                                           Style="@buttonStyle">
+                                    @question.Points
+                                </MudButton>
+                            }
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+        </MudStack>
+    }
+
+    
 
 </MudPaper>
 
 @code {
 
-    [Parameter] 
+    [Parameter]
     public required bool IsReadOnly { get; set; } = true;
 
     [Parameter]
     public required QuizSession QuizSession { get; set; }
 
-    public List<(string Category, List<Quiz.Execution.Question> Questions)> Columns { get; private set; } = [];
+    public List<(string Category, List<Question> Questions)> Columns => QuizSession.Quiz.CurrentBoard
+        .Questions
+        .GroupBy(q => q.Category)
+        .Select(g => (Category: g.Key, Questions: g.OrderBy(q => q.Order).ToList()))
+        .OrderBy(g => g.Category)
+        .ToList() ?? [];
 
-    protected override Task OnInitializedAsync()
-    {
-        Columns = QuizSession.Quiz.CurrentBoard
-            .Questions
-            .GroupBy(q => q.Category)
-            .Select(g => (Category: g.Key, Questions: g.OrderBy(q => q.Order).ToList()))
-            .ToList();
-
-        return base.OnInitializedAsync();
-    }
-
-    private void Callback(Quiz.Execution.Question question)
+    private void SelectQuestion(Question question)
     {
         if (IsReadOnly)
             return;
 
         QuizSession.SelectQuestion(question);
+    }
+
+    private void SelectNextBoard()
+    {
+        if (IsReadOnly)
+            return;
+
+        QuizSession.SelectNextBoard();
     }
 
 }

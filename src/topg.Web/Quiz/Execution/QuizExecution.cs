@@ -12,6 +12,7 @@ public class QuizExecution
 
     public int CurrentBoardId = 0;
     public Board CurrentBoard => Boards[CurrentBoardId];
+    public bool HasNextBoard => Boards.Count > CurrentBoardId + 1;
 
     public QuizExecution(QuizTemplate template)
     {
