@@ -17,7 +17,8 @@ public class QuizSession
     public TextInputState TextInputState { get; } = new();
     public TimerState TimerState { get; } = new();
     public SoundEffectManager SoundEffectManager { get; } = new();
-    public List<Player> Players { get; } = [];
+    public Player? ActivePlayer { get; private set; }
+    public LinkedList<Player> Players { get; } = [];
 
     public ControlDisplayState ControlDisplayState
     {
@@ -48,9 +49,25 @@ public class QuizSession
         playerId = playerName + "." + Convert.ToHexString(hmacBytes);
 
         var player = new Player { Id = playerId, Name = playerName, Score = 0 };
-        Players.Add(player);
+        Players.AddLast(player);
+        ActivePlayer ??= player;
         SessionStateHasChanged();
         return true;
+    }
+
+    private void AdvanceActivePlayer()
+    {
+        if (ActivePlayer == null)
+            return;
+
+        var activePlayerNode = Players.Find(ActivePlayer);
+        SetActivePlayer(activePlayerNode?.Next?.Value ?? Players.First?.Value);
+    }
+
+    public void SetActivePlayer(Player? player)
+    {
+        ActivePlayer = player;
+        SessionStateHasChanged();
     }
 
     public void SelectNextBoard()
@@ -95,6 +112,8 @@ public class QuizSession
         TextInputState.IsRevealed = false;
         BuzzerState.UnlockBuzzer();
         TimerState.Stop();
+
+        AdvanceActivePlayer();
 
         SessionStateHasChanged();
     }

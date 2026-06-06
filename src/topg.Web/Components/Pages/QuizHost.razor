@@ -88,10 +88,22 @@ else
                         <MudPaper Style="padding: 0.5em">
                             <MudStack>
                                 <MudText Typo="Typo.h5" Align="Align.Start">Timer</MudText>
-                                <MudNumericField T="int" Value="Session.TimerState.TimerDuration" ValueChanged="TimerDurationChanged" Min="0" Max="180" DebounceInterval="100" Immediate="true" ></MudNumericField>
+                                <MudNumericField T="int" Value="Session.TimerState.TimerDuration" ValueChanged="TimerDurationChanged" Min="0" Max="180" DebounceInterval="100" Immediate="true"></MudNumericField>
                                 <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="false" OnClick="() => Session.ToggleTimer()">
                                     @(Session.TimerState.IsRunning ? "Stop" : "Start")
                                 </MudButton>
+                            </MudStack>
+                        </MudPaper>
+
+                        <MudPaper Style="padding: 0.5em">
+                            <MudStack>
+                                <MudText Typo="Typo.h5" Align="Align.Start">Active Player</MudText>
+                                <MudMenu Label="@(Session.ActivePlayer?.Name ?? "No Active Player")" EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
+                                    @foreach (var player in Session.Players)
+                                    {
+                                        <MudMenuItem OnClick="() => Session.SetActivePlayer(player)">@player.Name</MudMenuItem>
+                                    }
+                                </MudMenu>
                             </MudStack>
                         </MudPaper>
                     </MudStack>
@@ -125,13 +137,13 @@ else
                         <div style="width: 95%; position: absolute; top: 10px; overflow: hidden; flex-shrink: 0; display: flex; align-items: flex-start;">
                             <MudText Align="Align.Center" Style="width: 100%; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">@Session.TextInputState.GetTextByPlayer(player)</MudText>
                         </div>
-                        
+
                         <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">@player.Name</MudText>
                         <MudStack Style="position: relative" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                             <MudText Typo="Typo.h3" Align="Align.Center">@player.Score</MudText>
                             <ScoreEditButton Player="player" OnScoreChanged="(score) => AdjustPlayerScoreManually(player, score)" />
                         </MudStack>
-                        
+
                         
                         @if (@Session.Quiz.CurrentQuestion != null)
                         {
@@ -140,13 +152,31 @@ else
                                 <MudButton OnClick="() => AdjustPlayerScore(player, Session.Quiz.CurrentQuestion.Points)">+ @Session.Quiz.CurrentQuestion.Points</MudButton>
                             </MudButtonGroup>
                         }
+
+                        @if (player == Session.ActivePlayer)
+                        {
+                            <div style="
+                            position:absolute;
+                            left:0;
+                            right:0;
+                            bottom:0;
+                            height:16px;
+                            pointer-events:none;
+                            background:linear-gradient(
+                            to top,
+                            rgba(140,190,255,0.8) 0,
+                            rgba(140,190,255,0.25) 6px,
+                            transparent 15px
+                            );
+                            "></div>
+                        }
                     </MudPaper>
                 }
             </MudStack>
         </MudPaper>
     </div>
 
-    @code {
+@code {
 
     [Parameter]
     public string? SessionKey { get; set; }
@@ -192,13 +222,10 @@ else
     {
         Session?.SetTimerDuration(timerDuration);
     }
-    
+
     private void AdjustPlayerScoreManually(Player player, int points)
     {
         Session?.AdjustPlayerScore(player, points - player.Score);
     }
-
-    
-
-    }
+}
 }
