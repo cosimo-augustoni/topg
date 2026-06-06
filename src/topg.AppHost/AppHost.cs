@@ -64,7 +64,7 @@ IResourceBuilder<PostgresServerResource> AddPostgres(IDistributedApplicationBuil
 
     if (distributedApplicationBuilder.Environment.IsDevelopment())
     {
-        resourceBuilder.WithPgWeb();
+        resourceBuilder.WithPgAdmin();
     }
     else
     {
