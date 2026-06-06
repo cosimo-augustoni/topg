@@ -1,0 +1,204 @@
+@page "/board/{BoardId:long}"
+@inject QuizMaker.Data.Repositories.IQuizRepository Repo
+@inject NavigationManager Nav
+
+<h1>Board Editor</h1>
+
+<div class="mb-2">
+    <button class="btn btn-primary" @onclick="AddCategory">Add Category</button>
+    <button class="btn btn-secondary ms-2" @onclick="Back">Back</button>
+</div>
+
+@if (board == null)
+{
+    <p>Loading...</p>
+}
+else if (categories.Count == 0)
+{
+    <p class="text-muted">No categories yet. Click "Add Category" to get started.</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var cat in categories)
+        {
+            <div class="col-12 col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                @if (editCategoryId == cat.Id)
+                                {
+                                    <input class="form-control form-control-sm" @bind="editCategoryBuffer" />
+                                }
+                                else
+                                {
+                                    <h5 class="card-title mb-1">@cat.Name</h5>
+                                }
+                                <div class="text-muted small">@("Category ID: " + cat.Id)</div>
+                            </div>
+                            <div class="btn-group">
+                                @if (editCategoryId == cat.Id)
+                                {
+                                    <button class="btn btn-sm btn-primary" @onclick="() => SaveCategoryName(cat)">Save</button>
+                                    <button class="btn btn-sm btn-secondary" @onclick="CancelRename">Cancel</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => StartRename(cat)">Rename</button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteCategory(cat)">Delete</button>
+                                }
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-2">
+                            <button class="btn btn-sm btn-success" @onclick="() => AddQuestion(cat)">Add Question</button>
+                        </div>
+
+                        @if (board != null)
+                        {
+                            var qs = board.Questions.Where(q => q.Category == cat.Name).OrderByDescending(q => q.Points).ToList();
+                            if (!qs.Any())
+                            {
+                                <div class="text-muted small">No questions yet.</div>
+                            }
+                            else
+                            {
+                                <ul class="list-group list-group-flush">
+                                    @foreach (var q in qs)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>@q.Points</strong> — <span class="small">@TruncateText((q as QuizMaker.DomainObjects.TextQuestion)?.QuestionText ?? (q as QuizMaker.DomainObjects.ImageQuestion)?.QuestionText, 60)</span>
+                                            </div>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditQuestion(q)">Edit</button>
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteQuestion(q)">Delete</button>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public long BoardId { get; set; }
+
+    QuizMaker.DomainObjects.Board? board;
+    long templateId = 0;
+    List<QuizMaker.DomainObjects.Category> categories = new();
+    long? editCategoryId = null;
+    string editCategoryBuffer = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBoard();
+    }
+
+    async Task LoadBoard()
+    {
+        var all = await Repo.GetAllTemplatesAsync();
+        foreach (var t in all)
+        {
+            var b = t.Boards.FirstOrDefault(x => x.Id == BoardId);
+            if (b != null)
+            {
+                board = b;
+                templateId = t.Id;
+                break;
+            }
+        }
+
+        if (board != null)
+        {
+            categories = await Repo.GetCategoriesByBoardAsync(board.Id);
+            // clear any edit state
+            editCategoryId = null;
+            editCategoryBuffer = string.Empty;
+        }
+    }
+
+    async Task AddCategory()
+    {
+        if (board == null) return;
+        var name = "Category " + (categories.Count + 1);
+        await Repo.CreateCategoryAsync(board.Id, name);
+        // reload categories to get persisted IDs
+        categories = await Repo.GetCategoriesByBoardAsync(board.Id);
+        StateHasChanged();
+    }
+
+    async Task DeleteCategory(QuizMaker.DomainObjects.Category cat)
+    {
+        await Repo.DeleteCategoryAsync(cat.Id);
+        await LoadBoard();
+        StateHasChanged();
+    }
+
+    void StartRename(QuizMaker.DomainObjects.Category cat)
+    {
+        editCategoryId = cat.Id;
+        editCategoryBuffer = cat.Name;
+    }
+
+    void CancelRename()
+    {
+        editCategoryId = null;
+        editCategoryBuffer = string.Empty;
+    }
+
+    async Task SaveCategoryName(QuizMaker.DomainObjects.Category cat)
+    {
+        if (string.IsNullOrWhiteSpace(editCategoryBuffer)) return;
+        await Repo.UpdateCategoryAsync(cat.Id, editCategoryBuffer);
+        await LoadBoard();
+        StateHasChanged();
+    }
+
+    void AddQuestion(QuizMaker.DomainObjects.Category cat)
+    {
+        Nav.NavigateTo($"/question/new?board={BoardId}&categoryId={cat.Id}&category={Uri.EscapeDataString(cat.Name)}");
+    }
+
+    async Task DeleteQuestion(QuizMaker.DomainObjects.Question q)
+    {
+        await Repo.DeleteQuestionAsync(q.Id);
+        await LoadBoard();
+        StateHasChanged();
+    }
+
+    QuizMaker.DomainObjects.Question? GetQuestion(QuizMaker.DomainObjects.Category cat, int points)
+    {
+        return board?.Questions.FirstOrDefault(q => q.Category == cat.Name && q.Points == points);
+    }
+
+    void AddQuestion(QuizMaker.DomainObjects.Category cat, int points)
+    {
+        Nav.NavigateTo($"/question/new?board={BoardId}&category={Uri.EscapeDataString(cat.Name)}&points={points}");
+    }
+
+    void EditQuestion(QuizMaker.DomainObjects.Question q)
+    {
+        // For now, navigate to view (editing can be added later)
+        Nav.NavigateTo($"/question/{q.Id}?board={BoardId}");
+    }
+
+    void Back()
+    {
+        Nav.NavigateTo($"/template/{templateId}");
+    }
+
+    static string TruncateText(string? text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        return text.Length <= maxLength ? text : text.Substring(0, maxLength) + "...";
+    }
+}

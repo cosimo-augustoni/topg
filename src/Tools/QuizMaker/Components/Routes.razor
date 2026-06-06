@@ -1,0 +1,21 @@
+﻿@* Routes *@
+<Router AppAssembly="typeof(MauiProgram).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+    <Found Context="routeData">
+        <ErrorBoundary>
+            <ChildContent>
+                <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </ChildContent>
+            <ErrorContent Context="error">
+                <div class="m-3 alert alert-danger">
+                    <h4>Unhandled error</h4>
+                    <pre>@error.Message</pre>
+                    <details>
+                        <summary>Details</summary>
+                        <pre>@error.ToString()</pre>
+                    </details>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
+    </Found>
+</Router>

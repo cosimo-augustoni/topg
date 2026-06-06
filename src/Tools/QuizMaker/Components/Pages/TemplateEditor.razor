@@ -1,0 +1,120 @@
+@page "/template/{Id:long}"
+@page "/template/new"
+@inject QuizMaker.Data.Repositories.IQuizRepository Repo
+@inject NavigationManager Nav
+
+<h1>Template Editor</h1>
+
+<div class="mb-3">
+    <label class="form-label">Name</label>
+    <input class="form-control" @bind="templateName" />
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="Save">Save</button>
+    <button class="btn btn-secondary ms-2" @onclick="Back">Back</button>
+    @if (template.Id > 0)
+    {
+        <button class="btn btn-success ms-2" @onclick="Export">Export</button>
+    }
+</div>
+
+@if (template.Id > 0)
+{
+    <hr />
+    <h3>Boards</h3>
+    <button class="btn btn-primary mb-3" @onclick="AddBoard">Add Board</button>
+
+    @if (template.Boards.Count == 0)
+    {
+        <p class="text-muted">No boards yet. Click "Add Board" to create one.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var board in template.Boards.OrderBy(b => b.Order))
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>Board @board.Order (@board.Questions.Count questions)</span>
+                    <div>
+                        <button class="btn btn-sm btn-secondary me-2" @onclick="() => EditBoard(board.Id)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteBoard(board.Id)">Delete</button>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    [Parameter] public long? Id { get; set; }
+    QuizMaker.DomainObjects.QuizTemplate template = new() { Name = string.Empty, Boards = new List<QuizMaker.DomainObjects.Board>() };
+    string templateName = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadTemplate();
+    }
+
+    async Task LoadTemplate()
+    {
+        if (Id.HasValue)
+        {
+            var t = await Repo.GetTemplateAsync(Id.Value);
+            if (t != null) template = t;
+            else template = new() { Name = string.Empty, Boards = new List<QuizMaker.DomainObjects.Board>() };
+        }
+        else
+        {
+            template = new() { Name = string.Empty, Boards = new List<QuizMaker.DomainObjects.Board>() };
+        }
+
+        templateName = template.Name;
+    }
+
+    async Task Save()
+    {
+        template = template with { Name = templateName };
+        if (template.Id == 0)
+        {
+            var created = await Repo.CreateTemplateAsync(template);
+            Nav.NavigateTo($"/template/{created.Id}");
+        }
+        else
+        {
+            await Repo.UpdateTemplateAsync(template);
+            await LoadTemplate(); // Refresh to show updated data
+        }
+    }
+
+    async Task AddBoard()
+    {
+        if (template.Id == 0) return;
+        var nextOrder = template.Boards.Count > 0 ? template.Boards.Max(b => b.Order) + 1 : 1;
+        var board = await Repo.CreateBoardAsync(template.Id, nextOrder);
+        await LoadTemplate();
+        StateHasChanged();
+    }
+
+    void EditBoard(long boardId)
+    {
+        Nav.NavigateTo($"/board/{boardId}");
+    }
+
+    async Task DeleteBoard(long boardId)
+    {
+        await Repo.DeleteBoardAsync(boardId);
+        await LoadTemplate();
+        StateHasChanged();
+    }
+
+    void Export()
+    {
+        Nav.NavigateTo($"/export/{template.Id}");
+    }
+
+    void Back()
+    {
+        Nav.NavigateTo("/");
+    }
+}

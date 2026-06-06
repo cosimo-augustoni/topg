@@ -1,0 +1,25 @@
+@page "/settings"
+@inject QuizMaker.Services.ConfigService Config
+
+<h1>Settings</h1>
+
+<div class="mb-2">
+    <label>Base URL</label>
+    <input class="form-control" @bind="baseUrl" />
+</div>
+
+<button class="btn btn-primary" @onclick="Save">Save</button>
+
+@code {
+    string baseUrl = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        baseUrl = await Config.GetBaseUrlAsync();
+    }
+
+    async Task Save()
+    {
+        await Config.SetBaseUrlAsync(baseUrl);
+    }
+}

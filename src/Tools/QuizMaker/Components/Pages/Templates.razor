@@ -1,0 +1,85 @@
+@page "/"
+@inject QuizMaker.Data.Repositories.IQuizRepository Repo
+@inject NavigationManager Nav
+
+<h1>Templates</h1>
+
+<button class="btn btn-primary" @onclick="CreateNew">New Template</button>
+
+<ul class="list-group mt-3">
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <li class="list-group-item text-danger">Error: @errorMessage</li>
+    }
+    else if (templates == null)
+    {
+        <li class="list-group-item">Loading...</li>
+    }
+    else
+    {
+        @foreach (var t in templates)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>@t.Name</div>
+                <div>
+                    <button class="btn btn-sm btn-secondary me-2" @onclick="() => Edit(t.Id)">Edit</button>
+                    <button class="btn btn-sm btn-danger" @onclick="() => Delete(t.Id)">Delete</button>
+                </div>
+            </li>
+        }
+    }
+
+    @if (!string.IsNullOrEmpty(errorDetail))
+    {
+        <li class="list-group-item text-muted"><pre>@errorDetail</pre></li>
+    }
+</ul>
+
+@code {
+    List<QuizMaker.DomainObjects.QuizTemplate>? templates;
+
+    string? errorMessage;
+    string? errorDetail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            templates = await Repo.GetAllTemplatesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            errorDetail = ex.ToString();
+            try
+            {
+                var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                var folder = System.IO.Path.Combine(appData, "QuizMaker");
+                System.IO.Directory.CreateDirectory(folder);
+                var logPath = System.IO.Path.Combine(folder, "last-error.log");
+                System.IO.File.WriteAllText(logPath, errorDetail);
+            }
+            catch
+            {
+                // ignore logging errors
+            }
+        }
+    }
+
+    void CreateNew()
+    {
+        Nav.NavigateTo($"/template/new");
+    }
+
+    void Edit(long id)
+    {
+        Nav.NavigateTo($"/template/{id}");
+    }
+
+    async Task Delete(long id)
+    {
+        await Repo.DeleteTemplateAsync(id);
+        templates = await Repo.GetAllTemplatesAsync();
+        StateHasChanged();
+    }
+}

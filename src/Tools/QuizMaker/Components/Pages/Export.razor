@@ -1,0 +1,50 @@
+@page "/export/{TemplateId:long}"
+@inject QuizMaker.Services.SqlExportService Exporter
+@inject QuizMaker.Services.ConfigService Config
+@inject QuizMaker.Data.Repositories.IQuizRepository Repo
+@inject QuizMaker.Services.MediaService Media
+
+<h1>Export</h1>
+
+<div>
+    <button class="btn btn-primary" @onclick="Generate">Generate SQL</button>
+    <button class="btn btn-secondary ms-2" @onclick="SaveSql" disabled="@(!hasSql)">Save SQL</button>
+    <button class="btn btn-secondary ms-2" @onclick="ExportZip" disabled="@(!hasSql)">Export Media Zip</button>
+</div>
+
+@if (hasSql)
+{
+    <pre>@sql</pre>
+}
+
+@code {
+    [Parameter] public long TemplateId { get; set; }
+
+    string? sql;
+    bool hasSql = false;
+
+    async Task Generate()
+    {
+        var baseUrl = await Config.GetBaseUrlAsync();
+        sql = await Exporter.ExportTemplateSqlAsync(TemplateId, baseUrl);
+        hasSql = true;
+    }
+
+    async Task SaveSql()
+    {
+        var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), $"template-{TemplateId}.sql");
+        await File.WriteAllTextAsync(path, sql ?? string.Empty);
+    }
+
+    async Task ExportZip()
+    {
+        var safe = await Repo.GetTemplateSafeFolderNameAsync(TemplateId);
+        if (string.IsNullOrEmpty(safe))
+        {
+            // fallback
+            safe = "template-" + TemplateId;
+        }
+        var output = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), $"{safe}.zip");
+        await Task.Run(() => Media.ExportMediaZip(safe, output));
+    }
+}

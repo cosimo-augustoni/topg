@@ -1,0 +1,216 @@
+@page "/question/new"
+@page "/question/{QuestionId:long}"
+@inject QuizMaker.Data.Repositories.IQuizRepository Repo
+@inject QuizMaker.Services.MediaService Media
+@inject QuizMaker.Services.ConfigService Config
+@inject NavigationManager Nav
+
+<h1>Question Editor</h1>
+
+<div class="mb-2">
+    <label>Type</label>
+    <select class="form-select" @bind="questionType">
+        <option value="0">Text</option>
+        <option value="2">Image</option>
+    </select>
+</div>
+
+<div class="mb-2">
+    <label>Answer Type</label>
+    <select class="form-select" @bind="answerType">
+        <option value="0">Buzzer</option>
+        <option value="1">Text</option>
+    </select>
+</div>
+
+<div class="mb-2">
+    <label>Points</label>
+    <input type="number" class="form-control" @bind="points" />
+</div>
+
+<div class="mb-2">
+    <label>Question Text</label>
+    <input class="form-control" @bind="questionText" />
+</div>
+
+<div class="mb-2">
+    <label>Correct Answer</label>
+    <input class="form-control" @bind="correctAnswer" />
+</div>
+
+@if (questionType == 2)
+{
+    <div class="mb-2">
+        <label>Image File</label>
+        <InputFile OnChange="OnInputFileChange" />
+        <div class="mt-2">@imageFilename</div>
+    </div>
+}
+
+<button class="btn btn-primary" @onclick="Save">Save</button>
+<button class="btn btn-secondary ms-2" @onclick="Back">Back</button>
+@if (isEditing)
+{
+    <button class="btn btn-danger ms-2" @onclick="Delete">Delete</button>
+}
+
+@code {
+    [Parameter] public long? QuestionId { get; set; }
+
+    long boardId = 0;
+    long categoryId = 0;
+    string? categoryName = null;
+    long templateId = 0;
+    int questionType = 0;
+    int answerType = (int)QuizMaker.DomainObjects.AnswerType.Buzzer;
+    int points = 100;
+    string questionText = string.Empty;
+    string correctAnswer = string.Empty;
+    string? imageFilename;
+    bool isEditing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var qs = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+        if (long.TryParse(qs["board"], out var b)) boardId = b;
+        if (long.TryParse(qs["categoryId"], out var cid)) categoryId = cid;
+        categoryName = qs["category"];
+        if (int.TryParse(qs["points"], out var p)) points = p;
+
+        // Resolve categoryId from boardId and categoryName
+        if (boardId > 0 && !string.IsNullOrEmpty(categoryName) && categoryId == 0)
+        {
+            var categories = await Repo.GetCategoriesByBoardAsync(boardId);
+            var cat = categories.FirstOrDefault(c => c.Name == categoryName);
+            if (cat != null)
+            {
+                categoryId = cat.Id;
+            }
+        }
+
+        // Resolve templateId from board
+        if (boardId > 0)
+        {
+            var all = await Repo.GetAllTemplatesAsync();
+            foreach (var t in all)
+            {
+                if (t.Boards.Any(bd => bd.Id == boardId))
+                {
+                    templateId = t.Id;
+                    break;
+                }
+            }
+        }
+
+        // If editing an existing question, load it
+        if (QuestionId.HasValue)
+        {
+            var existing = await Repo.GetQuestionAsync(QuestionId.Value);
+            if (existing != null)
+            {
+                isEditing = true;
+                questionType = (int)existing.QuestionType;
+                    answerType = (int)existing.AnswerType;
+                points = existing.Points;
+                questionText = existing is QuizMaker.DomainObjects.TextQuestion tq ? tq.QuestionText : existing is QuizMaker.DomainObjects.ImageQuestion iq ? iq.QuestionText : string.Empty;
+                correctAnswer = existing is QuizMaker.DomainObjects.TextQuestion tq2 ? tq2.CorrectAnswer : existing is QuizMaker.DomainObjects.ImageQuestion iq2 ? iq2.CorrectAnswer : string.Empty;
+                imageFilename = existing is QuizMaker.DomainObjects.ImageQuestion iq3 ? iq3.ImageUri : null;
+                categoryName = existing.Category;
+
+                // try to resolve categoryId from available board categories
+                if (boardId > 0 && !string.IsNullOrEmpty(categoryName))
+                {
+                    var cats = await Repo.GetCategoriesByBoardAsync(boardId);
+                    var cat = cats.FirstOrDefault(c => c.Name == categoryName);
+                    if (cat != null) categoryId = cat.Id;
+                }
+            }
+        }
+    }
+
+    async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        if (templateId == 0)
+        {
+            // fallback: get first template
+            var all = await Repo.GetAllTemplatesAsync();
+            var tpl = all?.FirstOrDefault();
+            if (tpl == null) return;
+            templateId = tpl.Id;
+        }
+
+        var safeName = await Repo.GetTemplateSafeFolderNameAsync(templateId);
+        // limit size if needed
+        using var stream = file.OpenReadStream(maxAllowedSize: 10_000_000);
+        imageFilename = await Media.AddMediaAsync(templateId, stream, safeName, file.Name);
+    }
+
+    async Task Save()
+    {
+        if (categoryId == 0)
+        {
+            // Cannot save without a valid category
+            return;
+        }
+
+        QuizMaker.DomainObjects.Question q;
+        if (questionType == 2)
+        {
+            q = new QuizMaker.DomainObjects.ImageQuestion
+            {
+                Id = isEditing && QuestionId.HasValue ? QuestionId.Value : 0,
+                QuestionType = QuizMaker.DomainObjects.QuestionType.Image,
+                AnswerType = (QuizMaker.DomainObjects.AnswerType)answerType,
+                Points = points,
+                Category = categoryName ?? string.Empty,
+                QuestionText = questionText,
+                CorrectAnswer = correctAnswer,
+                ImageUri = imageFilename ?? string.Empty
+            };
+        }
+        else
+        {
+            q = new QuizMaker.DomainObjects.TextQuestion
+            {
+                Id = isEditing && QuestionId.HasValue ? QuestionId.Value : 0,
+                QuestionType = QuizMaker.DomainObjects.QuestionType.Text,
+                AnswerType = (QuizMaker.DomainObjects.AnswerType)answerType,
+                Points = points,
+                Category = categoryName ?? string.Empty,
+                QuestionText = questionText,
+                CorrectAnswer = correctAnswer
+            };
+        }
+
+        if (isEditing)
+        {
+            await Repo.UpdateQuestionAsync(q);
+        }
+        else
+        {
+            await Repo.CreateQuestionAsync(categoryId, q);
+        }
+
+        Nav.NavigateTo($"/board/{boardId}");
+    }
+
+    async Task Delete()
+    {
+        if (!QuestionId.HasValue) return;
+        await Repo.DeleteQuestionAsync(QuestionId.Value);
+        Nav.NavigateTo($"/board/{boardId}");
+    }
+
+    void Back()
+    {
+        if (boardId > 0)
+            Nav.NavigateTo($"/board/{boardId}");
+        else
+            Nav.NavigateTo("/");
+    }
+}
