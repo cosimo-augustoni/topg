@@ -1,0 +1,45 @@
+@using System.Timers
+@implements IDisposable
+
+<div class="timer-countdown">@remainingSeconds</div>
+
+@code {
+    [Parameter]
+    public int Duration { get; set; }
+
+    private int remainingSeconds;
+    private Timer? countdownTimer;
+
+    protected override void OnInitialized()
+    {
+        remainingSeconds = Duration;
+        StartCountdown();
+    }
+
+    private void StartCountdown()
+    {
+        countdownTimer = new Timer(1000);
+        countdownTimer.Elapsed += OnTimerElapsed;
+        countdownTimer.AutoReset = true;
+        countdownTimer.Start();
+    }
+
+    private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
+    {
+        if (remainingSeconds > 0)
+        {
+            remainingSeconds--;
+            InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            countdownTimer?.Stop();
+        }
+    }
+
+    public void Dispose()
+    {
+        countdownTimer?.Stop();
+        countdownTimer?.Dispose();
+    }
+}

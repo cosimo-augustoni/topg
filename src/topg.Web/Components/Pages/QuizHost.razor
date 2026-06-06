@@ -77,6 +77,16 @@ else
                                                  ToggledColor="@Color.Success">
                             </MudToggleIconButton>
                         </MudPaper>
+
+                        <MudPaper Style="padding: 0.5em">
+                            <MudStack>
+                                <MudText Typo="Typo.h5" Align="Align.Start">Timer</MudText>
+                                <MudNumericField T="int" Value="Session.TimerState.TimerDuration" ValueChanged="TimerDurationChanged" Min="0" Max="180" DebounceInterval="100" Immediate="true" ></MudNumericField>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="false" OnClick="() => Session.ToggleTimer()">
+                                    @(Session.TimerState.IsRunning ? "Stop" : "Start")
+                                </MudButton>
+                            </MudStack>
+                        </MudPaper>
                     </MudStack>
 
                 </MudPaper>
@@ -123,7 +133,7 @@ else
         </MudPaper>
     </div>
 
-@code {
+    @code {
 
     [Parameter]
     public string? SessionKey { get; set; }
@@ -162,5 +172,11 @@ else
     {
         Session?.ControlDisplayState ^= ControlDisplayState.Text;
     }
-}
+
+    private void TimerDurationChanged(int timerDuration)
+    {
+        Session?.SetTimerDuration(timerDuration);
+    }
+
+    }
 }

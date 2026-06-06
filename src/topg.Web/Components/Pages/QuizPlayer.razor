@@ -20,35 +20,57 @@ else
         <div style="flex: 2; min-height: 0; display: flex; flex-direction: row; gap: 16px;">
 
             <div style="flex: 0 0 33.333%; min-height: 0; display: flex;">
-                <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; overflow: hidden;" Elevation="4">
-                    <MudStack Spacing="10">
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: row; align-items: flex-start; overflow: hidden;" Elevation="4" >
+                    <MudStack Style="flex: 1; display: flex; flex-direction: column; height: 100%" Spacing="10">
+                        
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="flex: 0;">
                             <MudText Typo="Typo.h5">@Session.Quiz.Name</MudText>
                             <SettingsButton @bind-Volume="Volume" OnClosed="SaveVolumeAsync" />
                         </MudStack>
 
-                        @if (Session.ControlDisplayState.HasFlag(ControlDisplayState.Buzzer))
-                        {
-                            <MudButton Variant="Variant.Filled"
-                                       Color="@(Session.BuzzerState.BuzzeredPlayer == Player ? Color.Success : Color.Default)"
-                                       Disabled="@(Session.BuzzerState.IsLocked && Session.BuzzerState.BuzzeredPlayer != Player)"
-                                       OnClick="BuzzerClicked"
-                                       Style="width: 120px; height: 120px; border-radius: 50%; min-width: unset; font-size: 1.1rem; font-weight: bold; align-self: center; margin-top: 16px;">
-                                BUZZ!
-                            </MudButton>
-                        }
+                        <MudGrid Style="flex: 1;">
+                            <MudItem xs="11">
+                                <MudStack Spacing="10">
+                                    @if (Session.ControlDisplayState.HasFlag(ControlDisplayState.Buzzer))
+                                    {
+                                        <MudButton Variant="Variant.Filled"
+                                                   Color="@(Session.BuzzerState.BuzzeredPlayer == Player ? Color.Success : Color.Default)"
+                                                   Disabled="@(Session.BuzzerState.IsLocked && Session.BuzzerState.BuzzeredPlayer != Player)"
+                                                   OnClick="BuzzerClicked"
+                                                   Style="width: 120px; height: 120px; border-radius: 50%; min-width: unset; font-size: 1.1rem; font-weight: bold; align-self: center; margin-top: 16px;">
+                                            BUZZ!
+                                        </MudButton>
+                                    }
 
-                        @if (Session.ControlDisplayState.HasFlag(ControlDisplayState.Text))
-                        {
-                            <MudTextField Variant="Variant.Filled"
-                                          T="string"
-                                          DebounceInterval="100"
-                                          MaxLength="150"
-                                          Immediate="true"
-                                          ValueChanged="UpdateTextInput"
-                                          Value="Session.TextInputState.GetTextByPlayer(Player)">
-                            </MudTextField>
-                        }
+                                    @if (Session.ControlDisplayState.HasFlag(ControlDisplayState.Text))
+                                    {
+                                        <MudTextField Variant="Variant.Filled"
+                                                      T="string"
+                                                      DebounceInterval="100"
+                                                      MaxLength="150"
+                                                      Immediate="true"
+                                                      ValueChanged="UpdateTextInput"
+                                                      Value="Session.TextInputState.GetTextByPlayer(Player)">
+                                        </MudTextField>
+                                    }
+                                </MudStack>
+                            </MudItem>
+                            
+                            <MudItem xs="1">
+                                @if (Session.TimerState.IsRunning)
+                                {
+                                    <div class="timer-container">
+                                        <div class="timer-bar-track">
+                                            <div class="timer-bar-fill timer-active"
+                                                 style="animation-duration: @(Session.TimerState.TimerDuration)s;">
+                                            </div>
+                                        </div>
+                                        <TimerCountdown Duration="Session.TimerState.TimerDuration"/>
+                                    </div>
+                                }
+                            </MudItem>
+                        </MudGrid>
+
                     </MudStack>
                 </MudPaper>
             </div>

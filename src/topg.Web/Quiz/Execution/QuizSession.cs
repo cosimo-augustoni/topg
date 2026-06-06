@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using MudBlazor;
 using topg.Web.Quiz.Management;
 using topg.Web.Templating.DomainObjects;
@@ -14,6 +15,7 @@ public class QuizSession
     public required QuizExecution Quiz { get; init; }
     public BuzzerState BuzzerState { get; } = new();
     public TextInputState TextInputState { get; } = new();
+    public TimerState TimerState { get; } = new();
     public SoundEffectManager SoundEffectManager { get; } = new();
     public List<Player> Players { get; } = [];
 
@@ -83,6 +85,7 @@ public class QuizSession
         TextInputState.Clear();
         TextInputState.IsRevealed = false;
         BuzzerState.UnlockBuzzer();
+        TimerState.Stop();
 
         SessionStateHasChanged();
     }
@@ -92,6 +95,22 @@ public class QuizSession
         player.Score += points;
         var sound = points > 0 ? SoundEffect.Correct : SoundEffect.Incorrect;
         SoundEffectManager.PlaySound(sound);
+        SessionStateHasChanged();
+    }
+
+    public void SetTimerDuration(int timerDuration)
+    {
+        TimerState.TimerDuration = timerDuration;
+        SessionStateHasChanged();
+    }
+
+    public void ToggleTimer()
+    {
+        if (TimerState.IsRunning)
+            TimerState.Stop();
+        else
+            TimerState.Start();
+
         SessionStateHasChanged();
     }
 
@@ -124,6 +143,7 @@ public class QuizSession
         if (BuzzerState.TrySetBuzzered(player))
         {
             SoundEffectManager.PlaySound(SoundEffect.Buzzer);
+            TimerState.Stop();
             SessionStateHasChanged();
         }
     }
@@ -149,5 +169,25 @@ public class QuizSession
     {
         player = Players.FirstOrDefault(p => p.Id == playerSession);
         return player != null;
+    }
+
+    
+}
+
+public class TimerState
+{
+    private int running = 0;
+
+    public bool IsRunning => running == 1;
+    public int TimerDuration { get; set; } = 10;
+
+    public void Start()
+    {
+        Interlocked.Exchange(ref running, 1);
+    }
+
+    public void Stop()
+    {
+        Interlocked.Exchange(ref running, 0);
     }
 }
