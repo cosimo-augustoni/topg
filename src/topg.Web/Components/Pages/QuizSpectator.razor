@@ -1,0 +1,115 @@
+﻿@page "/spectate/{sessionKey}"
+@using topg.Web.Components.Pages.Questions.Player
+@using topg.Web.Quiz.Execution
+@using topg.Web.Quiz.Management
+@inject NavigationManager NavigationManager
+@inject SessionHandler SessionHandler
+@inherits QuizSessionBase
+
+<PageTitle>Topg</PageTitle>
+
+@if (Session == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <div style="height: 100dvh; overflow: hidden; padding: 16px; gap: 16px; box-sizing: border-box; display: flex; flex-direction: column;">
+
+        @* Top row: controls (left) + board (right) — 2/3 of screen height *@
+        <div style="flex: 2; min-height: 0; display: flex; flex-direction: row; gap: 16px;">
+
+            <div style="flex: 0 0 33.333%; min-height: 0; display: flex;">
+                <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: row; align-items: flex-start; overflow: hidden;" Elevation="4">
+                    <MudStack Style="flex: 1; display: flex; flex-direction: column; height: 100%" Spacing="10">
+
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="flex: 0;">
+                            <MudText Typo="Typo.h5">@Session.Quiz.Name</MudText>
+                            <SettingsButton @bind-Volume="Volume" OnClosed="SaveVolumeAsync" />
+                        </MudStack>
+
+                        <MudGrid Style="flex: 1;">
+                            <MudItem xs="11">
+                            </MudItem>
+
+                            <MudItem xs="1">
+                                @if (Session.TimerState.IsRunning)
+                                {
+                                    <div class="timer-container">
+                                        <div class="timer-bar-track">
+                                            <div class="timer-bar-fill timer-active"
+                                                 style="animation-duration: @(Session.TimerState.TimerDuration)s;">
+                                            </div>
+                                        </div>
+                                        <TimerCountdown Duration="Session.TimerState.TimerDuration" />
+                                    </div>
+                                }
+                            </MudItem>
+                        </MudGrid>
+
+                    </MudStack>
+                </MudPaper>
+            </div>
+
+            <div style="flex: 1; min-height: 0; display: flex;">
+                @if (Session.Quiz.CurrentQuestion == null)
+                {
+                    <Board QuizSession="Session" IsReadOnly="true"></Board>
+                }
+                else
+                {
+                    <Question QuizSession="Session"></Question>
+                }
+            </div>
+
+        </div>
+
+        <MudPaper Style="flex: 1; min-height: 0; width: 100%; padding: 8px; overflow: hidden; box-sizing: border-box; display: flex; align-items: center;" Elevation="4">
+            <MudStack Row="true" Style="height: 100%; width: 100%; justify-content: space-evenly; align-items: center;">
+                @foreach (var player in Session.Players)
+                {
+                    var isBuzzered = Session.BuzzerState.BuzzeredPlayer == player;
+                    var buzzerStyle = isBuzzered
+                        ? "outline: 3px solid #4caf50; box-shadow: 0 0 12px 4px #4caf50;"
+                        : "";
+                    <MudPaper Elevation="2" Style="@($"aspect-ratio: 1 / 1; height: calc(100% - 16px); min-width: 0; display: flex; flex-direction: column; position: relative; padding: 8px; box-sizing: border-box; transition: box-shadow 0.2s, outline 0.2s; {buzzerStyle}")">
+                        <div style="width: 95%; position: absolute; top: 10px; overflow: hidden; flex-shrink: 0; display: flex; align-items: flex-start;">
+                            <MudText Typo="Typo.body1" Align="Align.Center" Style="width: 100%; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; font-weight: bold">@Session.TextInputState.GetTextByPlayer(player)</MudText>
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0;">
+                            <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold;">@player.Name</MudText>
+                            <MudText Typo="Typo.h3" Align="Align.Center">@player.Score</MudText>
+                        </div>
+                    </MudPaper>
+                }
+            </MudStack>
+        </MudPaper>
+    </div>
+}
+
+
+@code {
+    [Parameter]
+    public string? SessionKey { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            SetSessionOrLeave();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private void SetSessionOrLeave()
+    {
+        var sessionId = SessionKey != null ? new SessionId(SessionKey) : null;
+        if (sessionId != null && SessionHandler.Sessions.TryGetValue(sessionId, out var session))
+        {
+            SubscribeToSession(session);
+            StateHasChanged();
+            return;
+        }
+        NavigationManager.NavigateTo($"?joinCode={SessionKey}");
+    }
+}

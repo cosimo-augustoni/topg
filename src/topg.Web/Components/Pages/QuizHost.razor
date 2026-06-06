@@ -33,7 +33,14 @@ else
                                 <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
                                                Size="Size.Small"
                                                Title="Copy join link"
-                                               OnClick="CopyJoinLinkAsync" />
+                                               OnClick="async () => await CopyLinkAsync(JoinLink)" />
+                            </MudStack>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                <MudLink Href="@SpectateLink" Target="_blank" Typo="Typo.body2" Style="word-break: break-all;">@SpectateLink</MudLink>
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                               Size="Size.Small"
+                                               Title="Copy spectate link"
+                                               OnClick="async () => await CopyLinkAsync(SpectateLink)" />
                             </MudStack>
                         </MudPaper>
 
@@ -145,11 +152,13 @@ else
     public string? SessionKey { get; set; }
 
     private string JoinLink => $"{NavigationManager.BaseUri}play/{Session?.SessionId.Key}";
+    private string SpectateLink => $"{NavigationManager.BaseUri}spectate/{Session?.SessionId.Key}";
 
-    private async Task CopyJoinLinkAsync()
+    private async Task CopyLinkAsync(string link)
     {
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", JoinLink);
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", link);
     }
+
     protected override Task OnInitializedAsync()
     {
         var sessionId = SessionKey != null ? new SessionId(SessionKey) : null;
@@ -188,6 +197,8 @@ else
     {
         Session?.AdjustPlayerScore(player, points - player.Score);
     }
+
+    
 
     }
 }

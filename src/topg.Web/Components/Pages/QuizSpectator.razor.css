@@ -1,0 +1,124 @@
+/* Timer Animation Keyframes - Reusable for different elements */
+
+/* Vertical drain animation (top to bottom) - for vertical bars */
+@keyframes timer-drain-vertical {
+    from {
+        height: 100%;
+    }
+    to {
+        height: 0%;
+    }
+}
+
+/* Horizontal drain animation (right to left) - for horizontal bars */
+@keyframes timer-drain-horizontal {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+
+/* Opacity fade animation - can be combined with other animations */
+@keyframes timer-fade {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0.3;
+    }
+}
+
+/* Scale shrink animation - alternative visual effect */
+@keyframes timer-shrink {
+    from {
+        transform: scaleY(1);
+    }
+    to {
+        transform: scaleY(0);
+    }
+}
+
+/* Countdown number animation */
+@keyframes timer-countdown-pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Timer Bar Styles */
+.timer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 48px;
+    height: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.timer-bar-track {
+    flex: 1;
+    width: 24px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.timer-bar-fill {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, #f44336, #ff9800, #4caf50);
+    border-radius: 12px;
+    transform-origin: bottom;
+}
+
+/* Apply the drain animation - duration is set via inline style */
+.timer-bar-fill.timer-active {
+    animation-name: timer-drain-vertical;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+.timer-countdown {
+    margin-top: 8px;
+    font-size: 1.25rem;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+    min-width: 2ch;
+    text-align: center;
+}
+
+/* Utility classes for applying timer animations to any element */
+.timer-animate-vertical {
+    animation-name: timer-drain-vertical;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+.timer-animate-horizontal {
+    animation-name: timer-drain-horizontal;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+.timer-animate-shrink {
+    animation-name: timer-shrink;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    transform-origin: bottom;
+}
+
+.timer-animate-fade {
+    animation-name: timer-fade;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
