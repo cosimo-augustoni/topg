@@ -56,55 +56,47 @@ public class SqlExportService
                     var points = q.Points;
                     var categoryVal = string.IsNullOrEmpty(c.Name) ? "NULL" : $"'{Escape(c.Name)}'";
                     var questionTextVal = string.IsNullOrEmpty(q.QuestionText) ? "NULL" : $"'{Escape(q.QuestionText)}'";
-                    var correctVal = string.IsNullOrEmpty(q.CorrectAnswer) ? "NULL" : $"'{Escape(q.CorrectAnswer)}'";
-                    string imageVal = "NULL";
-                    if (q.QuestionType == QuizMaker.DomainObjects.QuestionType.Image)
+
+                    // Build a fully-qualified media URL (baseUrl/template/filename) from a stored filename.
+                    string ImageUrlVal(string? filename)
                     {
-                        var fname = q.ImageUri ?? string.Empty;
-                        if (!string.IsNullOrEmpty(fname))
-                        {
-                            var full = baseUrl.TrimEnd('/') + "/" + templateSafe + "/" + fname;
-                            imageVal = $"'{Escape(full)}'";
-                        }
+                        if (string.IsNullOrEmpty(filename)) return "NULL";
+                        var full = baseUrl.TrimEnd('/') + "/" + templateSafe + "/" + filename;
+                        return $"'{Escape(full)}'";
                     }
 
-                    // Build columns/values depending on question type (TPH + TextQuestion_* for text questions)
+                    // Build columns/values for the target TPH "Questions" table. Image and text
+                    // questions populate disjoint sets of columns; the rest default to NULL.
                     var cols = new List<string>() { "\"QuestionType\"", "\"AnswerType\"", "\"Points\"", "\"Category\"", "\"BoardId\"" };
                     var vals = new List<string>() { qType.ToString(), aType.ToString(), points.ToString(), categoryVal, $"b{bi}" };
 
                     if (q.QuestionType == QuizMaker.DomainObjects.QuestionType.Image)
                     {
-                        // Image questions: populate QuestionText, CorrectAnswer, ImageUri; TextQuestion_* = NULL
+                        var answerTextVal = string.IsNullOrEmpty(q.AnswerText) ? "NULL" : $"'{Escape(q.AnswerText)}'";
+                        var imageSizeVal = ((int)(q.ImageSize ?? QuizMaker.DomainObjects.ImageSize.Medium)).ToString();
+
                         cols.Add("\"QuestionText\"");
-                        cols.Add("\"CorrectAnswer\"");
-                        cols.Add("\"ImageUri\"");
+                        cols.Add("\"QuestionImageUri\"");
+                        cols.Add("\"AnswerText\"");
+                        cols.Add("\"AnswerImageUri\"");
+                        cols.Add("\"ImageSize\"");
 
-                        vals.Add(questionTextVal == "NULL" ? "NULL" : questionTextVal);
-                        vals.Add(correctVal == "NULL" ? "NULL" : correctVal);
-                        vals.Add(imageVal == "NULL" ? "NULL" : imageVal);
-
-                        // Explicitly add NULLs for TextQuestion_* columns to be explicit (optional)
-                        cols.Add("\"TextQuestion_QuestionText\"");
-                        cols.Add("\"TextQuestion_CorrectAnswer\"");
-                        vals.Add("NULL");
-                        vals.Add("NULL");
+                        vals.Add(questionTextVal);
+                        vals.Add(ImageUrlVal(q.QuestionImageUri));
+                        vals.Add(answerTextVal);
+                        vals.Add(ImageUrlVal(q.AnswerImageUri));
+                        vals.Add(imageSizeVal);
                     }
                     else
                     {
-                        // Text questions: set QuestionText/CorrectAnswer/ImageUri = NULL; use TextQuestion_* columns
-                        cols.Add("\"QuestionText\"");
-                        cols.Add("\"CorrectAnswer\"");
-                        cols.Add("\"ImageUri\"");
-                        vals.Add("NULL");
-                        vals.Add("NULL");
-                        vals.Add("NULL");
+                        // Text questions use TextQuestion_QuestionText + CorrectAnswer.
+                        var correctVal = string.IsNullOrEmpty(q.CorrectAnswer) ? "NULL" : $"'{Escape(q.CorrectAnswer)}'";
 
                         cols.Add("\"TextQuestion_QuestionText\"");
-                        cols.Add("\"TextQuestion_CorrectAnswer\"");
-                        var tQuestionTextVal = string.IsNullOrEmpty(q.QuestionText) ? "NULL" : $"'{Escape(q.QuestionText)}'";
-                        var tCorrectVal = string.IsNullOrEmpty(q.CorrectAnswer) ? "NULL" : $"'{Escape(q.CorrectAnswer)}'";
-                        vals.Add(tQuestionTextVal);
-                        vals.Add(tCorrectVal);
+                        cols.Add("\"CorrectAnswer\"");
+
+                        vals.Add(questionTextVal);
+                        vals.Add(correctVal);
                     }
 
                     sb.AppendLine($"    INSERT INTO public.\"Questions\" ({string.Join(", ", cols)}) VALUES ({string.Join(", ", vals)});");

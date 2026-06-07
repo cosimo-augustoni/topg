@@ -13,6 +13,13 @@ public class QuestionEntity
 
     // Common fields
     public string? QuestionText { get; set; }
+
+    // Text question fields
     public string? CorrectAnswer { get; set; }
-    public string? ImageUri { get; set; }
+
+    // Image question fields
+    public string? QuestionImageUri { get; set; }
+    public string? AnswerText { get; set; }
+    public string? AnswerImageUri { get; set; }
+    public ImageSize? ImageSize { get; set; }
 }

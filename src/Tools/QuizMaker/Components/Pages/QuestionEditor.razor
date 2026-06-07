@@ -41,9 +41,24 @@
 @if (questionType == 2)
 {
     <div class="mb-2">
-        <label>Image File</label>
-        <InputFile OnChange="OnInputFileChange" />
+        <label>Question Image File</label>
+        <InputFile OnChange="OnQuestionImageChange" />
         <div class="mt-2">@imageFilename</div>
+    </div>
+
+    <div class="mb-2">
+        <label>Answer Image File</label>
+        <InputFile OnChange="OnAnswerImageChange" />
+        <div class="mt-2">@answerImageFilename</div>
+    </div>
+
+    <div class="mb-2">
+        <label>Image Size</label>
+        <select class="form-select" @bind="imageSize">
+            <option value="0">Small</option>
+            <option value="1">Medium</option>
+            <option value="2">Large</option>
+        </select>
     </div>
 }
 
@@ -67,6 +82,8 @@
     string questionText = string.Empty;
     string correctAnswer = string.Empty;
     string? imageFilename;
+    string? answerImageFilename;
+    int imageSize = (int)QuizMaker.DomainObjects.ImageSize.Medium;
     bool isEditing = false;
 
     protected override async Task OnInitializedAsync()
@@ -115,8 +132,13 @@
                     answerType = (int)existing.AnswerType;
                 points = existing.Points;
                 questionText = existing is QuizMaker.DomainObjects.TextQuestion tq ? tq.QuestionText : existing is QuizMaker.DomainObjects.ImageQuestion iq ? iq.QuestionText : string.Empty;
-                correctAnswer = existing is QuizMaker.DomainObjects.TextQuestion tq2 ? tq2.CorrectAnswer : existing is QuizMaker.DomainObjects.ImageQuestion iq2 ? iq2.CorrectAnswer : string.Empty;
-                imageFilename = existing is QuizMaker.DomainObjects.ImageQuestion iq3 ? iq3.ImageUri : null;
+                correctAnswer = existing is QuizMaker.DomainObjects.TextQuestion tq2 ? tq2.CorrectAnswer : existing is QuizMaker.DomainObjects.ImageQuestion iq2 ? iq2.AnswerText : string.Empty;
+                if (existing is QuizMaker.DomainObjects.ImageQuestion iq3)
+                {
+                    imageFilename = iq3.QuestionImageUri;
+                    answerImageFilename = iq3.AnswerImageUri;
+                    imageSize = (int)iq3.ImageSize;
+                }
                 categoryName = existing.Category;
 
                 // try to resolve categoryId from available board categories
@@ -130,24 +152,34 @@
         }
     }
 
-    async Task OnInputFileChange(InputFileChangeEventArgs e)
+    async Task OnQuestionImageChange(InputFileChangeEventArgs e)
+    {
+        imageFilename = await UploadMediaAsync(e) ?? imageFilename;
+    }
+
+    async Task OnAnswerImageChange(InputFileChangeEventArgs e)
+    {
+        answerImageFilename = await UploadMediaAsync(e) ?? answerImageFilename;
+    }
+
+    async Task<string?> UploadMediaAsync(InputFileChangeEventArgs e)
     {
         var file = e.File;
-        if (file == null) return;
+        if (file == null) return null;
 
         if (templateId == 0)
         {
             // fallback: get first template
             var all = await Repo.GetAllTemplatesAsync();
             var tpl = all?.FirstOrDefault();
-            if (tpl == null) return;
+            if (tpl == null) return null;
             templateId = tpl.Id;
         }
 
         var safeName = await Repo.GetTemplateSafeFolderNameAsync(templateId);
         // limit size if needed
         using var stream = file.OpenReadStream(maxAllowedSize: 10_000_000);
-        imageFilename = await Media.AddMediaAsync(templateId, stream, safeName, file.Name);
+        return await Media.AddMediaAsync(templateId, stream, safeName, file.Name);
     }
 
     async Task Save()
@@ -169,8 +201,10 @@
                 Points = points,
                 Category = categoryName ?? string.Empty,
                 QuestionText = questionText,
-                CorrectAnswer = correctAnswer,
-                ImageUri = imageFilename ?? string.Empty
+                QuestionImageUri = imageFilename ?? string.Empty,
+                AnswerText = correctAnswer,
+                AnswerImageUri = answerImageFilename ?? string.Empty,
+                ImageSize = (QuizMaker.DomainObjects.ImageSize)imageSize
             };
         }
         else

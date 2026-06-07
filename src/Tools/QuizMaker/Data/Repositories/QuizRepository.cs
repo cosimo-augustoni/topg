@@ -128,8 +128,11 @@ public class QuizRepository : IQuizRepository
             AnswerType = question.AnswerType,
             Points = question.Points,
             QuestionText = (question as QuizMaker.DomainObjects.TextQuestion)?.QuestionText ?? (question as QuizMaker.DomainObjects.ImageQuestion)?.QuestionText,
-            CorrectAnswer = (question as QuizMaker.DomainObjects.TextQuestion)?.CorrectAnswer ?? (question as QuizMaker.DomainObjects.ImageQuestion)?.CorrectAnswer,
-            ImageUri = (question as QuizMaker.DomainObjects.ImageQuestion)?.ImageUri
+            CorrectAnswer = (question as QuizMaker.DomainObjects.TextQuestion)?.CorrectAnswer,
+            QuestionImageUri = (question as QuizMaker.DomainObjects.ImageQuestion)?.QuestionImageUri,
+            AnswerText = (question as QuizMaker.DomainObjects.ImageQuestion)?.AnswerText,
+            AnswerImageUri = (question as QuizMaker.DomainObjects.ImageQuestion)?.AnswerImageUri,
+            ImageSize = (question as QuizMaker.DomainObjects.ImageQuestion)?.ImageSize
         };
         _db.Questions.Add(qe);
         await _db.SaveChangesAsync();
@@ -144,8 +147,11 @@ public class QuizRepository : IQuizRepository
         qe.AnswerType = question.AnswerType;
         qe.Points = question.Points;
         qe.QuestionText = (question as QuizMaker.DomainObjects.TextQuestion)?.QuestionText ?? (question as QuizMaker.DomainObjects.ImageQuestion)?.QuestionText;
-        qe.CorrectAnswer = (question as QuizMaker.DomainObjects.TextQuestion)?.CorrectAnswer ?? (question as QuizMaker.DomainObjects.ImageQuestion)?.CorrectAnswer;
-        qe.ImageUri = (question as QuizMaker.DomainObjects.ImageQuestion)?.ImageUri;
+        qe.CorrectAnswer = (question as QuizMaker.DomainObjects.TextQuestion)?.CorrectAnswer;
+        qe.QuestionImageUri = (question as QuizMaker.DomainObjects.ImageQuestion)?.QuestionImageUri;
+        qe.AnswerText = (question as QuizMaker.DomainObjects.ImageQuestion)?.AnswerText;
+        qe.AnswerImageUri = (question as QuizMaker.DomainObjects.ImageQuestion)?.AnswerImageUri;
+        qe.ImageSize = (question as QuizMaker.DomainObjects.ImageQuestion)?.ImageSize;
         await _db.SaveChangesAsync();
     }
 
@@ -199,8 +205,10 @@ public class QuizRepository : IQuizRepository
                 Points = q.Points,
                 Category = categoryName,
                 QuestionText = q.QuestionText ?? string.Empty,
-                CorrectAnswer = q.CorrectAnswer ?? string.Empty,
-                ImageUri = q.ImageUri ?? string.Empty
+                QuestionImageUri = q.QuestionImageUri ?? string.Empty,
+                AnswerText = q.AnswerText ?? string.Empty,
+                AnswerImageUri = q.AnswerImageUri ?? string.Empty,
+                ImageSize = q.ImageSize ?? QuizMaker.DomainObjects.ImageSize.Small
             };
         }
 

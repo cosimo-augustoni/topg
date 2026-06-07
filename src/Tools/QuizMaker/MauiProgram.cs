@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Storage;
 using CommunityToolkit.Maui;
 using QuizMaker.Data;
 using QuizMaker.Data.Repositories;
@@ -47,7 +50,7 @@ namespace QuizMaker
             {
                 using var scope = app.Services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<QuizDbContext>();
-                db.Database.EnsureCreated();
+                InitializeDatabase(db);
             }
             catch (Exception ex)
             {
@@ -83,6 +86,33 @@ namespace QuizMaker
             catch { }
 
             return app;
+        }
+
+        // Applies EF Core migrations to bring the local SQLite database up to date.
+        // Databases created by an older build (which used EnsureCreated()) have no migrations
+        // history, so Migrate() would try to recreate existing tables and fail. In that case we
+        // first baseline the database to the InitialCreate migration — using EF's own history
+        // scripts — so that Migrate() only applies the remaining migrations and existing data is
+        // preserved. Brand-new databases are created entirely by Migrate().
+        private const string InitialMigrationId = "20260607113542_InitialCreate";
+
+        private static void InitializeDatabase(QuizDbContext db)
+        {
+            var creator = db.Database.GetService<IRelationalDatabaseCreator>();
+            var history = db.Database.GetService<IHistoryRepository>();
+
+            var databaseExists = creator.Exists();
+            var hasLegacySchema = databaseExists && creator.HasTables() && !history.Exists();
+
+            if (hasLegacySchema)
+            {
+                // Pre-migrations database created by EnsureCreated(): register the create-table
+                // baseline as already applied without re-running it.
+                db.Database.ExecuteSqlRaw(history.GetCreateScript());
+                db.Database.ExecuteSqlRaw(history.GetInsertScript(new HistoryRow(InitialMigrationId, ProductInfo.GetVersion())));
+            }
+
+            db.Database.Migrate();
         }
     }
 }
