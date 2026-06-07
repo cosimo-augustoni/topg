@@ -26,8 +26,10 @@ public class TextQuestion(Templating.DomainObjects.TextQuestion question) : Ques
 public class ImageQuestion(Templating.DomainObjects.ImageQuestion question) : Question(question)
 {
     public required string QuestionText { get; init; } = question.QuestionText;
-    public required Uri ImageUri { get; init; } = new Uri(question.ImageUri);
-    public required string CorrectAnswer { get; init; } = question.CorrectAnswer;
+    public required Uri QuestionImageUri { get; init; } = new Uri(question.QuestionImageUri);
+    public required string AnswerText { get; init; } = question.AnswerText;
+    public required Uri AnswerImageUri { get; init; } = new Uri(question.AnswerImageUri);
+    public required ImageSize ImageSize { get; init; } = question.ImageSize;
     public ImageQuestionDisplayState DisplayState { get; set; }
 }
 

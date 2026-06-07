@@ -1,24 +1,31 @@
 ﻿@using topg.Web.Quiz.Execution
 
-<MudStack Spacing="4" Style="flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; width: 100%; padding-top: 3rem">
-    @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))
-    {
-        <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
-            <MudText Typo="Typo.h4" Class="font-weight-bold">@ImageQuestion.QuestionText</MudText>
-        </MudStack>
-    }
+<MudStack Spacing="4" Style="height:100%; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; width: 100%; padding-top: 3rem">
+    @* question text *@
+    <div style="--top-row-height: 4rem; height:var(--top-row-height); flex: 0 0 var(--top-row-height); min-height: 0; display:flex; align-items:center; justify-content:center; padding:0 1rem; box-sizing:border-box; overflow:hidden;">
+        @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))
+        {
+            <div class="_question-text" style="width:100%; text-align:center; line-height:1; height:100%; display:flex; align-items:center; justify-content:center;">
+                <MudText Style="display:block; width:100%; height:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:clamp(12px, calc(var(--top-row-height) * 0.8), 48px) !important;">@ImageQuestion.QuestionText</MudText>
+            </div>
+        }
+    </div>
 
-    @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))
-    {
-        <div style="flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: row; align-items: flex-start; overflow: hidden;">
-            <MudImage Src="@ImageQuestion.ImageUri.ToString()"
-                      Alt="Question Image"
-                      ObjectFit="ObjectFit.Contain"
-                      ObjectPosition="ObjectPosition.LeftTop"
-                      Style="flex: 1; min-width: 0; width: 100%; height: auto; max-height: 100%; aspect-ratio: 16 / 9; object-fit: contain; display: block;"
-                      Class="rounded-0"/>
+    @* Image area*@
+    <div style="flex:1; min-height:0; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        <div style="position:relative; width:100%; max-width:100%; display:flex; align-items:center; justify-content:center; height:100%; min-height:0;">
+            <div style="position:relative; height:@GetInnerBoxHeight(); width:100%; max-width:100%; margin:0 auto; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))
+                {
+                    <img src="@ImageQuestion.QuestionImageUri.ToString()" alt="Question Image" style="height:100%; max-width:100%; width:auto; object-fit:contain; display:block;" class="rounded-0" />
+                }
+                @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Answer))
+                {
+                    <img src="@ImageQuestion.AnswerImageUri.ToString()" alt="Answer Image" style="position:absolute; top:0; left:50%; transform:translateX(-50%); height:100%; max-width:100%; width:auto; object-fit:contain; display:block;" class="rounded-0" />
+                }
+            </div>
         </div>
-    }
+    </div>
 
 </MudStack>
 @code {
@@ -26,4 +33,16 @@
     [Parameter]
     public required ImageQuestion ImageQuestion { get; set; }
 
+    private string GetInnerBoxHeight()
+    {
+        // Use percentage of the parent container's height. The MudStack and intermediate wrappers
+        // are set to height:100% so these percentages will be relative to the component's allocated height.
+        return ImageQuestion.ImageSize switch
+        {
+            Templating.DomainObjects.ImageSize.Large => "100%",
+            Templating.DomainObjects.ImageSize.Medium => "70%",
+            Templating.DomainObjects.ImageSize.Small => "40%",
+            _ => "70%",
+        };
+    }
 }

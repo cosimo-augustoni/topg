@@ -5,7 +5,9 @@ using topg.Web.Templating.DomainObjects;
 
 namespace topg.MigrationService;
 
-internal record SeedingQuestion(string Question, string Answer, string? ImageUri = null);
+internal record SeedingQuestion(string Question, string Answer, string? ImageUri = null, string? AnswerImageUri = null)
+{
+}
 
 public class Worker(IServiceProvider serviceProvider,
     IHostApplicationLifetime hostApplicationLifetime) : BackgroundService
@@ -162,7 +164,7 @@ public class Worker(IServiceProvider serviceProvider,
                 // Board 1
                 [
                     ("Movies",      [
-                        new("From which movie is this Character?",                                     "The Matrix", "https://thegeektwins.com/wp-content/uploads/2019/04/Matrizx-1999-Morpheus-Laurence-Fishburne-600x300-3.jpg"),
+                        new("From which movie is this Character?",                                     "The Matrix", "https://thegeektwins.com/wp-content/uploads/2019/04/Matrizx-1999-Morpheus-Laurence-Fishburne-600x300-3.jpg", "https://cdn.kallisto.li/topg/test-quiz-1/3.png"),
                         new("What year was the first Star Wars film released?",                "1977"),
                         new("Which film features the line 'You can't handle the truth!'?",     "A Few Good Men"),
                         new("Who played Iron Man in the MCU?",                                 "Robert Downey Jr."),
@@ -265,9 +267,11 @@ public class Worker(IServiceProvider serviceProvider,
                             AnswerType = AnswerType.Buzzer,
                             Category = c.category,
                             Points = pointValues[i],
-                            ImageUri = e.ImageUri,
+                            QuestionImageUri = e.ImageUri,
                             QuestionText = e.Question,
-                            CorrectAnswer = e.Answer,
+                            AnswerText = e.Answer,
+                            AnswerImageUri = e.AnswerImageUri ?? string.Empty,
+                            ImageSize = ImageSize.Medium
                         };
                     
                     }

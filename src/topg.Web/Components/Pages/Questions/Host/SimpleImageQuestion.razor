@@ -1,38 +1,40 @@
 ﻿@using topg.Web.Quiz.Execution
-
-<MudStack Spacing="0" Style="flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;">
-    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h6" Class="font-weight-bold">@ImageQuestion.QuestionText</MudText>
-        <MudToggleIconButton Icon="@Icons.Material.Filled.VisibilityOff"
-                             ToggledIcon="@Icons.Material.Filled.Visibility"
-                             Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))"
-                             Color="@Color.Error"
-                             ToggledChanged="ToggleQuestionVisibility"
-                             ToggledColor="@Color.Success"
-                             Title="Toggle question visibility" />
-    </MudStack>
-
-    <div style="flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: row; align-items: flex-start; overflow: hidden;">
-        <MudImage Src="@ImageQuestion.ImageUri.ToString()"
-                  Alt="Question Image"
-                  ObjectFit="ObjectFit.Contain"
-                  ObjectPosition="ObjectPosition.LeftTop"
-                  Style="flex: 1; min-width: 0; width: 100%; height: auto; max-height: 100%; aspect-ratio: 16 / 9; object-fit: contain; display: block;"
-                  Class="rounded-0"/>
-        <MudToggleIconButton Icon="@Icons.Material.Filled.VisibilityOff"
-                             ToggledIcon="@Icons.Material.Filled.Visibility"
-                             Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))"
-                             Color="@Color.Error"
-                             ToggledChanged="ToggleImageVisibility"
-                             ToggledColor="@Color.Success"
-                             Title="Toggle image visibility"/>
+@using topg.Web.Components.Shared
+<div class="qc-flex-grid">
+    <div class="qc-grid-item">
+        <QuestionCard Title="Question Text"
+                      Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))"
+                      ToggledChanged="ToggleQuestionVisibility">
+            <ChildContent>
+                <MudText Typo="Typo.h4">@ImageQuestion.QuestionText</MudText>
+            </ChildContent>
+        </QuestionCard>
     </div>
 
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mt-2 mb-1">
-        <MudText Typo="Typo.h5" Color="Color.Success" Class="font-weight-black">@ImageQuestion.CorrectAnswer</MudText>
-    </MudStack>
+    <div class="qc-grid-item">
+        <QuestionCard Title="Question Image"
+                      ImageUrl="@ImageQuestion.QuestionImageUri.ToString()"
+                      Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))"
+                      ToggledChanged="ToggleImageVisibility">
+        </QuestionCard>
+    </div>
 
-</MudStack>
+    <div class="qc-grid-item">
+        <QuestionCard Title="Answer Text">
+            <ChildContent>
+                <MudText Typo="Typo.h4">@ImageQuestion.AnswerText</MudText>
+            </ChildContent>
+        </QuestionCard>
+    </div>
+
+    <div class="qc-grid-item">
+        <QuestionCard Title="Answer Image"
+                      ImageUrl="@ImageQuestion.AnswerImageUri.ToString()"
+                      Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Answer))"
+                      ToggledChanged="ToggleAnswerVisibility">
+        </QuestionCard>
+    </div>
+</div>
 
 @code {
 
@@ -50,6 +52,11 @@
     private void ToggleQuestionVisibility()
     {
         QuizSession.UpdateQuestion(ImageQuestion, question => question.DisplayState ^= ImageQuestionDisplayState.Text);
+    }
+
+    private void ToggleAnswerVisibility()
+    {
+        QuizSession.UpdateQuestion(ImageQuestion, question => question.DisplayState ^= ImageQuestionDisplayState.Answer);
     }
 
 }
