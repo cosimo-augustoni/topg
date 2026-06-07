@@ -1,0 +1,13 @@
+@using MudBlazor
+@inherits MudComponentBase
+
+<MudDialog>
+    <MudDialogContent Style="padding:0; display:flex; justify-content:center; align-items:center;">
+        <img src="@ImageUrl" alt="Image" style="max-height:85vh; max-width:95vw; object-fit:contain;" />
+    </MudDialogContent>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public required string ImageUrl { get; set; }
+}

@@ -1,0 +1,28 @@
+﻿<td>
+    <MudImage Src="@ImageUrl"
+              ObjectFit="ObjectFit.Contain"
+              ObjectPosition="ObjectPosition.Center"
+              Style="max-height:5rem; max-width:100%; width:auto;"
+              @onclick="ShowImage"/>
+</td>
+
+<MudDialog @bind-Visible="_dialogVisible" Options="new DialogOptions { CloseOnEscapeKey= true, NoHeader = true, MaxWidth = MaxWidth.ExtraExtraLarge }">
+    <DialogContent>
+        <div style="display:flex; justify-content:center; align-items:center; padding:0;">
+            <MudImage Src="@ImageUrl" ObjectFit="ObjectFit.Contain" ObjectPosition="ObjectPosition.Center" Fluid="true" Style="height:70vh; width:80vw;" />
+        </div>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    private bool _dialogVisible;
+
+    [Parameter]
+    public required string ImageUrl { get; set; }
+
+    private void ShowImage()
+    {
+        _dialogVisible = true;
+    }
+
+}

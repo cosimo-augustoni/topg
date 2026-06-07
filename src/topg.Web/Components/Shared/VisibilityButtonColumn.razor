@@ -1,0 +1,17 @@
+﻿<td>
+    <MudToggleIconButton Icon="@Icons.Material.Filled.VisibilityOff"
+                         ToggledIcon="@Icons.Material.Filled.Visibility"
+                         Toggled="Toggled"
+                         Color="@Color.Error"
+                         ToggledChanged="ToggledChanged"
+                         ToggledColor="@Color.Success" />
+</td>
+
+@code {
+
+    [Parameter]
+    public bool Toggled { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ToggledChanged { get; set; }
+}

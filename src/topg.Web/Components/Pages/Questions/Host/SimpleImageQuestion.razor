@@ -1,40 +1,41 @@
-﻿@using topg.Web.Quiz.Execution
-@using topg.Web.Components.Shared
-<div class="qc-flex-grid">
-    <div class="qc-grid-item">
-        <QuestionCard Title="Question Text"
-                      Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))"
-                      ToggledChanged="ToggleQuestionVisibility">
-            <ChildContent>
-                <MudText Typo="Typo.h4">@ImageQuestion.QuestionText</MudText>
-            </ChildContent>
-        </QuestionCard>
-    </div>
-
-    <div class="qc-grid-item">
-        <QuestionCard Title="Question Image"
-                      ImageUrl="@ImageQuestion.QuestionImageUri.ToString()"
-                      Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))"
-                      ToggledChanged="ToggleImageVisibility">
-        </QuestionCard>
-    </div>
-
-    <div class="qc-grid-item">
-        <QuestionCard Title="Answer Text">
-            <ChildContent>
-                <MudText Typo="Typo.h4">@ImageQuestion.AnswerText</MudText>
-            </ChildContent>
-        </QuestionCard>
-    </div>
-
-    <div class="qc-grid-item">
-        <QuestionCard Title="Answer Image"
-                      ImageUrl="@ImageQuestion.AnswerImageUri.ToString()"
-                      Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Answer))"
-                      ToggledChanged="ToggleAnswerVisibility">
-        </QuestionCard>
-    </div>
-</div>
+﻿@using topg.Web.Components.Shared
+@using topg.Web.Quiz.Execution
+<MudSimpleTable Dense="true" Style="height: 90%" FixedHeader="true">
+    <thead>
+        <tr>
+            <th><MudText>Name</MudText></th>
+            <th><MudText>Content</MudText></th>
+            <th><MudText>Visibility</MudText></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <TextColumn>Question Text</TextColumn>
+            <TextColumn>@ImageQuestion.QuestionText</TextColumn>
+            <VisibilityButtonColumn Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))" ToggledChanged="ToggleQuestionVisibility"></VisibilityButtonColumn>
+        </tr>
+        <tr>
+            <TextColumn>Question Image</TextColumn>
+            <ImageColumn ImageUrl="@ImageQuestion.QuestionImageUri.ToString()"></ImageColumn>
+            <VisibilityButtonColumn Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))" ToggledChanged="ToggleImageVisibility"></VisibilityButtonColumn>
+        </tr>
+        <tr style="background-color: var(--mud-palette-primary)">
+            <TextColumn>Answer</TextColumn>
+            <TextColumn></TextColumn>
+            <TextColumn></TextColumn>
+        </tr>
+        <tr>
+            <TextColumn>Answer Image</TextColumn>
+            <ImageColumn ImageUrl="@ImageQuestion.AnswerImageUri.ToString()"></ImageColumn>
+            <VisibilityButtonColumn Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Answer))" ToggledChanged="ToggleAnswerVisibility"></VisibilityButtonColumn>
+        </tr>
+        <tr>
+            <TextColumn>Answer</TextColumn>
+            <TextColumn>@ImageQuestion.AnswerText</TextColumn>
+            <TextColumn></TextColumn>
+        </tr>
+    </tbody>
+</MudSimpleTable>
 
 @code {
 

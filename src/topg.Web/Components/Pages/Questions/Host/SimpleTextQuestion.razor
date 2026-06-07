@@ -1,22 +1,32 @@
-﻿@using topg.Web.Quiz.Execution
+﻿@using topg.Web.Components.Shared
+@using topg.Web.Quiz.Execution
 
-<MudStack>
-    <MudPaper>
-        <MudStack Row="true">
-            <MudToggleIconButton Icon="@Icons.Material.Filled.VisibilityOff"
-                                 ToggledIcon="@Icons.Material.Filled.Visibility"
-                                 Toggled="@(TextQuestion.DisplayState.HasFlag(TextQuestionDisplayState.Question))"
-                                 Color="@Color.Error"
-                                 ToggledChanged="ToggleQuestionVisibility"
-                                 ToggledColor="@Color.Success">
-            </MudToggleIconButton>
-            <MudText Typo="Typo.h4" Align="Align.Center" Style="font-weight: bold;">@TextQuestion.QuestionText</MudText>
-        </MudStack>
-    </MudPaper>
-
-    <MudText Typo="Typo.h6" Align="Align.Center" Style="font-weight: bold;">@TextQuestion.CorrectAnswer</MudText>
-
-</MudStack>
+<MudSimpleTable Dense="true" Style="height: 90%" FixedHeader="true">
+    <thead>
+    <tr>
+        <th><MudText>Name</MudText></th>
+        <th><MudText>Content</MudText></th>
+        <th><MudText>Visibility</MudText></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <TextColumn>Question Text</TextColumn>
+            <TextColumn>@TextQuestion.QuestionText</TextColumn>
+            <VisibilityButtonColumn Toggled="@(TextQuestion.DisplayState.HasFlag(TextQuestionDisplayState.Question))" ToggledChanged="ToggleQuestionVisibility"></VisibilityButtonColumn>
+    </tr>
+    <tr style="background-color: var(--mud-palette-primary)">
+        <TextColumn>Answer</TextColumn>
+        <TextColumn></TextColumn>
+        <TextColumn></TextColumn>
+    </tr>
+    <tr>
+        <TextColumn>Answer</TextColumn>
+            <TextColumn>@TextQuestion.CorrectAnswer</TextColumn>
+        <TextColumn></TextColumn>
+    </tr>
+    </tbody>
+</MudSimpleTable>
 
 @code {
 
