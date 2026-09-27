@@ -67,6 +67,11 @@ else
                         <MudPaper Style="position: relative; padding: 0.5em">
                             <MudStack>
                                 <MudText Typo="Typo.h5" Align="Align.Start">Text</MudText>
+                                <MudText Typo="Typo.body1" Align="Align.Start">Text State: @(Session.TextInputState.IsLocked ? "Locked" : "Unlocked")</MudText>
+                                <MudButtonGroup DropShadow="false" Color="Color.Primary" Variant="Variant.Filled" FullWidth="false">
+                                    <MudButton Disabled="@Session.TextInputState.IsLocked" OnClick="() => Session.LockTextInputs()">Lock</MudButton>
+                                    <MudButton Disabled="@(!Session.TextInputState.IsLocked)" OnClick="() => Session.UnlockTextInputs()">Unlock</MudButton>
+                                </MudButtonGroup>
                                 <MudButtonGroup DropShadow="false" Color="Color.Primary" Variant="Variant.Filled" FullWidth="false">
                                     <MudButton Disabled="@Session.TextInputState.IsRevealed" OnClick="() => Session.RevealTextInput()">Show</MudButton>
                                     <MudButton Disabled="@(!Session.TextInputState.IsRevealed)" OnClick="() => Session.HideTextInput()">Hide</MudButton>

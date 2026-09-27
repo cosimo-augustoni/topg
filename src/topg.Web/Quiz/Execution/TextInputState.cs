@@ -4,6 +4,7 @@ public class TextInputState
 {
     private Dictionary<string, string> TextInputsByPlayer { get; } = new();
     public bool IsRevealed { get; set; }
+    public bool IsLocked { get; set; }
 
     public void UpdateTextInput(Player player, string? text)
     {
