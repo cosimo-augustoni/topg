@@ -12,9 +12,9 @@ using Template = topg.Web.Templating.DomainObjects;
 
 namespace topg.Web.Tests;
 
-public class ImagePixelationTests : IAsyncLifetime
+public class ImageObscuringTests : IAsyncLifetime
 {
-    private const long Pixelated = 1;
+    private const long Obscured = 1;
     private const long Sharp = 2;
     private const string QuestionImage = "https://cdn.example.com/quiz/flag.png";
     private const string AnswerImage = "https://cdn.example.com/quiz/answer.png";
@@ -23,7 +23,7 @@ public class ImagePixelationTests : IAsyncLifetime
     private readonly SessionHandler sessionHandler = new();
     private readonly SessionId sessionId;
 
-    public ImagePixelationTests()
+    public ImageObscuringTests()
     {
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
@@ -32,13 +32,13 @@ public class ImagePixelationTests : IAsyncLifetime
 
         var template = new Template.QuizTemplate { Name = "Quiz", Boards = [] };
         var board = new Template.Board { Template = template, Questions = [] };
-        board.Questions.Add(Question(Pixelated, 100, startPixelated: true));
-        board.Questions.Add(Question(Sharp, 200, startPixelated: false));
+        board.Questions.Add(Question(Obscured, 100, startObscured: true));
+        board.Questions.Add(Question(Sharp, 200, startObscured: false));
         template.Boards.Add(board);
         sessionId = sessionHandler.CreateSession(template);
     }
 
-    private static Template.ImageQuestion Question(long id, int points, bool startPixelated) => new()
+    private static Template.ImageQuestion Question(long id, int points, bool startObscured) => new()
     {
         Id = id,
         Points = points,
@@ -50,7 +50,7 @@ public class ImagePixelationTests : IAsyncLifetime
         AnswerText = "Switzerland",
         AnswerImageUri = AnswerImage,
         ImageSize = ImageSize.Medium,
-        StartPixelated = startPixelated,
+        StartObscured = startObscured,
     };
 
     public Task InitializeAsync() => Task.CompletedTask;
@@ -78,28 +78,30 @@ public class ImagePixelationTests : IAsyncLifetime
     private IRenderedComponent<QuizSpectator> RenderSpectator() =>
         context.Render<QuizSpectator>(parameters => parameters.Add(p => p.SessionKey, sessionId.Key));
 
-    private int[] DrawnBlockCounts() =>
-        [.. context.JSInterop.Invocations["pixelateImage"].Select(invocation =>
+    private static readonly ObscureLevel[] Levels = ImageQuestion.ObscureLevels;
+
+    private ObscureLevel[] DrawnLevels() =>
+        [.. context.JSInterop.Invocations["obscureImage"].Select(invocation =>
         {
             Assert.IsType<ElementReference>(invocation.Arguments[0]);
             Assert.Equal(QuestionImage, invocation.Arguments[1]);
-            return (int)invocation.Arguments[2]!;
+            return Levels.Single(level => level.Turns == (double)invocation.Arguments[2]! && level.BlurWidth == (int?)invocation.Arguments[3]);
         })];
 
     [Fact]
-    public void The_steps_run_from_8_to_128_blocks_and_clear_is_past_the_end()
+    public void Clear_is_the_step_past_the_last_level_and_the_levels_get_weaker()
     {
-        Assert.Equal([8, 16, 32, 64, 128], ImageQuestion.PixelationSteps);
-        Assert.Equal(5, ImageQuestion.ClearStep);
+        Assert.Equal(Levels.Length, ImageQuestion.ClearStep);
+        Assert.Equal(Levels.OrderByDescending(level => level.Turns), Levels);
     }
 
     [Fact]
-    public void A_question_with_the_flag_starts_at_the_coarsest_step()
+    public void A_question_with_the_flag_starts_at_the_strongest_step()
     {
-        var question = Open(Pixelated);
+        var question = Open(Obscured);
 
-        Assert.Equal(0, question.PixelationStep);
-        Assert.Equal(8, question.PixelationBlocks);
+        Assert.Equal(0, question.ObscureStep);
+        Assert.Equal(Levels[0], question.CurrentObscureLevel);
     }
 
     [Fact]
@@ -107,108 +109,109 @@ public class ImagePixelationTests : IAsyncLifetime
     {
         var question = Open(Sharp);
 
-        Assert.Equal(ImageQuestion.ClearStep, question.PixelationStep);
-        Assert.Null(question.PixelationBlocks);
+        Assert.Equal(ImageQuestion.ClearStep, question.ObscureStep);
+        Assert.Null(question.CurrentObscureLevel);
     }
 
     [Theory]
-    [InlineData(Pixelated, 0)]
+    [InlineData(Obscured, 0)]
     [InlineData(Sharp, 5)]
     public void Back_to_board_resets_the_slider_to_the_starting_step(long id, int startStep)
     {
         var question = Open(id);
-        Session.UpdateQuestion(question, q => q.PixelationStep = 2);
+        Session.UpdateQuestion(question, q => q.ObscureStep = 2);
 
         Session.ReturnToBoard();
 
-        Assert.Equal(startStep, question.PixelationStep);
+        Assert.Equal(startStep, question.ObscureStep);
     }
 
     [Fact]
     public void Host_slider_has_a_tick_per_step_and_moving_it_changes_the_step()
     {
-        var question = Open(Pixelated);
+        var question = Open(Obscured);
         var host = RenderHost();
 
         var slider = host.Find("input[type=range]");
         Assert.Equal("0", slider.GetAttribute("min"));
         Assert.Equal("5", slider.GetAttribute("max"));
-        Assert.Equal(["8", "16", "32", "64", "128", "Clear"], host.FindAll(".mud-slider-tickmarks .mud-typography").Select(label => label.TextContent.Trim()));
+        Assert.Equal(["5", "4", "3", "2", "1", "Clear"], host.FindAll(".mud-slider-tickmarks .mud-typography").Select(label => label.TextContent.Trim()));
 
         slider.Input("2");
 
-        Assert.Equal(2, question.PixelationStep);
+        Assert.Equal(2, question.ObscureStep);
     }
 
     [Fact]
-    public void A_pixelated_image_is_drawn_on_a_canvas_and_never_as_a_sharp_img()
+    public void An_obscured_image_is_drawn_on_a_canvas_and_never_as_a_sharp_img()
     {
-        Open(Pixelated, showImage: true);
+        Open(Obscured, showImage: true);
 
         var spectator = RenderSpectator();
 
-        Assert.Single(spectator.FindAll("canvas[aria-label='Question Image']"));
+        var canvas = spectator.Find("canvas[aria-label='Question Image']");
+        Assert.Contains("filter:grayscale(1)", canvas.GetAttribute("style"));
         Assert.Empty(spectator.FindAll("img[alt='Question Image']"));
-        Assert.Equal([8], DrawnBlockCounts());
+        Assert.Equal([Levels[0]], DrawnLevels());
     }
 
     [Fact]
-    public void Moving_the_slider_redraws_every_screen_with_the_new_block_count()
+    public void Moving_the_slider_redraws_every_screen_at_the_new_level()
     {
-        var question = Open(Pixelated, showImage: true);
-        Session.UpdateQuestion(question, q => q.PixelationStep = 1);
+        var question = Open(Obscured, showImage: true);
+        Session.UpdateQuestion(question, q => q.ObscureStep = 1);
         var spectator = RenderSpectator();
 
-        Session.UpdateQuestion(question, q => q.PixelationStep = 2);
+        Session.UpdateQuestion(question, q => q.ObscureStep = 2);
 
-        spectator.WaitForAssertion(() => Assert.Equal([16, 32], DrawnBlockCounts()));
+        spectator.WaitForAssertion(() => Assert.Equal([Levels[1], Levels[2]], DrawnLevels()));
     }
 
     [Fact]
     public void Other_session_changes_do_not_redraw_the_canvas()
     {
-        var question = Open(Pixelated, showImage: true);
+        var question = Open(Obscured, showImage: true);
         var spectator = RenderSpectator();
 
         Session.UpdateQuestion(question, q => q.DisplayState |= ImageQuestionDisplayState.Text);
 
         spectator.WaitForAssertion(() => Assert.NotEmpty(spectator.FindAll("._question-text")));
-        Assert.Equal([8], DrawnBlockCounts());
+        Assert.Equal([Levels[0]], DrawnLevels());
     }
 
     [Fact]
     public void At_clear_the_original_image_is_shown_as_before()
     {
-        var question = Open(Pixelated, showImage: true);
+        var question = Open(Obscured, showImage: true);
         var spectator = RenderSpectator();
 
-        Session.UpdateQuestion(question, q => q.PixelationStep = ImageQuestion.ClearStep);
+        Session.UpdateQuestion(question, q => q.ObscureStep = ImageQuestion.ClearStep);
 
         spectator.WaitForAssertion(() => Assert.Equal(QuestionImage, spectator.Find("img[alt='Question Image']").GetAttribute("src")));
         Assert.Empty(spectator.FindAll("canvas"));
     }
 
     [Fact]
-    public void The_host_can_pixelate_a_question_without_the_flag_before_showing_it()
+    public void The_host_can_obscure_a_question_without_the_flag_before_showing_it()
     {
         var question = Open(Sharp);
         var spectator = RenderSpectator();
 
-        Session.UpdateQuestion(question, q => q.PixelationStep = 1);
+        Session.UpdateQuestion(question, q => q.ObscureStep = 1);
         Assert.Empty(spectator.FindAll("canvas"));
         Assert.Empty(spectator.FindAll("img[alt='Question Image']"));
-        Assert.DoesNotContain(context.JSInterop.Invocations, i => i.Identifier == "pixelateImage");
+        Assert.DoesNotContain(context.JSInterop.Invocations, i => i.Identifier == "obscureImage");
 
         Session.UpdateQuestion(question, q => q.DisplayState |= ImageQuestionDisplayState.Image);
 
         spectator.WaitForAssertion(() => Assert.Single(spectator.FindAll("canvas[aria-label='Question Image']")));
-        Assert.Equal([16], DrawnBlockCounts());
+        Assert.Equal([Levels[1]], DrawnLevels());
     }
 
     [Fact]
-    public void The_answer_image_is_shown_sharp_over_the_pixelated_question_image()
+    public void The_answer_image_is_shown_sharp_over_the_obscured_question_image()
     {
-        Open(Pixelated, showImage: true).DisplayState |= ImageQuestionDisplayState.Answer;
+        Open(Obscured, showImage: true).DisplayState |= ImageQuestionDisplayState.Answer;
 
         var spectator = RenderSpectator();
 

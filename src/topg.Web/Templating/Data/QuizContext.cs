@@ -25,7 +25,7 @@ namespace topg.Web.Templating.Data
             // Only image questions have this column, so it is nullable in the shared table. Import scripts exported
             // before the flag existed leave it out, and the default keeps those rows loadable as a non-nullable bool.
             modelBuilder.Entity<ImageQuestion>()
-                .Property(x => x.StartPixelated)
+                .Property(x => x.StartObscured)
                 .HasDefaultValue(false);
 
             // The import script's "replace existing" deletes questions and relies on their hints going with them.

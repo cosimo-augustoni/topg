@@ -20,10 +20,10 @@
             <VisibilityButtonColumn Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))" ToggledChanged="ToggleImageVisibility"></VisibilityButtonColumn>
         </tr>
         <tr>
-            <TextColumn>Pixelation</TextColumn>
+            <TextColumn>Obscured</TextColumn>
             <td>
-                <MudSlider T="int" Value="ImageQuestion.PixelationStep" ValueChanged="SetPixelationStep"
-                           Min="0" Max="ImageQuestion.ClearStep" Step="1" TickMarks="true" TickMarkLabels="PixelationLabels"
+                <MudSlider T="int" Value="ImageQuestion.ObscureStep" ValueChanged="SetObscureStep"
+                           Min="0" Max="ImageQuestion.ClearStep" Step="1" TickMarks="true" TickMarkLabels="ObscureLabels"
                            Color="Color.Primary" Class="px-4" />
             </td>
             <TextColumn></TextColumn>
@@ -57,11 +57,13 @@
     [Parameter]
     public required ImageQuestion ImageQuestion { get; set; }
 
-    private static readonly string[] PixelationLabels = [.. ImageQuestion.PixelationSteps.Select(blocks => $"{blocks}"), "Clear"];
+    // Counts down to "Clear", so the host reads how strongly the image is still hidden.
+    private static readonly string[] ObscureLabels =
+        [.. Enumerable.Range(0, ImageQuestion.ClearStep).Select(step => $"{ImageQuestion.ClearStep - step}"), "Clear"];
 
-    private void SetPixelationStep(int step)
+    private void SetObscureStep(int step)
     {
-        QuizSession.UpdateQuestion(ImageQuestion, question => question.PixelationStep = step);
+        QuizSession.UpdateQuestion(ImageQuestion, question => question.ObscureStep = step);
     }
 
     private void ToggleImageVisibility()

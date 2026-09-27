@@ -1,4 +1,5 @@
-﻿@using topg.Web.Quiz.Execution
+﻿@using System.Globalization
+@using topg.Web.Quiz.Execution
 
 <MudStack Spacing="4" Style="height:100%; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; width: 100%; padding-top: 3rem">
     <div style="--top-row-height: 4rem; height:var(--top-row-height); flex: 0 0 var(--top-row-height); min-height: 0; display:flex; align-items:center; justify-content:center; padding:0 1rem; box-sizing:border-box; overflow:hidden;">
@@ -15,10 +16,11 @@
             <div style="position:relative; height:@GetInnerBoxHeight(); width:100%; max-width:100%; margin:0 auto; overflow:hidden; display:flex; align-items:center; justify-content:center;">
                 @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))
                 {
-                    @* No <img> while pixelated, so the sharp image never flashes up before the canvas is drawn. *@
-                    @if (ImageQuestion.PixelationBlocks is not null)
+                    @* No <img> while obscured, so the sharp image never flashes up before the canvas is drawn. *@
+                    @if (ImageQuestion.CurrentObscureLevel is { } level)
                     {
-                        <canvas @ref="_canvas" aria-label="Question Image" style="height:100%; max-width:100%; width:auto; object-fit:contain; display:block; image-rendering:pixelated;" class="rounded-0"></canvas>
+                        @* Safari has no canvas filters, so the colour is taken away on the element instead. *@
+                        <canvas @ref="_canvas" aria-label="Question Image" style="height:100%; max-width:100%; width:auto; object-fit:contain; display:block; filter:grayscale(@level.Grey.ToString(CultureInfo.InvariantCulture));" class="rounded-0"></canvas>
                     }
                     else
                     {
@@ -43,25 +45,25 @@
     public required ImageQuestion ImageQuestion { get; set; }
 
     private ElementReference _canvas;
-    private (string? CanvasId, Uri Image, int Blocks)? _drawn;
+    private (string? CanvasId, Uri Image, double Turns, int? BlurWidth)? _drawn;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image) || ImageQuestion.PixelationBlocks is not { } blocks)
+        if (!ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image) || ImageQuestion.CurrentObscureLevel is not { } level)
         {
             _drawn = null;
             return;
         }
 
         // Every session change re-renders this component; only redraw when the canvas or what it shows changed.
-        var target = (_canvas.Id, ImageQuestion.QuestionImageUri, blocks);
+        var target = (_canvas.Id, ImageQuestion.QuestionImageUri, level.Turns, level.BlurWidth);
         if (_drawn == target)
         {
             return;
         }
 
         _drawn = target;
-        await JS.InvokeVoidAsync("pixelateImage", _canvas, ImageQuestion.QuestionImageUri.ToString(), blocks);
+        await JS.InvokeVoidAsync("obscureImage", _canvas, ImageQuestion.QuestionImageUri.ToString(), level.Turns, level.BlurWidth);
     }
 
     private string GetInnerBoxHeight()

@@ -83,7 +83,7 @@ public static class SqlExport
                 AppendWithHints(sql, project, (TextQuestionDraft)question, category);
             }
 
-            AppendInsert(sql, "\"QuestionText\", \"QuestionImageUri\", \"AnswerText\", \"AnswerImageUri\", \"ImageSize\", \"StartPixelated\"",
+            AppendInsert(sql, "\"QuestionText\", \"QuestionImageUri\", \"AnswerText\", \"AnswerImageUri\", \"ImageSize\", \"StartObscured\"",
                 questions.Where(x => x.Question is ImageQuestionDraft).Select(x =>
                 {
                     var q = (ImageQuestionDraft)x.Question;
@@ -91,7 +91,7 @@ public static class SqlExport
                         ?? throw new InvalidOperationException("Image question without image – validate the project before exporting.");
                     // The game treats an empty string as "no answer image" and the column is mapped as non-nullable.
                     var answerImage = q.AnswerImage?.Url(project.BaseUrl, project.Folder) ?? "";
-                    return $"{Common(q, x.Category)}, {Literal(q.QuestionText)}, {Literal(questionImage)}, {Literal(q.AnswerText)}, {Literal(answerImage)}, {(int)q.ImageSize}, {(q.StartPixelated ? "TRUE" : "FALSE")}";
+                    return $"{Common(q, x.Category)}, {Literal(q.QuestionText)}, {Literal(questionImage)}, {Literal(q.AnswerText)}, {Literal(answerImage)}, {(int)q.ImageSize}, {(q.StartObscured ? "TRUE" : "FALSE")}";
                 }));
 
         }

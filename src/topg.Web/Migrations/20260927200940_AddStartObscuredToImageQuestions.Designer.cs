@@ -11,8 +11,8 @@ using topg.Web.Templating.Data;
 namespace topg.Web.Migrations
 {
     [DbContext(typeof(QuizContext))]
-    [Migration("20260927193718_AddStartPixelatedToImageQuestions")]
-    partial class AddStartPixelatedToImageQuestions
+    [Migration("20260927200940_AddStartObscuredToImageQuestions")]
+    partial class AddStartObscuredToImageQuestions
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -169,7 +169,7 @@ namespace topg.Web.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("StartPixelated")
+                    b.Property<bool>("StartObscured")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);

@@ -58,24 +58,31 @@ public class ImageQuestion(Templating.DomainObjects.ImageQuestion question) : Qu
     public required ImageSize ImageSize { get; init; } = question.ImageSize;
     public ImageQuestionDisplayState DisplayState { get; set; }
 
-    // Blocks across the image width, coarsest first. The steps get tuned after playtesting, so the slider, the starting
-    // step and the renderer all derive from this list, and the session stores an index into it rather than a count.
-    public static readonly int[] PixelationSteps = [8, 16, 32, 64, 128];
+    // Strongest first. The steps get tuned after playtesting, so the slider, the starting step and the renderer all
+    // derive from this list, and the session stores an index into it rather than the level itself.
+    public static readonly ObscureLevel[] ObscureLevels =
+    [
+        new(Turns: 3, BlurWidth: 16, Grey: 1),
+        new(Turns: 1.8, BlurWidth: 32, Grey: 0.6),
+        new(Turns: 1, BlurWidth: 64, Grey: 0),
+        new(Turns: 0.5, BlurWidth: 160, Grey: 0),
+        new(Turns: 0.2, BlurWidth: null, Grey: 0),
+    ];
 
-    public static int ClearStep => PixelationSteps.Length;
+    public static int ClearStep => ObscureLevels.Length;
 
-    public bool StartPixelated { get; init; } = question.StartPixelated;
+    public bool StartObscured { get; init; } = question.StartObscured;
 
-    public int StartStep => StartPixelated ? 0 : ClearStep;
+    public int StartStep => StartObscured ? 0 : ClearStep;
 
-    public int PixelationStep { get; set; } = question.StartPixelated ? 0 : ClearStep;
+    public int ObscureStep { get; set; } = question.StartObscured ? 0 : ClearStep;
 
-    public int? PixelationBlocks => PixelationStep < ClearStep ? PixelationSteps[PixelationStep] : null;
+    public ObscureLevel? CurrentObscureLevel => ObscureStep < ClearStep ? ObscureLevels[ObscureStep] : null;
 
     public override void ResetDisplayState()
     {
         DisplayState = ImageQuestionDisplayState.None;
-        PixelationStep = StartStep;
+        ObscureStep = StartStep;
     }
 }
 

@@ -37,7 +37,7 @@ public static class ExportFixtures
                 Category("Animals", new ImageQuestionDraft
                 {
                     Points = 100, QuestionText = "Which flag?", QuestionImage = flag, AnswerText = "Switzerland",
-                    AnswerImage = answer, ImageSize = ImageSize.Large, AnswerType = AnswerType.Text, StartPixelated = true,
+                    AnswerImage = answer, ImageSize = ImageSize.Large, AnswerType = AnswerType.Text, StartObscured = true,
                 }),
             ],
         });
@@ -291,7 +291,7 @@ public class ProjectFileTests
     }
 
     [Fact]
-    public async Task Round_trip_keeps_start_pixelated()
+    public async Task Round_trip_keeps_start_obscured()
     {
         var project = await ExportFixtures.Sample(_source);
         var file = await ProjectFile.CreateAsync(project, _source);
@@ -301,18 +301,18 @@ public class ProjectFileTests
         await ProjectFile.ImportAsync(Read(file), asCopy: false, target, targetStore);
 
         var imported = await targetStore.GetAsync(project.Id);
-        Assert.Equal([true, false], imported!.AllQuestions().OfType<ImageQuestionDraft>().Select(q => q.StartPixelated));
+        Assert.Equal([true, false], imported!.AllQuestions().OfType<ImageQuestionDraft>().Select(q => q.StartObscured));
     }
 
     [Fact]
-    public async Task File_saved_before_start_pixelated_existed_imports_with_the_flag_off()
+    public async Task File_saved_before_start_obscured_existed_imports_with_the_flag_off()
     {
         var project = await ExportFixtures.Sample(_source);
         var json = JsonNode.Parse(CreatorJson.Serialize(project))!;
         var removed = 0;
         foreach (var question in json["boards"]!.AsArray().SelectMany(b => b!["categories"]!.AsArray()).SelectMany(c => c!["questions"]!.AsArray()))
         {
-            removed += question!.AsObject().Remove("startPixelated") ? 1 : 0;
+            removed += question!.AsObject().Remove("startObscured") ? 1 : 0;
         }
 
         Assert.Equal(2, removed);
@@ -323,7 +323,7 @@ public class ProjectFileTests
 
         var imported = Read(Zip(entries)).Project;
 
-        Assert.All(imported.AllQuestions().OfType<ImageQuestionDraft>(), q => Assert.False(q.StartPixelated));
+        Assert.All(imported.AllQuestions().OfType<ImageQuestionDraft>(), q => Assert.False(q.StartObscured));
     }
 
     [Fact]

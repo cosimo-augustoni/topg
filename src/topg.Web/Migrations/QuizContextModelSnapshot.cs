@@ -166,7 +166,7 @@ namespace topg.Web.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("StartPixelated")
+                    b.Property<bool>("StartObscured")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);

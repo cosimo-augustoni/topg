@@ -5,13 +5,13 @@
 namespace topg.Web.Migrations
 {
     /// <inheritdoc />
-    public partial class AddStartPixelatedToImageQuestions : Migration
+    public partial class AddStartObscuredToImageQuestions : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<bool>(
-                name: "StartPixelated",
+                name: "StartObscured",
                 table: "Questions",
                 type: "boolean",
                 nullable: true,
@@ -22,7 +22,7 @@ namespace topg.Web.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "StartPixelated",
+                name: "StartObscured",
                 table: "Questions");
         }
     }
