@@ -33,15 +33,29 @@ public class ProjectEditingTests
     private static readonly int[] Defaults = [100, 200, 300, 400, 500];
 
     [Fact]
-    public void Starter_board_has_five_categories_with_default_points_and_empty_texts()
+    public void Starter_boards_have_five_categories_with_default_then_doubled_points_and_empty_texts()
     {
         var project = QuizProject.Create("Quiz", "https://cdn");
-        project.AddStarterBoard(Defaults);
+        project.AddStarterBoards(Defaults);
 
-        var board = Assert.Single(project.Boards);
-        Assert.Equal(["Category 1", "Category 2", "Category 3", "Category 4", "Category 5"], board.Categories.Select(c => c.Name));
-        Assert.All(board.Categories, c => Assert.Equal(Defaults, c.Questions.Select(q => q.Points)));
-        Assert.Contains(ProjectValidator.Validate(project), i => i.Code == "question.text.empty");
+        Assert.Equal(2, project.Boards.Count);
+        Assert.All(project.Boards, b => Assert.Equal(["Category 1", "Category 2", "Category 3", "Category 4", "Category 5"], b.Categories.Select(c => c.Name)));
+        Assert.All(project.Boards.SelectMany(b => b.Categories).SelectMany(c => c.Questions), q => Assert.IsType<TextQuestionDraft>(q));
+        Assert.All(project.Boards[0].Categories, c => Assert.Equal(Defaults, c.Questions.Select(q => q.Points)));
+        Assert.All(project.Boards[1].Categories, c => Assert.Equal([200, 400, 600, 800, 1000], c.Questions.Select(q => q.Points)));
+
+        var issueBoards = ProjectValidator.Validate(project).Where(i => i.Code == "question.text.empty").Select(i => i.BoardId).ToHashSet();
+        Assert.Equal(project.Boards.Select(b => (Guid?)b.Id).ToHashSet(), issueBoards);
+    }
+
+    [Fact]
+    public void Starter_boards_follow_custom_default_points()
+    {
+        var project = QuizProject.Create("Quiz", "https://cdn");
+        project.AddStarterBoards([10, 20]);
+
+        Assert.All(project.Boards[0].Categories, c => Assert.Equal([10, 20], c.Questions.Select(q => q.Points)));
+        Assert.All(project.Boards[1].Categories, c => Assert.Equal([20, 40], c.Questions.Select(q => q.Points)));
     }
 
     [Fact]

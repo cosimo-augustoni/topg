@@ -16,7 +16,7 @@
             <div>
                 <MudText Typo="Typo.caption" Class="mud-text-secondary">Start with</MudText>
                 <MudRadioGroup T="bool" @bind-Value="_starter">
-                    <MudRadio T="bool" Value="true" Dense="true">1 board, 5 categories × @Settings.Current.DefaultPoints.Count questions</MudRadio>
+                    <MudRadio T="bool" Value="true" Dense="true">2 boards, 5 categories × @Settings.Current.DefaultPoints.Count questions, second board double points</MudRadio>
                     <MudRadio T="bool" Value="false" Dense="true">Empty</MudRadio>
                 </MudRadioGroup>
             </div>
@@ -78,7 +78,7 @@
         project.Folder = _folder;
         if (_starter)
         {
-            project.AddStarterBoard(Settings.Current.DefaultPoints);
+            project.AddStarterBoards(Settings.Current.DefaultPoints);
         }
 
         Dialog.Close(DialogResult.Ok(project));
