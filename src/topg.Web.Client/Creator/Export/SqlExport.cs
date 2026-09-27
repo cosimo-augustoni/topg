@@ -9,7 +9,7 @@ namespace topg.Web.Client.Creator.Export;
 /// Turns a project into a PostgreSQL script for the live database. The script is one <c>DO</c> block, so it
 /// runs atomically, and it captures the generated ids with <c>RETURNING … INTO</c>.
 /// Table and column names follow <c>QuizContextModelSnapshot.cs</c>:
-/// Templates(Name) → Boards(TemplateId, Order) → Questions (TPH, discriminator <c>QuestionType</c>).
+/// Templates(Name) → Boards(TemplateId, Order) → Questions (TPH, discriminator <c>QuestionType</c>) → QuestionHints(QuestionId, Order).
 /// </summary>
 public static class SqlExport
 {
@@ -26,6 +26,8 @@ public static class SqlExport
         var name = project.Name.Trim();
         var questionCount = project.AllQuestions().Count();
         var tag = DollarQuoteTag(project);
+        // Declared only when used, so scripts of quizzes without hints stay exactly as they were before hints existed.
+        var hasHints = project.AllQuestions().Any(HasHints);
 
         var sql = new StringBuilder();
         sql.Line("-- topg quiz import");
@@ -37,10 +39,16 @@ public static class SqlExport
         sql.Line("DECLARE");
         sql.Line("    template_id bigint;");
         sql.Line("    board_id bigint;");
+        if (hasHints)
+        {
+            sql.Line("    question_id bigint;");
+        }
+
         sql.Line("BEGIN");
 
         if (project.ReplaceExisting)
         {
+            // Hints cascade from their question, so deleting the questions is enough.
             sql.Line($"    -- Replace existing templates with this name. Questions don't cascade from boards, so delete them first.");
             sql.Line("    DELETE FROM \"Questions\" WHERE \"BoardId\" IN (");
             sql.Line($"        SELECT b.\"Id\" FROM \"Boards\" b JOIN \"Templates\" t ON t.\"Id\" = b.\"TemplateId\" WHERE t.\"Name\" = {Literal(name)});");
@@ -62,12 +70,18 @@ public static class SqlExport
                 .SelectMany(c => GameOrder.Questions(c).Select(q => (Category: c.Name.Trim(), Question: q)))
                 .ToList();
 
-            AppendInsert(sql, "\"TextQuestion_QuestionText\", \"CorrectAnswer\"",
-                questions.Where(x => x.Question is TextQuestionDraft).Select(x =>
+            AppendInsert(sql, TextColumns,
+                questions.Where(x => x.Question is TextQuestionDraft && !HasHints(x.Question)).Select(x =>
                 {
                     var q = (TextQuestionDraft)x.Question;
                     return $"{Common(q, x.Category)}, {Literal(q.QuestionText)}, {Literal(q.CorrectAnswer)}";
                 }));
+
+            // The hints need the question's id, which a multi-row insert doesn't give back.
+            foreach (var (category, question) in questions.Where(x => HasHints(x.Question)))
+            {
+                AppendWithHints(sql, project, (TextQuestionDraft)question, category);
+            }
 
             AppendInsert(sql, "\"QuestionText\", \"QuestionImageUri\", \"AnswerText\", \"AnswerImageUri\", \"ImageSize\"",
                 questions.Where(x => x.Question is ImageQuestionDraft).Select(x =>
@@ -91,6 +105,28 @@ public static class SqlExport
         string.Create(CultureInfo.InvariantCulture, $"board_id, {(int)q.Type}, {(int)q.AnswerType}, {q.Points}, {Literal(category)}");
 
     private const string CommonColumns = "\"BoardId\", \"QuestionType\", \"AnswerType\", \"Points\", \"Category\"";
+
+    private const string TextColumns = "\"TextQuestion_QuestionText\", \"CorrectAnswer\"";
+
+    private static bool HasHints(QuestionDraft question) => question is TextQuestionDraft { Hints.Count: > 0 };
+
+    private static void AppendWithHints(StringBuilder sql, QuizProject project, TextQuestionDraft q, string category)
+    {
+        var type = q.HintType ?? HintType.Text;
+        sql.Line($"    INSERT INTO \"Questions\" ({CommonColumns}, {TextColumns}, \"HintType\") VALUES");
+        sql.Line($"        ({Common(q, category)}, {Literal(q.QuestionText)}, {Literal(q.CorrectAnswer)}, {(int)type}) RETURNING \"Id\" INTO question_id;");
+        sql.Line("    INSERT INTO \"QuestionHints\" (\"QuestionId\", \"Order\", \"Text\", \"ImageUri\") VALUES");
+        for (var order = 0; order < q.Hints.Count; order++)
+        {
+            var hint = q.Hints[order];
+            var imageUri = type == HintType.Image
+                ? hint.Image?.Url(project.BaseUrl, project.Folder)
+                  ?? throw new InvalidOperationException("Image hint without image – validate the project before exporting.")
+                : "";
+            sql.Append(string.Create(CultureInfo.InvariantCulture, $"        (question_id, {order}, {Literal(hint.Text)}, {Literal(imageUri)})"))
+                .Line(order == q.Hints.Count - 1 ? ";" : ",");
+        }
+    }
 
     private static void AppendInsert(StringBuilder sql, string typeColumns, IEnumerable<string> rows)
     {
@@ -120,7 +156,8 @@ public static class SqlExport
     private static string DollarQuoteTag(QuizProject project)
     {
         var texts = project.AllQuestions()
-            .SelectMany(q => new[] { q.QuestionText, (q as TextQuestionDraft)?.CorrectAnswer, (q as ImageQuestionDraft)?.AnswerText })
+            .SelectMany(q => new[] { q.QuestionText, (q as TextQuestionDraft)?.CorrectAnswer, (q as ImageQuestionDraft)?.AnswerText }
+                .Concat((q as TextQuestionDraft)?.Hints.Select(h => h.Text) ?? []))
             .Concat(project.Boards.SelectMany(b => b.Categories).Select(c => c.Name))
             .Append(project.Name)
             .Append(project.BaseUrl)

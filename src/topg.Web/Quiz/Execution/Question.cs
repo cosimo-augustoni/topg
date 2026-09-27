@@ -25,8 +25,27 @@ public class TextQuestion(Templating.DomainObjects.TextQuestion question) : Ques
     public required string QuestionText { get; init; } = question.QuestionText;
     public required string CorrectAnswer { get; init; } = question.CorrectAnswer;
     public TextQuestionDisplayState DisplayState { get; set; } = TextQuestionDisplayState.None;
+    public HintType? HintType { get; init; } = question.Hints.Count == 0 ? null : question.HintType ?? Client.Shared.HintType.Text;
 
-    public override void ResetDisplayState() => DisplayState = TextQuestionDisplayState.None;
+    // The DB returns hints in no guaranteed order.
+    public IReadOnlyList<QuestionHint> Hints { get; init; } = question.Hints.OrderBy(h => h.Order).Select(h => new QuestionHint(h)).ToList();
+
+    public override void ResetDisplayState()
+    {
+        DisplayState = TextQuestionDisplayState.None;
+        foreach (var hint in Hints)
+        {
+            hint.IsVisible = false;
+        }
+    }
+}
+
+// Ten hints toggle independently, which a [Flags] display state can't hold, so each hint carries its own visibility.
+public class QuestionHint(Templating.DomainObjects.QuestionHint hint)
+{
+    public string Text { get; } = hint.Text;
+    public Uri? ImageUri { get; } = string.IsNullOrEmpty(hint.ImageUri) ? null : new Uri(hint.ImageUri);
+    public bool IsVisible { get; set; }
 }
 
 [method: SetsRequiredMembers]

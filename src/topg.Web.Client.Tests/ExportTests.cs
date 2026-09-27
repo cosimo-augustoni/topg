@@ -50,6 +50,24 @@ public static class ExportFixtures
         });
         return project;
     }
+
+    public static async Task<QuizProject> SampleWithHints(InMemoryCreatorStorage storage)
+    {
+        var project = await Sample(storage);
+        var hints = new[]
+        {
+            await StoreImage(storage, "red", "red.png"),
+            await StoreImage(storage, "white", "white.png"),
+            await StoreImage(storage, "cross", "cross.png"),
+        };
+
+        project.Boards[0].Categories.Add(Category("Cities",
+            TextHints(300, "It's on the \"Rhine\".", "Line 1\nLine 2", "C:\\path"),
+            Text(400, "No hints here", "Plain")));
+        project.Boards[1].Categories.Add(Category("Flags",
+            ImageHints(500, (hints[0], "Red"), (hints[1], ""), (hints[2], "O'Brien's cross"))));
+        return project;
+    }
 }
 
 public class SqlExportTests
@@ -69,6 +87,34 @@ public class SqlExportTests
         project.ReplaceExisting = false;
 
         Golden.AssertMatches("sample-insert-only.sql", SqlExport.Generate(project, ExportFixtures.GeneratedAt));
+    }
+
+    [Fact]
+    public async Task Script_with_hints_matches_golden_file()
+    {
+        var project = await ExportFixtures.SampleWithHints(new InMemoryCreatorStorage());
+
+        Golden.AssertMatches("sample-hints.sql", SqlExport.Generate(project, ExportFixtures.GeneratedAt));
+    }
+
+    [Fact]
+    public async Task Script_without_hints_does_not_declare_a_question_id()
+    {
+        var project = await ExportFixtures.Sample(new InMemoryCreatorStorage());
+
+        Assert.DoesNotContain("question_id", SqlExport.Generate(project, ExportFixtures.GeneratedAt));
+    }
+
+    [Fact]
+    public void Dollar_quote_tag_avoids_hint_texts_containing_it()
+    {
+        var project = Valid();
+        project.Boards[0].Categories[0].Questions.Add(TextHints(300, "What does $topg$ do?"));
+
+        var sql = SqlExport.Generate(project, ExportFixtures.GeneratedAt);
+
+        Assert.Contains("DO $topg1$", sql);
+        Assert.EndsWith("$topg1$;\n", sql);
     }
 
     [Theory]
@@ -160,6 +206,20 @@ public class ExportPackageTests
     }
 
     [Fact]
+    public async Task Zip_contains_the_hint_images_in_the_cdn_folder()
+    {
+        var storage = new InMemoryCreatorStorage();
+        var project = await ExportFixtures.SampleWithHints(storage);
+        var hints = project.AllQuestions().OfType<TextQuestionDraft>().SelectMany(q => q.Hints).Select(h => h.Image).OfType<ImageRef>().ToList();
+
+        var bytes = await ExportPackage.BuildAsync(project, storage, ExportFixtures.GeneratedAt);
+
+        using var zip = new ZipArchive(new MemoryStream(bytes));
+        Assert.Equal(3, hints.Count);
+        Assert.All(hints, image => Assert.NotNull(zip.GetEntry($"pub-quiz/{image.FileName}")));
+    }
+
+    [Fact]
     public async Task Missing_image_fails_with_its_name()
     {
         var storage = new InMemoryCreatorStorage();
@@ -211,6 +271,23 @@ public class ProjectFileTests
         Assert.Equal(
             await ExportPackage.BuildAsync(project, _source, ExportFixtures.GeneratedAt),
             await ExportPackage.BuildAsync(imported!, target, ExportFixtures.GeneratedAt));
+    }
+
+    [Fact]
+    public async Task Round_trip_restores_hints_and_their_images()
+    {
+        var project = await ExportFixtures.SampleWithHints(_source);
+        var file = await ProjectFile.CreateAsync(project, _source);
+
+        var target = new InMemoryCreatorStorage();
+        var targetStore = new ProjectStore(target);
+        await ProjectFile.ImportAsync(Read(file), asCopy: false, target, targetStore);
+
+        var imported = await targetStore.GetAsync(project.Id);
+        Assert.Equal(CreatorJson.Serialize(project), CreatorJson.Serialize(imported));
+        var question = imported!.AllQuestions().OfType<TextQuestionDraft>().Single(q => q.HintType == HintType.Image);
+        Assert.Equal(["Red", "", "O'Brien's cross"], question.Hints.Select(h => h.Text));
+        Assert.All(question.Hints, h => Assert.True(target.Images.ContainsKey(h.Image!.Hash)));
     }
 
     [Fact]
