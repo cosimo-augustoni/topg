@@ -1,21 +1,18 @@
 ﻿@using topg.Web.Quiz.Execution
 
-@if (TextQuestion.Hints.Count == 0)
+@* Hint slots under a hidden question would look like a broken screen, so the hints follow the question. Each hint
+   keeps its own visibility and shows it again once the question is shown. *@
+@if (TextQuestion.DisplayState.HasFlag(TextQuestionDisplayState.Question))
 {
-    @if (TextQuestion.DisplayState.HasFlag(TextQuestionDisplayState.Question))
+    if (TextQuestion.Hints.Count == 0)
     {
         <MudText Typo="Typo.h1" Align="Align.Center" Style="font-weight: bold;">@TextQuestion.QuestionText</MudText>
     }
-}
-else
-{
-    <div class="hint-header">
-        @if (TextQuestion.DisplayState.HasFlag(TextQuestionDisplayState.Question))
-        {
-            <span>@TextQuestion.QuestionText</span>
-        }
-    </div>
-    <HintGrid Question="TextQuestion" />
+    else
+    {
+        <div class="hint-header"><span>@TextQuestion.QuestionText</span></div>
+        <HintGrid Question="TextQuestion" />
+    }
 }
 
 @code {

@@ -65,10 +65,15 @@ public class QuestionHintsTests : IAsyncLifetime
 
     private QuizSession Session => sessionHandler.Sessions[sessionId];
 
-    private TextQuestion Open(long id)
+    private TextQuestion Open(long id, bool showQuestion = true)
     {
         var question = Session.Quiz.CurrentBoard.Questions.OfType<TextQuestion>().Single(q => q.Id == id);
         Session.SelectQuestion(question);
+        if (showQuestion)
+        {
+            question.DisplayState = TextQuestionDisplayState.Question;
+        }
+
         return question;
     }
 
@@ -130,18 +135,29 @@ public class QuestionHintsTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Question_text_toggles_on_its_own_and_is_a_header_above_the_hints()
+    public void Hints_follow_the_question_text_and_keep_their_own_visibility()
     {
-        var question = Open(WithTextHints);
+        var question = Open(WithTextHints, showQuestion: false);
         question.Hints[0].IsVisible = true;
         var host = RenderHost();
         var spectator = RenderSpectator();
+        Assert.Empty(spectator.FindAll(".hint-area"));
+        Assert.Empty(spectator.FindAll(".hint-header"));
+
+        // Revealed while the question is hidden: the host prepares the screen before showing it.
+        ToggleOf(host, "Hint 2").Click();
+        Assert.Empty(spectator.FindAll(".hint-area"));
 
         ToggleOf(host, "Question Text").Click();
 
-        spectator.WaitForAssertion(() => Assert.Equal("Which city?", spectator.Find(".hint-header").TextContent.Trim()));
+        spectator.WaitForAssertion(() => Assert.Equal(["First", "Second", "#3", "#4"], Tiles(spectator)));
+        Assert.Equal("Which city?", spectator.Find(".hint-header").TextContent.Trim());
         Assert.Empty(spectator.FindAll("h1"));
-        Assert.Equal(["First", "#2", "#3", "#4"], Tiles(spectator));
+
+        ToggleOf(host, "Question Text").Click();
+
+        spectator.WaitForAssertion(() => Assert.Empty(spectator.FindAll(".hint-area")));
+        Assert.Equal([true, true, false, false], question.Hints.Select(h => h.IsVisible));
     }
 
     [Fact]
@@ -158,8 +174,7 @@ public class QuestionHintsTests : IAsyncLifetime
     [Fact]
     public void Question_without_hints_looks_like_before()
     {
-        var question = Open(WithoutHints);
-        question.DisplayState = TextQuestionDisplayState.Question;
+        Open(WithoutHints);
 
         var host = RenderHost();
         var spectator = RenderSpectator();
