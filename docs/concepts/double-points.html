@@ -1,4 +1,4 @@
-<!-- UI concept for https://github.com/cosimo-augustoni/topg/issues/20 (double points on the last questions of a board). Kept in the repo so implementers and agents can read it without access to the claude.ai artifact it was published as. -->
+<!-- UI concept for https://github.com/cosimo-augustoni/topg/issues/20 (1.5× points on the last questions of a board). Kept in the repo so implementers and agents can read it without access to the claude.ai artifact it was published as. -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-<title>topg Double Points</title>
+<title>topg Bonus Points</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&family=Roboto:wght@400;500;700&display=swap">
 <style>
@@ -21,7 +21,7 @@
   --g-bg:#32333d; --g-paper:#373740; --g-text:rgba(255,255,255,.72); --g-strong:rgba(255,255,255,.92);
   --g-primary:#776be7; --g-default:#4b4c57; --g-line:rgba(255,255,255,.12);
   --g-disabled-bg:rgba(255,255,255,.12); --g-disabled-ink:rgba(255,255,255,.3);
-  --g-double:#ffb545; --g-double-ink:#2a1d00; --g-double-glow:rgba(255,181,69,.35);
+  --g-double:#776be7; --g-double-ink:#ffffff; --g-double-dark:#5a4ed1; --g-double-light:#a8a0ff; --g-double-glow:rgba(168,160,255,.75);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -58,9 +58,9 @@ code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding
 .host-col .ghost{opacity:.45}
 .ghost h4{margin:0 0 6px;font:400 1.3rem/1.2 var(--game);color:var(--g-strong)}
 .ghost .bar{height:30px;border-radius:4px;background:var(--g-default)}
-.dp{outline:2px dashed var(--g-double);outline-offset:3px;position:relative}
+.dp{outline:2px dashed var(--g-double-light);outline-offset:3px;position:relative}
 .dp h4{margin:0 0 10px;font:400 1.3rem/1.2 var(--game);color:var(--g-strong)}
-.new-tag{position:absolute;top:-11px;right:8px;background:var(--g-double);color:var(--g-double-ink);font:700 .65rem/1 var(--mono);padding:4px 6px;border-radius:4px;letter-spacing:.06em}
+.new-tag{position:absolute;top:-11px;right:8px;background:var(--g-double-light);color:#1c1b24;font:700 .65rem/1 var(--mono);padding:4px 6px;border-radius:4px;letter-spacing:.06em}
 .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .switch{position:relative;width:40px;height:22px;flex:none}
 .switch input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
@@ -75,7 +75,7 @@ code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding
 .num input:focus{outline:none;border-bottom:2px solid var(--g-primary)}
 .num input:disabled{color:var(--g-disabled-ink)}
 .status{margin-top:10px;font-size:.85rem;color:var(--g-text)}
-.status b{color:var(--g-double)}
+.status b{color:var(--g-double-light)}
 
 .board{display:flex;flex-direction:column;gap:10px;min-width:560px}
 .cats,.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
@@ -85,7 +85,7 @@ code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding
 .tile:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .tile.answered{background:var(--g-disabled-bg);color:var(--g-disabled-ink);box-shadow:none}
 .tile.double{background:var(--g-double);color:var(--g-double-ink);box-shadow:0 0 0 3px var(--g-double-glow),0 2px 3px rgba(0,0,0,.3)}
-.tile .x2{position:absolute;top:4px;right:5px;font:700 .72rem/1 var(--game);background:var(--g-double-ink);color:var(--g-double);padding:3px 5px;border-radius:3px}
+.tile .x2{position:absolute;top:4px;right:5px;font:700 .72rem/1 var(--game);background:var(--g-double-dark);color:#fff;padding:3px 5px;border-radius:3px}
 .board-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:.85rem}
 .tbtn{font:500 .8rem var(--game);text-transform:uppercase;letter-spacing:.04em;background:var(--g-default);color:var(--g-strong);border:0;border-radius:4px;padding:6px 12px;cursor:pointer}
 .tbtn[aria-pressed="true"]{background:var(--g-primary)}
@@ -98,7 +98,7 @@ code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding
 .q-cat,.q-pts{position:absolute;top:0;padding:6px 12px;font-weight:700;font-size:1.2rem}
 .q-cat{left:0;background:var(--g-default);color:var(--g-strong)}
 .q-pts{right:0;background:var(--g-double);color:var(--g-double-ink);display:flex;align-items:center;gap:8px}
-.q-pts small{font-size:.75rem;background:var(--g-double-ink);color:var(--g-double);padding:2px 5px;border-radius:3px}
+.q-pts small{font-size:.75rem;background:var(--g-double-dark);color:#fff;padding:2px 5px;border-radius:3px}
 .q-players{display:flex;flex-direction:column;gap:8px}
 .q-players .paper{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .q-players b{color:var(--g-strong);font-weight:500}
@@ -129,22 +129,22 @@ pre{margin:0;background:var(--surface-2);border-radius:8px;padding:14px;overflow
 <div class="wrap">
   <header>
     <span class="eyebrow">UI concept · game · enhancement</span>
-    <h1>Double points on the last questions of a board</h1>
-    <p class="lede">The host turns on one session-wide rule: once only X unanswered questions are left on the current board, those questions are worth double. It's on by default with X = 3. The rule lives only in the running session, so no data is stored in the quiz template.</p>
+    <h1>Bonus points on the last questions of a board</h1>
+    <p class="lede">The host turns on one session-wide rule: once only X unanswered questions are left on the current board, those questions are worth 1.5× their points. It's on by default with X = 3. The rule lives only in the running session, so no data is stored in the quiz template.</p>
     <div class="chips"><span class="chip">host · player · spectator</span><span class="chip">runtime only</span><span class="chip">no DB migration</span></div>
   </header>
 
   <section>
     <h2>Host screen with the board</h2>
-    <p class="hint">Try it: click tiles to mark them answered, and change the switch or X. Players and spectators see the same board, with the same doubled tiles, but without the left column.</p>
+    <p class="hint">Try it: click tiles to mark them answered, and change the switch or X. Players and spectators see the same board, with the same boosted tiles, but without the left column.</p>
     <div class="stage" id="stage">
       <div class="host-col">
         <div class="paper ghost"><h4>Buzzer</h4><div class="bar"></div></div>
         <div class="paper ghost"><h4>Timer</h4><div class="bar"></div></div>
         <div class="paper dp">
           <span class="new-tag">NEW</span>
-          <div class="row"><h4 style="margin:0">Double points</h4>
-            <label class="switch" title="Double points"><input type="checkbox" id="dp-on" checked aria-label="Double points enabled"><span></span></label>
+          <div class="row"><h4 style="margin:0">Bonus points</h4>
+            <label class="switch" title="Bonus points"><input type="checkbox" id="dp-on" checked aria-label="Bonus points enabled"><span></span></label>
           </div>
           <div class="num">
             <label for="dp-x">Last questions on each board</label>
@@ -166,36 +166,37 @@ pre{margin:0;background:var(--surface-2);border-radius:8px;padding:14px;overflow
         </div>
       </div>
     </div>
-    <p class="caption">A doubled tile shows only the doubled value, with a ×2 corner badge and the amber highlight, so the change reads from across the room on the spectator screen. Once a doubled question is answered, its greyed-out tile shows the normal points again (400, not 800).</p>
+    <p class="caption">A boosted tile shows only the boosted value, with a ×1.5 corner badge and a light ring around the primary fill, so the change reads from across the room on the spectator screen. Once a boosted question is answered, its greyed-out tile shows the normal points again (400, not 600).</p>
   </section>
 
   <section>
-    <h2>An open doubled question</h2>
+    <h2>An open boosted question</h2>
     <div class="q-stage">
       <div class="q-screen">
         <span class="q-cat">Geography</span>
-        <span class="q-pts">800 <small>×2</small></span>
+        <span class="q-pts">600 <small>×1.5</small></span>
         Which river flows through Basel?
       </div>
       <div class="q-players">
-        <div class="paper"><b>Anna · 1200</b><span class="btns"><span>− 400</span><span>+ 800</span></span></div>
-        <div class="paper"><b>Ben · 900</b><span class="btns"><span>− 400</span><span>+ 800</span></span></div>
-        <div class="paper"><b>Chris · 300</b><span class="btns"><span>− 400</span><span>+ 800</span></span></div>
+        <div class="paper"><b>Anna · 1200</b><span class="btns"><span>− 300</span><span>+ 600</span></span></div>
+        <div class="paper"><b>Ben · 900</b><span class="btns"><span>− 300</span><span>+ 600</span></span></div>
+        <div class="paper"><b>Chris · 300</b><span class="btns"><span>− 300</span><span>+ 600</span></span></div>
       </div>
     </div>
-    <p class="caption">This is a 400 question while double points apply. The points banner (<code>QuestionContextBanners</code>) shows 800 ×2 on every screen. The host's score buttons award +800, and the penalty is half of the doubled value (−400).</p>
+    <p class="caption">This is a 400 question while bonus points apply. The points banner (<code>QuestionContextBanners</code>) shows 600 ×1.5 on every screen. The host's score buttons award +600, and the penalty is half of the boosted value (−300). Values that are not whole numbers round to the nearest point, halves up (125 → 188).</p>
   </section>
 
   <section>
     <h2>Data model plan</h2>
-    <p>Nothing is persisted, not even in the host's browser: every new session starts at on/3. The rule sits next to the other per-session state (<code>TimerState</code>, <code>BuzzerState</code>) and the doubled value is derived when it is needed, so it never goes stale. Because answered questions never count as doubled, their tiles fall back to normal points without any extra state.</p>
+    <p>Nothing is persisted, not even in the host's browser: every new session starts at on/3. The rule sits next to the other per-session state (<code>TimerState</code>, <code>BuzzerState</code>) and the boosted value is derived when it is needed, so it never goes stale. Because answered questions never get the bonus, their tiles fall back to normal points without any extra state.</p>
     <div class="plan">
       <div class="card">
-        <h3>New: <code>DoublePointsState</code></h3>
-        <span class="path">topg.Web/Quiz/Execution/DoublePointsState.cs</span>
-<pre>public class DoublePointsState
+        <h3>New: <code>BonusPointsState</code></h3>
+        <span class="path">topg.Web/Quiz/Execution/BonusPointsState.cs</span>
+<pre>public class BonusPointsState
 {
     public const int DefaultLastQuestions = 3;
+    public const decimal Multiplier = 1.5m;
 
     public bool IsEnabled { get; set; } = true;
     public int LastQuestions { get; set; } = DefaultLastQuestions;
@@ -204,22 +205,25 @@ pre{margin:0;background:var(--surface-2);border-radius:8px;padding:14px;overflow
       <div class="card">
         <h3><code>QuizSession</code>: state, setter, point calculation</h3>
         <span class="path">topg.Web/Quiz/Execution/QuizSession.cs</span>
-<pre><span class="add">+ public DoublePointsState DoublePointsState { get; } = new();</span>
+<pre><span class="add">+ public BonusPointsState BonusPointsState { get; } = new();</span>
 
-<span class="add">+ public void SetDoublePoints(bool isEnabled, int lastQuestions)</span>
+<span class="add">+ public void SetBonusPoints(bool isEnabled, int lastQuestions)</span>
 <span class="add">+ {</span>
-<span class="add">+     DoublePointsState.IsEnabled = isEnabled;</span>
-<span class="add">+     DoublePointsState.LastQuestions = Math.Max(1, lastQuestions);</span>
+<span class="add">+     BonusPointsState.IsEnabled = isEnabled;</span>
+<span class="add">+     BonusPointsState.LastQuestions = Math.Max(1, lastQuestions);</span>
 <span class="add">+     SessionStateHasChanged();</span>
 <span class="add">+ }</span>
 
-<span class="add">+ public bool IsDoubled(Question q) =></span>
-<span class="add">+     DoublePointsState.IsEnabled &amp;&amp; !q.IsAnswered</span>
+<span class="add">+ public bool HasBonus(Question q) =></span>
+<span class="add">+     BonusPointsState.IsEnabled &amp;&amp; !q.IsAnswered</span>
 <span class="add">+     &amp;&amp; Quiz.CurrentBoard.UnansweredCount</span>
-<span class="add">+        &lt;= DoublePointsState.LastQuestions;</span>
+<span class="add">+        &lt;= BonusPointsState.LastQuestions;</span>
 
 <span class="add">+ public int PointsFor(Question q) =></span>
-<span class="add">+     IsDoubled(q) ? q.Points * 2 : q.Points;</span></pre>
+<span class="add">+     HasBonus(q)</span>
+<span class="add">+         ? (int)Math.Round(q.Points * BonusPointsState.Multiplier,</span>
+<span class="add">+               MidpointRounding.AwayFromZero)</span>
+<span class="add">+         : q.Points;</span></pre>
       </div>
       <div class="card">
         <h3><code>Board</code> (execution)</h3>
@@ -231,9 +235,9 @@ pre{margin:0;background:var(--surface-2);border-radius:8px;padding:14px;overflow
       <div class="card">
         <h3>UI changes</h3>
         <ul>
-          <li><code>Components/Pages/Board.razor</code>: the tile shows <code>PointsFor(q)</code>, plus the ×2 badge and highlight when <code>IsDoubled(q)</code>. It already runs on host, player and spectator, so all three get the change.</li>
-          <li><code>Questions/QuestionContextBanners.razor</code>: pass the displayed points and the doubled flag in as parameters. It only receives <code>Question</code> today.</li>
-          <li><code>QuizHost.razor</code>: the +/− buttons use <code>PointsFor(CurrentQuestion)</code> and half of it. There's a new “Double points” card in the left column (a switch and a number field, minimum 1).</li>
+          <li><code>Components/Pages/Board.razor</code>: the tile shows <code>PointsFor(q)</code>, plus the ×1.5 badge and ring when <code>HasBonus(q)</code>. It already runs on host, player and spectator, so all three get the change.</li>
+          <li><code>Questions/QuestionContextBanners.razor</code>: pass the displayed points and the bonus flag in as parameters. It only receives <code>Question</code> today.</li>
+          <li><code>QuizHost.razor</code>: the +/− buttons use <code>PointsFor(CurrentQuestion)</code> and half of it. There's a new “Bonus points” card in the left column (a switch, a number field with minimum 1, and a status line). The column already scrolls, so the card stays reachable on laptop screens.</li>
         </ul>
       </div>
       <div class="card untouched">
@@ -247,8 +251,8 @@ pre{margin:0;background:var(--surface-2);border-radius:8px;padding:14px;overflow
       <div class="card">
         <h3>Tests</h3>
         <ul>
-          <li><code>topg.Web.IntegrationTests/DoublePointsTests.cs</code>, following <code>QuizSessionTimerTests</code>: threshold, disabled, changing X mid-board, the next board, a board with ≤ X questions.</li>
-          <li>bUnit in <code>topg.Web.Tests</code>: <code>Board</code> renders 800 and ×2 for doubled tiles.</li>
+          <li><code>topg.Web.IntegrationTests/BonusPointsTests.cs</code>, following <code>QuizSessionTimerTests</code>: threshold, rounding, disabled, changing X mid-board, the next board, a board with ≤ X questions.</li>
+          <li>bUnit in <code>topg.Web.Tests</code>: <code>Board</code> renders 600 and ×1.5 for boosted tiles.</li>
         </ul>
       </div>
     </div>
@@ -270,14 +274,14 @@ function render(){
   let html="";
   pts.forEach((p,r)=>cats.forEach((c,ci)=>{
     const id=`${ci}-${r}`, done=answered.has(id), dbl=active&&!done;
-    const label=dbl?`${p*2}<span class="x2">×2</span>`:p;
-    html+=`<button class="tile${done?" answered":""}${dbl?" double":""}" data-id="${id}" ${done?"disabled":""} aria-label="${c} ${dbl?p*2+" double":p}">${label}</button>`;
+    const label=dbl?`${Math.round(p*1.5)}<span class="x2">×1.5</span>`:p;
+    html+=`<button class="tile${done?" answered":""}${dbl?" double":""}" data-id="${id}" ${done?"disabled":""} aria-label="${c} ${dbl?Math.round(p*1.5)+" with bonus":p}">${label}</button>`;
   }));
   $("tiles").innerHTML=html;
   $("remaining").textContent=`${left} of ${total} questions left`;
   x.disabled=!on.checked;
   $("dp-status").innerHTML=!on.checked?"Off: all questions give their normal points."
-    :active?`<b>Active</b>: the last ${left} question${left===1?"":"s"} give double points.`
+    :active?`<b>Active</b>: the last ${left} question${left===1?"":"s"} give 1.5× points.`
     :`Starts in ${left-lastN()} question${left-lastN()===1?"":"s"}.`;
 }
 $("tiles").addEventListener("click",e=>{const t=e.target.closest(".tile");if(t&&!t.disabled){answered.add(t.dataset.id);render();}});

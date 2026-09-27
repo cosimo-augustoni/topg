@@ -33,13 +33,21 @@
                         <MudItem Style="width: 20%; max-width: 20%; flex-basis: 20%; box-sizing: border-box; display: flex;">
                             @if (question != null)
                             {
-                                var buttonStyle = $"flex: 1; min-height: 0; font-size: 1.6rem; font-weight: bold; {(IsReadOnly ? "pointer-events: none;" : "")}";
+                                var hasBonus = QuizSession.HasBonus(question);
+                                var buttonStyle = $"position: relative; flex: 1; min-height: 0; font-size: 1.6rem; font-weight: bold; {(hasBonus ? BonusTileStyle : "")} {(IsReadOnly ? "pointer-events: none;" : "")}";
                                 <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                            OnClick="() => SelectQuestion(question)"
                                            FullWidth="true"
                                            Disabled="question.IsAnswered"
+                                           Class="@(hasBonus ? "bonus-tile" : null)"
                                            Style="@buttonStyle">
-                                    @question.Points
+                                    @QuizSession.PointsFor(question)
+                                    @if (hasBonus)
+                                    {
+                                        <span class="bonus-badge" style="position: absolute; top: 6px; right: 8px; font-size: 0.9rem; line-height: 1; padding: 3px 6px; border-radius: 4px; background-color: var(--mud-palette-primary-darken); color: var(--mud-palette-primary-text);">
+                                            ×1.5
+                                        </span>
+                                    }
                                 </MudButton>
                             }
                         </MudItem>
@@ -54,6 +62,9 @@
 </MudPaper>
 
 @code {
+
+    // Normal tiles are already primary, so bonus tiles stand out through a ring and the badge instead of their fill.
+    private const string BonusTileStyle = "box-shadow: 0 0 0 4px var(--mud-palette-primary-lighten), 0 0 16px 4px var(--mud-palette-primary-lighten);";
 
     [Parameter]
     public required bool IsReadOnly { get; set; } = true;

@@ -99,6 +99,17 @@ else
                             </MudStack>
                         </MudPaper>
 
+                        <MudPaper Class="bonus-points-panel" Style="padding: 0.5em">
+                            <MudStack Spacing="1">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.h5" Align="Align.Start">Bonus points</MudText>
+                                    <MudSwitch T="bool" Value="Session.BonusPointsState.IsEnabled" ValueChanged="BonusPointsEnabledChanged" Color="Color.Primary" aria-label="Bonus points enabled" />
+                                </MudStack>
+                                <MudNumericField T="int" Label="Last questions on each board" Value="Session.BonusPointsState.LastQuestions" ValueChanged="BonusPointsLastQuestionsChanged" Min="1" Disabled="@(!Session.BonusPointsState.IsEnabled)" DebounceInterval="100" Immediate="true"></MudNumericField>
+                                <MudText Typo="Typo.body2" Class="bonus-points-status">@BonusPointsStatus</MudText>
+                            </MudStack>
+                        </MudPaper>
+
                         <MudPaper Style="padding: 0.5em">
                             <MudStack>
                                 <MudText Typo="Typo.h5" Align="Align.Start">Active Player</MudText>
@@ -156,9 +167,10 @@ else
                         
                         @if (@Session.Quiz.CurrentQuestion != null)
                         {
+                            var points = Session.PointsFor(Session.Quiz.CurrentQuestion);
                             <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
-                                <MudButton OnClick="() => AdjustPlayerScore(player, -(Session.Quiz.CurrentQuestion.Points / 2))">- @(Session.Quiz.CurrentQuestion.Points / 2)</MudButton>
-                                <MudButton OnClick="() => AdjustPlayerScore(player, Session.Quiz.CurrentQuestion.Points)">+ @Session.Quiz.CurrentQuestion.Points</MudButton>
+                                <MudButton OnClick="() => AdjustPlayerScore(player, -(points / 2))">− @(points / 2)</MudButton>
+                                <MudButton OnClick="() => AdjustPlayerScore(player, points)">+ @points</MudButton>
                             </MudButtonGroup>
                         }
 
@@ -230,6 +242,36 @@ else
     private void TimerDurationChanged(int timerDuration)
     {
         Session?.SetTimerDuration(timerDuration);
+    }
+
+    private string BonusPointsStatus
+    {
+        get
+        {
+            if (Session == null || !Session.BonusPointsState.IsEnabled)
+                return "Off: all questions give their normal points.";
+
+            var remaining = Session.Quiz.CurrentBoard.UnansweredCount;
+            if (remaining == 0)
+                return "The board is finished.";
+
+            var untilBonus = Session.QuestionsUntilBonus;
+            return untilBonus == 0
+                ? $"Active: the last {Questions(remaining)} give 1.5× points."
+                : $"Starts in {Questions(untilBonus)}.";
+        }
+    }
+
+    private static string Questions(int count) => count == 1 ? "1 question" : $"{count} questions";
+
+    private void BonusPointsEnabledChanged(bool isEnabled)
+    {
+        Session?.SetBonusPoints(isEnabled, Session.BonusPointsState.LastQuestions);
+    }
+
+    private void BonusPointsLastQuestionsChanged(int lastQuestions)
+    {
+        Session?.SetBonusPoints(Session.BonusPointsState.IsEnabled, lastQuestions);
     }
 
     private void AdjustPlayerScoreManually(Player player, int points)
