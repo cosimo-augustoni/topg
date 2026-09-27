@@ -10,7 +10,6 @@ using static topg.Web.Client.Tests.TestProjects;
 
 namespace topg.Web.Client.Tests;
 
-/// <summary>Projects with real image bytes in an in-memory store.</summary>
 public static class ExportFixtures
 {
     public static readonly DateTimeOffset GeneratedAt = new(2026, 9, 27, 12, 0, 0, TimeSpan.Zero);
@@ -23,7 +22,6 @@ public static class ExportFixtures
         return new ImageRef(hash, "png", "image/png", name);
     }
 
-    /// <summary>Two boards, text and image questions, special characters – the golden file's input.</summary>
     public static async Task<QuizProject> Sample(InMemoryCreatorStorage storage)
     {
         var flag = await StoreImage(storage, "flag", "flag.png");

@@ -2,10 +2,8 @@ using topg.Web.Client.Shared;
 
 namespace topg.Web.Client.Creator.Model;
 
-/// <summary>Where a question lives in the project.</summary>
 public record QuestionLocation(BoardDraft Board, int BoardNumber, CategoryDraft Category, QuestionDraft Question);
 
-/// <summary>Where a category lives in the project.</summary>
 public record CategoryLocation(BoardDraft Board, int BoardNumber, CategoryDraft Category);
 
 /// <summary>
@@ -29,8 +27,6 @@ public static class ProjectEditing
             }
         }
     }
-
-    // Lookup
 
     public static int BoardNumber(this QuizProject project, BoardDraft board) => project.Boards.IndexOf(board) + 1;
 
@@ -67,8 +63,6 @@ public static class ProjectEditing
         return null;
     }
 
-    // Boards
-
     public static BoardDraft AddBoard(this QuizProject project)
     {
         var board = new BoardDraft();
@@ -76,7 +70,6 @@ public static class ProjectEditing
         return board;
     }
 
-    /// <summary>Inserts a copy (with new ids) right after the original.</summary>
     public static BoardDraft DuplicateBoard(this QuizProject project, BoardDraft board)
     {
         var copy = CreatorJson.Clone(board);
@@ -85,7 +78,6 @@ public static class ProjectEditing
         return copy;
     }
 
-    /// <summary>Moves the board one position; <paramref name="offset"/> is -1 (left) or +1 (right). Returns false at the edges.</summary>
     public static bool MoveBoard(this QuizProject project, BoardDraft board, int offset)
     {
         var index = project.Boards.IndexOf(board);
@@ -99,8 +91,6 @@ public static class ProjectEditing
         return true;
     }
 
-    // Categories
-
     public static CategoryDraft AddCategory(this BoardDraft board, string? name = null)
     {
         var category = new CategoryDraft { Name = name ?? NextCategoryName(board) };
@@ -108,7 +98,6 @@ public static class ProjectEditing
         return category;
     }
 
-    /// <summary>"Category n" with the lowest n not used on the board.</summary>
     public static string NextCategoryName(BoardDraft board)
     {
         var names = board.Categories.Select(c => c.Name.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -136,7 +125,6 @@ public static class ProjectEditing
         target.Categories.Add(category);
     }
 
-    /// <summary>Adds text questions for the default points the category doesn't have yet (S-3c). Returns how many were added.</summary>
     public static int FillDefaultPoints(this CategoryDraft category, IEnumerable<int> points)
     {
         var existing = category.Questions.Select(q => q.Points).ToHashSet();
@@ -150,12 +138,6 @@ public static class ProjectEditing
         return added;
     }
 
-    // Questions
-
-    /// <summary>
-    /// Points for a new question: the next unused value of the default list, otherwise the largest value plus the
-    /// last step of the list (e.g. 600 after 100–500).
-    /// </summary>
     public static int NextPoints(this CategoryDraft category, IReadOnlyList<int> defaultPoints)
     {
         var points = defaultPoints.Count > 0 ? defaultPoints : Settings.CreatorSettings.StandardPoints;
@@ -177,7 +159,6 @@ public static class ProjectEditing
         return question;
     }
 
-    /// <summary>Copy with a new id in the same category; images are shared (same hash).</summary>
     public static QuestionDraft DuplicateQuestion(this CategoryDraft category, QuestionDraft question)
     {
         var copy = CreatorJson.Clone(question);
@@ -201,14 +182,10 @@ public static class ProjectEditing
     public static bool RemoveQuestion(this QuizProject project, Guid questionId) =>
         project.FindQuestion(questionId) is { } location && location.Category.Questions.Remove(location.Question);
 
-    /// <summary>True if switching the type would drop filled fields (images), so the UI should ask first.</summary>
     public static bool WouldLoseData(QuestionDraft question, QuestionType newType) =>
         question.Type != newType && question is ImageQuestionDraft image && image.Images().Any();
 
-    /// <summary>
-    /// Replaces the question with one of <paramref name="newType"/> in place, keeping id, points, answer type and
-    /// question text. The correct answer and the answer text are the same idea, so the value moves across.
-    /// </summary>
+    // The correct answer and the answer text are the same idea, so the value moves across.
     public static QuestionDraft ChangeQuestionType(this QuizProject project, QuestionDraft question, QuestionType newType)
     {
         if (question.Type == newType)
@@ -240,9 +217,6 @@ public static class ProjectEditing
         return replacement;
     }
 
-    // Projects
-
-    /// <summary>Copy of the whole project with new ids, named "… (copy)". Export timestamps are reset.</summary>
     public static QuizProject Duplicate(this QuizProject project)
     {
         var copy = CreatorJson.Clone(project);

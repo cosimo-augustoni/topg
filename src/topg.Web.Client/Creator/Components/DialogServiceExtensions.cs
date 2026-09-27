@@ -4,7 +4,6 @@ namespace topg.Web.Client.Creator.Components;
 
 public static class DialogServiceExtensions
 {
-    /// <summary>Shows C-6 and returns true if the user confirmed.</summary>
     public static async Task<bool> ShowConfirmAsync(this IDialogService dialogs, string title, string message, string confirmText,
         bool destructive = false, string? requiredText = null)
     {
@@ -20,7 +19,6 @@ public static class DialogServiceExtensions
         return result is { Canceled: false };
     }
 
-    /// <summary>Asks for one line of text. Returns null if cancelled.</summary>
     public static async Task<string?> ShowTextPromptAsync(this IDialogService dialogs, string title, string label, string initialValue,
         string confirmText = "Save")
     {

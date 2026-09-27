@@ -29,7 +29,6 @@ public record CreatorLocation(Guid? ProjectId, CreatorSection? Section)
         _ => throw new ArgumentOutOfRangeException(nameof(section)),
     };
 
-    /// <param name="relativePath">Path relative to the base URI, e.g. <c>create/{id}/board/1</c>.</param>
     public static CreatorLocation Parse(string relativePath)
     {
         var path = relativePath.Split('?', '#')[0];

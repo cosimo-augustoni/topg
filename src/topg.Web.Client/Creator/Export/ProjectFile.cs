@@ -8,22 +8,13 @@ using topg.Web.Client.Creator.Storage;
 
 namespace topg.Web.Client.Creator.Export;
 
-/// <summary>The problem is shown to the user in S-8.</summary>
 public class ProjectFileException(string message) : Exception(message);
 
-/// <summary>A project file that was read and checked, ready to be imported.</summary>
 public record ProjectFileContent(QuizProject Project, IReadOnlyDictionary<string, byte[]> ImagesByHash)
 {
     public long ImageBytes => ImagesByHash.Values.Sum(i => (long)i.Length);
 }
 
-/// <summary>
-/// The backup / transfer format of a project (WI-16), a ZIP named <c>{folder}.topgquiz</c>:
-/// <code>
-/// project.json          the project (CreatorJson, with schemaVersion)
-/// images/{hash}.{ext}   every image the project references
-/// </code>
-/// </summary>
 public static class ProjectFile
 {
     public const string Extension = ".topgquiz";
@@ -57,8 +48,6 @@ public static class ProjectFile
         return buffer.ToArray();
     }
 
-    /// <summary>Reads and checks a project file. Nothing is stored yet.</summary>
-    /// <exception cref="ProjectFileException">Not a project file, a newer schema, or a missing/corrupt image.</exception>
     public static ProjectFileContent Read(Stream file)
     {
         ZipArchive zip;
@@ -155,10 +144,6 @@ public static class ProjectFile
         return buffer.ToArray();
     }
 
-    /// <summary>
-    /// Stores the images and the project. <paramref name="asCopy"/> gives the project new ids and " (copy)" in the name,
-    /// otherwise an existing project with the same id is overwritten.
-    /// </summary>
     public static async Task<QuizProject> ImportAsync(ProjectFileContent content, bool asCopy, ICreatorStorage storage, ProjectStore store)
     {
         foreach (var image in content.Project.AllImages().DistinctBy(i => i.Hash))

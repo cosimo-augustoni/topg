@@ -1,5 +1,4 @@
 @page "/create/{ProjectId:guid}/export"
-@* S-7 Export (ui-concept.md): Check → Review → Download *@
 @inject ProjectSession Session
 @inject ICreatorStorage Storage
 @inject ImagePreviewCache Previews
@@ -180,7 +179,6 @@
     [Parameter]
     public Guid ProjectId { get; set; }
 
-    /// <summary>Step ① is done with 0 errors and either no warnings or the checkbox ticked.</summary>
     private bool CheckPassed => Session.ErrorCount == 0 && (Session.WarningCount == 0 || _warningsReviewed);
 
     private bool CanContinue => _step switch
@@ -192,7 +190,6 @@
 
     private async Task OnStepInteraction(StepperInteractionEventArgs args)
     {
-        // Forward navigation needs a passed check; going back is always allowed.
         if (args.StepIndex > 0 && !CheckPassed)
         {
             args.Cancel = true;
@@ -215,7 +212,6 @@
         await stepper.NextStepAsync();
     }
 
-    /// <summary>Builds the SQL (with the time used for the download too) and the image list.</summary>
     private async Task PrepareReviewAsync()
     {
         var project = Session.Project!;

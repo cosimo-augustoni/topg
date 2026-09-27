@@ -3,7 +3,6 @@
 .board-editor {
     display: grid;
     grid-template-columns: 0 minmax(0, 1fr) 0;
-    /* Full height below the dense (48 px) app bar. */
     height: calc(100vh - 48px);
     overflow: hidden;
 }
@@ -50,7 +49,6 @@
     border-bottom: 1px solid var(--mud-palette-divider);
 }
 
-/* Below 960 px the side panes overlay the board (UX-5 "drawers turn into overlays"). */
 @media (max-width: 959.98px) {
     .board-editor,
     .board-editor.outline-open,
@@ -83,7 +81,6 @@
         width: min(400px, 100%);
     }
 
-    /* Only one overlay at a time: the inspector wins over the outline. */
     .board-editor.inspector-open .outline-pane {
         visibility: hidden;
     }

@@ -1,12 +1,8 @@
-/* Global styles of the quiz creator (/create). Component-specific styles live in *.razor.css. */
-
-/* UX-3: pane and section titles are uppercase subtitle2 with letter spacing. */
 .section-title {
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
 
-/* C-1 app bar */
 .creator-appbar {
     border-bottom: 1px solid var(--mud-palette-divider);
 }
@@ -33,7 +29,6 @@
     overflow-x: auto;
 }
 
-/* S-3a/b/c inspectors */
 .inspector .field-row {
     display: flex;
     align-items: center;
@@ -72,7 +67,6 @@
     white-space: nowrap;
 }
 
-/* Below 960 px (UX-1 P1: usable, not optimized) the project name makes room for the section links. */
 @media (max-width: 959.98px) {
     .creator-appbar .project-name,
     .creator-appbar .project-name-separator {

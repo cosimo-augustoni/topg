@@ -60,7 +60,6 @@
         return InvokeAsync(StateHasChanged);
     }
 
-    /// <summary>The app bar toggle switches between an explicit light and dark theme.</summary>
     private Task ToggleDarkModeAsync() =>
         Settings.SaveAsync(Settings.Current with { Theme = IsDarkMode ? ThemeMode.Light : ThemeMode.Dark });
 

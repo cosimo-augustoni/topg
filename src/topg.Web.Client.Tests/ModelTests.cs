@@ -206,7 +206,6 @@ public class CreatorSettingsTests
         Assert.Equal(ThemeMode.Light, reloaded.Current.Theme);
     }
 
-    /// <summary>Holds setting writes until <see cref="Release"/> is called.</summary>
     private class SlowSettingsStorage : InMemoryCreatorStorage, ICreatorStorage
     {
         private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);

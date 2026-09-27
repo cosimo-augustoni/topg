@@ -1,8 +1,3 @@
-// Browser storage of the quiz creator (WI-05). Everything stays in this browser's IndexedDB:
-//   projects: { id, json }                   one quiz project as JSON (see CreatorJson.cs)
-//   images:   { hash, ...metadata, blob }    image bytes, stored once per content hash
-//   settings: { key, value }                 creator-wide settings as JSON strings
-
 const DB_NAME = "topg-creator";
 const DB_VERSION = 1;
 
@@ -67,8 +62,6 @@ function imageMetadata(record) {
     return metadata;
 }
 
-// Projects
-
 export function listProjects() {
     return run("projects", "readonly", async store => (await promisify(store.getAll())).map(r => r.json));
 }
@@ -85,8 +78,6 @@ export function deleteProject(id) {
     return run("projects", "readwrite", store => promisify(store.delete(id)));
 }
 
-// Images
-
 async function measure(blob) {
     try {
         const bitmap = await createImageBitmap(blob);
@@ -98,7 +89,6 @@ async function measure(blob) {
     }
 }
 
-/** Stores the image unless an image with the same hash exists. Returns the stored metadata. */
 export async function putImage(hash, extension, contentType, bytes) {
     const existing = await getImageMetadata(hash);
     if (existing) {
@@ -145,7 +135,6 @@ export function deleteImages(hashes) {
     });
 }
 
-/** Object URL for previews. The caller must revoke it with revokeObjectUrl. */
 export async function createObjectUrl(hash) {
     const record = await run("images", "readonly", store => promisify(store.get(hash)));
     return record ? URL.createObjectURL(record.blob) : null;
@@ -155,8 +144,6 @@ export function revokeObjectUrl(url) {
     URL.revokeObjectURL(url);
 }
 
-// Settings
-
 export function getSetting(key) {
     return run("settings", "readonly", async store => (await promisify(store.get(key)))?.value ?? null);
 }
@@ -164,8 +151,6 @@ export function getSetting(key) {
 export function setSetting(key, value) {
     return run("settings", "readwrite", store => promisify(store.put({ key, value })));
 }
-
-// Storage quota and persistence
 
 export async function getStorageEstimate() {
     const storage = navigator.storage;

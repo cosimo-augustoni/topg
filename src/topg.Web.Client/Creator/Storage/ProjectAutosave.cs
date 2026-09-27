@@ -6,15 +6,10 @@ public enum SaveStatus
 {
     Saved,
 
-    /// <summary>A change is waiting for the debounce delay or is being written.</summary>
     Saving,
     Failed,
 }
 
-/// <summary>
-/// Debounced autosave of the project being edited (P4 "never lose work"). The editor calls
-/// <see cref="ScheduleSave"/> after every change; <c>C-2 SaveStatusChip</c> shows <see cref="Status"/>.
-/// </summary>
 public sealed class ProjectAutosave(ProjectStore store, TimeSpan? delay = null) : IAsyncDisposable
 {
     public static readonly TimeSpan DefaultDelay = TimeSpan.FromSeconds(1);
@@ -44,7 +39,6 @@ public sealed class ProjectAutosave(ProjectStore store, TimeSpan? delay = null) 
         _ = SaveAfterDelayAsync(_debounce.Token);
     }
 
-    /// <summary>Writes pending changes right away (Ctrl+S, leaving the editor, retry after a failure).</summary>
     public async Task SaveNowAsync()
     {
         _debounce?.Cancel();

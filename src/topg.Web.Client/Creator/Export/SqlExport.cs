@@ -87,7 +87,6 @@ public static class SqlExport
         return sql.ToString();
     }
 
-    /// <summary>Values of the columns every question has, in the order of <see cref="CommonColumns"/>.</summary>
     private static string Common(QuestionDraft q, string category) =>
         string.Create(CultureInfo.InvariantCulture, $"board_id, {(int)q.Type}, {(int)q.AnswerType}, {q.Points}, {Literal(category)}");
 

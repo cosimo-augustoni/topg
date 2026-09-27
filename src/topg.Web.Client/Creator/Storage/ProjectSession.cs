@@ -10,7 +10,6 @@ public enum EditorSelectionKind
     Question,
 }
 
-/// <summary>What the inspector shows. Grid, outline, inspector and validation panel all read this one value.</summary>
 public record EditorSelection(EditorSelectionKind Kind, Guid Id)
 {
     public static readonly EditorSelection None = new(EditorSelectionKind.None, Guid.Empty);
@@ -19,10 +18,6 @@ public record EditorSelection(EditorSelectionKind Kind, Guid Id)
     public static EditorSelection Category(Guid id) => new(EditorSelectionKind.Category, id);
 }
 
-/// <summary>
-/// The project currently open in the editor, shared by the project pages and the app bar. Every edit goes through
-/// <see cref="Change"/> / <see cref="ChangeWithUndo"/>, which revalidates, schedules the autosave and notifies the UI.
-/// </summary>
 public sealed class ProjectSession(ProjectStore store) : IAsyncDisposable
 {
     private const int MaxUndoSteps = 20;
@@ -39,25 +34,20 @@ public sealed class ProjectSession(ProjectStore store) : IAsyncDisposable
     public int ErrorCount { get; private set; }
     public int WarningCount { get; private set; }
 
-    /// <summary>Set when the stored project exists but could not be read.</summary>
     public string? LoadError { get; private set; }
 
     public EditorSelection Selection { get; private set; } = EditorSelection.None;
 
-    /// <summary>Show required-field errors right away (the selection came from the validation panel).</summary>
     public bool ShowFieldErrors { get; private set; }
 
-    /// <summary>Incremented when the inspector should focus its first field (e.g. after adding a question).</summary>
     public int FocusRequest { get; private set; }
 
     public string? UndoLabel => _undo.TryPeek(out var top) ? top.Label : null;
 
-    /// <summary>Left pane of the board editor (toggled from the app bar).</summary>
     public bool OutlineOpen { get; private set; } = true;
 
     public event Action? Changed;
 
-    /// <summary>Loads the project unless it is already open. Returns false if it doesn't exist or can't be read.</summary>
     public Task<bool> OpenAsync(Guid id)
     {
         if (Project?.Id == id)
@@ -105,7 +95,6 @@ public sealed class ProjectSession(ProjectStore store) : IAsyncDisposable
         }
     }
 
-    /// <summary>Writes pending changes and forgets the project (e.g. before the project list edits the store directly).</summary>
     public async Task CloseAsync()
     {
         if (Autosave is not null)
@@ -125,7 +114,6 @@ public sealed class ProjectSession(ProjectStore store) : IAsyncDisposable
         Selection = EditorSelection.None;
     }
 
-    /// <summary>Call after changing the project in place (e.g. a text field).</summary>
     public void Change(Action<QuizProject>? edit = null)
     {
         if (Project is null)
@@ -139,7 +127,6 @@ public sealed class ProjectSession(ProjectStore store) : IAsyncDisposable
         Notify();
     }
 
-    /// <summary>A destructive change (delete, move) that the user can undo from the snackbar or with Ctrl+Z.</summary>
     public void ChangeWithUndo(string label, Action<QuizProject> edit)
     {
         if (Project is null)
@@ -152,7 +139,6 @@ public sealed class ProjectSession(ProjectStore store) : IAsyncDisposable
         Change(edit);
     }
 
-    /// <summary>Restores the state before the last undoable change. Returns its label, or null if there was nothing to undo.</summary>
     public string? Undo()
     {
         if (Project is null || !_undo.TryPop(out var step))
@@ -188,7 +174,6 @@ public sealed class ProjectSession(ProjectStore store) : IAsyncDisposable
         Notify();
     }
 
-    /// <summary>Board containing the selected question or category.</summary>
     public BoardDraft? SelectedBoard() => Project is null
         ? null
         : Selection.Kind switch
@@ -201,7 +186,6 @@ public sealed class ProjectSession(ProjectStore store) : IAsyncDisposable
     public IReadOnlyList<ValidationIssue> IssuesFor(Guid targetId) =>
         _issuesByTarget.TryGetValue(targetId, out var issues) ? issues : [];
 
-    /// <summary>All issues of a board, its categories and questions.</summary>
     public IReadOnlyList<ValidationIssue> IssuesInBoard(Guid boardId) =>
         _issuesByBoard.TryGetValue(boardId, out var issues) ? issues : [];
 

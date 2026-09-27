@@ -4,8 +4,6 @@ using topg.Web.Client.Creator.Validation;
 
 namespace topg.Web.Client.Creator.Storage;
 
-/// <summary>Row of the project list (S-1).</summary>
-/// <param name="IsCorrupt">The stored JSON could not be read. The project can only be deleted.</param>
 public record ProjectSummary(
     Guid Id,
     string Name,
@@ -18,7 +16,6 @@ public record ProjectSummary(
     public IReadOnlyList<ValidationIssue> Issues { get; init; } = Issues ?? [];
 }
 
-/// <param name="Images">Stored images that no project references.</param>
 public record UnusedImages(IReadOnlyList<StoredImage> Images)
 {
     public long TotalSize => Images.Sum(i => i.Size);
@@ -50,7 +47,6 @@ public class ProjectStore(ICreatorStorage storage)
         return json is null ? null : CreatorJson.Deserialize<QuizProject>(json);
     }
 
-    /// <summary>Saves the project and sets <see cref="QuizProject.UpdatedAt"/>, unless <paramref name="touch"/> is false (imports).</summary>
     public async Task SaveAsync(QuizProject project, bool touch = true)
     {
         if (touch)
@@ -61,7 +57,6 @@ public class ProjectStore(ICreatorStorage storage)
         await storage.SaveProjectJsonAsync(project.Id, CreatorJson.Serialize(project));
     }
 
-    /// <summary>Deletes the project and the images only this project used.</summary>
     public async Task DeleteAsync(Guid id)
     {
         var project = await GetOrDefaultAsync(id);
@@ -94,7 +89,6 @@ public class ProjectStore(ICreatorStorage storage)
         return new UnusedImages(images.Where(i => !referenced.Contains(i.Hash)).ToList());
     }
 
-    /// <summary>Deletes images no project references (e.g. replaced images, deleted questions).</summary>
     public async Task<UnusedImages> DeleteUnusedImagesAsync()
     {
         var unused = await FindUnusedImagesAsync();
@@ -112,7 +106,6 @@ public class ProjectStore(ICreatorStorage storage)
         return json is not null && TryDeserialize(json, out var project) ? project : null;
     }
 
-    /// <summary>Hashes referenced by any project, or null if a project is unreadable and its images can't be known.</summary>
     private async Task<HashSet<string>?> TryGetReferencedHashesAsync()
     {
         var hashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

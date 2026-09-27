@@ -24,13 +24,6 @@ namespace topg.Web.Quiz.Management
             return sessionId;
         }
 
-        /// <summary>
-        /// Tries to join an existing session.
-        /// </summary>
-        /// <param name="sessionId">Id of the session.</param>
-        /// <param name="playerName">Name under which the player wants to join. Doubles as identifier.</param>
-        /// <param name="playerId">Id of the player when the Join was successful</param>
-        /// <returns>Whether the join was successful.</returns>
         public bool Join(SessionId sessionId, string playerName, [NotNullWhen(true)] out string? playerId)
         {
             if (Sessions.TryGetValue(sessionId, out var session))

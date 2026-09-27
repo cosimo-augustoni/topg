@@ -1,4 +1,3 @@
-@* C-6 ConfirmDialog (ui-concept.md). Open it with IDialogService.ShowConfirmAsync. *@
 <MudDialog>
     <DialogContent>
         <MudText Typo="Typo.body2">@Message</MudText>
@@ -31,7 +30,6 @@
     [Parameter]
     public bool Destructive { get; set; }
 
-    /// <summary>If set, the user must type this text (e.g. the project name) before confirming.</summary>
     [Parameter]
     public string? RequiredText { get; set; }
 

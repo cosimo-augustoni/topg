@@ -7,25 +7,20 @@ public enum ThemeMode
     System,
 }
 
-/// <summary>Browser-wide defaults of the creator (S-2). Existing projects keep their own values.</summary>
 public record CreatorSettings
 {
     public static readonly IReadOnlyList<int> StandardPoints = [100, 200, 300, 400, 500];
 
-    /// <summary>Pre-filled as base URL of new projects.</summary>
     public string DefaultBaseUrl { get; init; } = "";
 
-    /// <summary>Points of new questions: a new question gets the first value its category doesn't have yet.</summary>
     public IReadOnlyList<int> DefaultPoints { get; init; } = StandardPoints;
 
     public ThemeMode Theme { get; init; } = ThemeMode.Dark;
 
-    /// <summary>The "projects are only stored in this browser" hint on S-1 was closed.</summary>
     public bool ProjectsHintDismissed { get; init; }
 
     public static string FormatPoints(IEnumerable<int> points) => string.Join(", ", points);
 
-    /// <summary>Parses "100, 200, 300". Returns an error message for the settings form, or null if valid.</summary>
     public static string? TryParsePoints(string? text, out IReadOnlyList<int> points)
     {
         points = [];

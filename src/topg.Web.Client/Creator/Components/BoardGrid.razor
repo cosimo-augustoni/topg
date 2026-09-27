@@ -1,4 +1,3 @@
-@* C-9 BoardGrid (ui-concept.md): the board as the game shows it – categories alphabetically, questions by points. *@
 @inject ProjectSession Session
 @inject CreatorSettingsService Settings
 @inject ImagePreviewCache Previews
@@ -106,7 +105,6 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        // Start loading thumbnails; cells show them once the object URLs exist.
         var pending = Board.Categories.SelectMany(c => c.Questions).OfType<ImageQuestionDraft>()
             .Where(q => q.QuestionImage is not null)
             .Select(q => Previews.GetUrlAsync(q.QuestionImage!.Hash))

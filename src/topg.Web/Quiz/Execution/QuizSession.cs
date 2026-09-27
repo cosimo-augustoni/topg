@@ -35,10 +35,6 @@ public class QuizSession
 
     public event AsyncEventHandler<SessionChangedEventArgs>? SessionStateChanged;
 
-    /// <summary>
-    /// Adds a player to the session if no player with the same name exists.
-    /// </summary>
-    /// <returns>Whether the player was added.</returns>
     public bool TryAddPlayer(string playerName, [NotNullWhen(true)] out string? playerId)
     {
         playerId = null;

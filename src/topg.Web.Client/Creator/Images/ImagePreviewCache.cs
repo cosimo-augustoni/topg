@@ -20,7 +20,6 @@ public class ImagePreviewCache(ICreatorStorage storage)
         return url;
     }
 
-    /// <summary>The URL if it was already created, otherwise null (and starts creating it).</summary>
     public string? TryGetUrl(string hash)
     {
         var task = GetUrlAsync(hash);

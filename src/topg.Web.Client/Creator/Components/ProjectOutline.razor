@@ -1,4 +1,3 @@
-@* S-3 left pane: boards › categories (alphabetical) › questions (by points), in sync with the selection. *@
 @inject ProjectSession Session
 @inject NavigationManager Navigation
 
@@ -82,7 +81,6 @@
 
     protected override void OnParametersSet()
     {
-        // Expand the path to the selection and the current board, unless the user collapsed it.
         if (CurrentBoardNumber >= 1 && CurrentBoardNumber <= Project.Boards.Count)
         {
             AutoExpand(Project.Boards[CurrentBoardNumber - 1].Id);

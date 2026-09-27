@@ -1,4 +1,3 @@
-@* C-3 ImageDropZone (ui-concept.md): upload or drop an image, store it by content hash and show the final CDN URL. *@
 @implements IAsyncDisposable
 @inject ImageIntake Intake
 @inject ICreatorStorage Storage
@@ -91,7 +90,6 @@
     [Parameter, EditorRequired]
     public required string Label { get; set; }
 
-    /// <summary><c>{baseUrl}/{folder}/</c> of the project, see <see cref="ImageRef.UrlPrefix"/>.</summary>
     [Parameter, EditorRequired]
     public required string UrlPrefix { get; set; }
 

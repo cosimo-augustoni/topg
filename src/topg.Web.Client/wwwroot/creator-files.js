@@ -1,5 +1,3 @@
-// File downloads of the creator (export package, project file). The bytes never leave the browser.
-
 export function downloadFile(fileName, contentType, bytes) {
     const blob = new Blob([bytes], { type: contentType });
     const url = URL.createObjectURL(blob);

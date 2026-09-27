@@ -1,9 +1,5 @@
 namespace topg.Web.Client.Creator.Model;
 
-/// <summary>
-/// A quiz being edited in the creator. Saved as JSON in the browser (IndexedDB) and in project files.
-/// Board order is the order of <see cref="Boards"/>; it becomes <c>Boards.Order</c> on export.
-/// </summary>
 public class QuizProject
 {
     /// <summary>Bump when the JSON shape changes in a way old readers can't handle.</summary>
@@ -12,16 +8,12 @@ public class QuizProject
     public Guid Id { get; set; } = Guid.NewGuid();
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
 
-    /// <summary>Template name in the game.</summary>
     public string Name { get; set; } = "";
 
-    /// <summary>CDN folder slug. Defaults to a slug of the name but is never renamed automatically.</summary>
     public string Folder { get; set; } = "";
 
-    /// <summary>Absolute http(s) URL the image URLs are prefixed with.</summary>
     public string BaseUrl { get; set; } = "";
 
-    /// <summary>Delete existing templates with the same name before inserting (insert or replace).</summary>
     public bool ReplaceExisting { get; set; } = true;
 
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
@@ -41,7 +33,6 @@ public class QuizProject
     public IEnumerable<QuestionDraft> AllQuestions() =>
         Boards.SelectMany(b => b.Categories).SelectMany(c => c.Questions);
 
-    /// <summary>All images referenced by questions of this project.</summary>
     public IEnumerable<ImageRef> AllImages() => AllQuestions().SelectMany(q => q.Images());
 }
 

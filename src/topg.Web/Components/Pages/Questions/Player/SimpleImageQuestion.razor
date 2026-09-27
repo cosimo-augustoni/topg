@@ -1,7 +1,6 @@
 ﻿@using topg.Web.Quiz.Execution
 
 <MudStack Spacing="4" Style="height:100%; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; width: 100%; padding-top: 3rem">
-    @* question text *@
     <div style="--top-row-height: 4rem; height:var(--top-row-height); flex: 0 0 var(--top-row-height); min-height: 0; display:flex; align-items:center; justify-content:center; padding:0 1rem; box-sizing:border-box; overflow:hidden;">
         @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))
         {
@@ -11,7 +10,6 @@
         }
     </div>
 
-    @* Image area*@
     <div style="flex:1; min-height:0; display:flex; align-items:center; justify-content:center; overflow:hidden;">
         <div style="position:relative; width:100%; max-width:100%; display:flex; align-items:center; justify-content:center; height:100%; min-height:0;">
             <div style="position:relative; height:@GetInnerBoxHeight(); width:100%; max-width:100%; margin:0 auto; overflow:hidden; display:flex; align-items:center; justify-content:center;">

@@ -1,5 +1,3 @@
-// Keyboard shortcuts of the board editor (UX-6). The page registers a listener and receives shortcut names.
-
 function isTextInput(element) {
     return element instanceof HTMLElement
         && (element.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName));
@@ -37,7 +35,6 @@ function toShortcut(e) {
     return null;
 }
 
-/** Returns a handle whose dispose() removes the listener. */
 export function registerShortcuts(dotNetRef) {
     const handler = e => {
         if (e.isComposing || e.repeat && e.key === "Escape") {

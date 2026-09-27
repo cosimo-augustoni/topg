@@ -5,10 +5,6 @@ using topg.Web.Templating.Data;
 
 namespace topg.Web.IntegrationTests;
 
-/// <summary>
-/// A throw-away PostgreSQL with the app's migrations applied. Needs Docker; without it the tests are skipped
-/// (<see cref="DockerUnavailableReason"/>) instead of failing.
-/// </summary>
 public sealed class PostgresFixture : IAsyncLifetime
 {
     private PostgreSqlContainer? _container;
@@ -52,7 +48,6 @@ public sealed class PostgresFixture : IAsyncLifetime
         await command.ExecuteNonQueryAsync();
     }
 
-    /// <summary>Removes all quiz data between tests.</summary>
     public Task ResetAsync() => ExecuteScriptAsync("""TRUNCATE "Questions", "Boards", "Templates" RESTART IDENTITY CASCADE;""");
 
     public async Task DisposeAsync()

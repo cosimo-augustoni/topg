@@ -5,7 +5,6 @@ using topg.Web.Client.Shared;
 
 namespace topg.Web.Client.Tests;
 
-/// <summary>In-memory replacement for the IndexedDB storage.</summary>
 public class InMemoryCreatorStorage : ICreatorStorage
 {
     public Dictionary<Guid, string> Projects { get; } = [];
@@ -101,7 +100,6 @@ public class FakeBrowserFile(string name, string contentType, byte[] content) : 
     }
 }
 
-/// <summary>Builds valid projects for tests; individual tests break one rule at a time.</summary>
 public static class TestProjects
 {
     public static ImageRef Image(string hash = "0123456789abcdef") => new(hash, "png", "image/png", "cat.png");

@@ -10,7 +10,6 @@ public static class ImageNaming
 {
     public const int HashLength = 16;
 
-    /// <summary>Allowed content types and their normalized extension.</summary>
     private static readonly Dictionary<string, string> ExtensionsByContentType = new(StringComparer.OrdinalIgnoreCase)
     {
         ["image/png"] = "png",
@@ -29,7 +28,6 @@ public static class ImageNaming
         ["gif"] = "image/gif",
     };
 
-    /// <summary>Value for the <c>accept</c> attribute of file inputs.</summary>
     public const string Accept = ".png,.jpg,.jpeg,.webp,.gif";
 
     public static string ComputeHash(ReadOnlySpan<byte> content) =>

@@ -1,4 +1,3 @@
-@* S-3c Category inspector (ui-concept.md) *@
 @inject ProjectSession Session
 @inject CreatorSettingsService Settings
 @inject UndoSnackbar Undo
@@ -82,7 +81,6 @@
 
     private int MissingDefaults => Settings.Current.DefaultPoints.Except(Location.Category.Questions.Select(q => q.Points)).Count();
 
-    /// <summary>Same rules and texts as the validator (UX-7), checked while typing.</summary>
     private string? ValidateName(string? name)
     {
         var trimmed = name?.Trim() ?? "";

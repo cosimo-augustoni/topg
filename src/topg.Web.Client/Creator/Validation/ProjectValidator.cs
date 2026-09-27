@@ -2,10 +2,6 @@ using topg.Web.Client.Creator.Model;
 
 namespace topg.Web.Client.Creator.Validation;
 
-/// <summary>
-/// Checks a project against the rules of the game and the database (see "Implicit rules" in work-items.md).
-/// Errors block the export, warnings have to be acknowledged. Editing is never blocked.
-/// </summary>
 public static class ProjectValidator
 {
     /// <summary>The game board renders every category as a 20% wide column.</summary>

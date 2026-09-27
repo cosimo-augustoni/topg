@@ -2,7 +2,6 @@ using Microsoft.JSInterop;
 
 namespace topg.Web.Client.Creator.Export;
 
-/// <summary>Offers bytes built in WASM as a browser download (Blob + &lt;a download&gt;).</summary>
 public sealed class FileDownloader(IJSRuntime js) : IAsyncDisposable
 {
     private Task<IJSObjectReference>? _module;

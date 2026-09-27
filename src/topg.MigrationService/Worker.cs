@@ -56,7 +56,6 @@ public class Worker(IServiceProvider serviceProvider,
                     await Task.Delay(delayMs, cancellationToken);
                 }
             }
-            // Final attempt — let any exception propagate naturally
             await dbContext.Database.MigrateAsync(cancellationToken);
         });
     }
@@ -73,7 +72,6 @@ public class Worker(IServiceProvider serviceProvider,
         {
             CreateTemplate("Science & Nature",
             [
-                // Board 1
                 [
                     ("Physics",     [
                         new("What is the unit of force?",                      "Newton"),
@@ -116,7 +114,6 @@ public class Worker(IServiceProvider serviceProvider,
                         new("What is the Pythagorean theorem?",                "a² + b² = c²"),
                     ]),
                 ],
-                // Board 2
                 [
                     ("Physics II",  [
                         new("What is the unit of power?",                      "Watt"),
@@ -162,7 +159,6 @@ public class Worker(IServiceProvider serviceProvider,
             ]),
             CreateTemplate("Pop Culture & History",
             [
-                // Board 1
                 [
                     ("Movies",      [
                         new("From which movie is this Character?",                                     "The Matrix", "https://thegeektwins.com/wp-content/uploads/2019/04/Matrizx-1999-Morpheus-Laurence-Fishburne-600x300-3.jpg", "https://cdn.kallisto.li/topg/test-quiz-1/3.png"),
@@ -205,7 +201,6 @@ public class Worker(IServiceProvider serviceProvider,
                         new("Which sport uses a puck?",                        "Ice hockey"),
                     ]),
                 ],
-                // Board 2
                 [
                     ("Movies II",   [
                         new("Who played Jack in Titanic?",                     "Leonardo DiCaprio"),

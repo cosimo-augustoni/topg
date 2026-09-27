@@ -7,16 +7,12 @@ namespace topg.Web.Client.Creator.Images;
 
 public class ImageRejectedException(string message) : Exception(message);
 
-/// <summary>
-/// Takes an uploaded file, checks type and size, names it by content hash and stores it once in the image store.
-/// </summary>
 public class ImageIntake(ICreatorStorage storage)
 {
     public const long DefaultMaxFileSize = 10 * 1024 * 1024;
 
     public long MaxFileSize { get; init; } = DefaultMaxFileSize;
 
-    /// <exception cref="ImageRejectedException">Unsupported type or too large. The message is shown to the user.</exception>
     public async Task<ImageRef> ImportAsync(IBrowserFile file, CancellationToken cancellationToken = default)
     {
         if (!ImageNaming.TryResolveType(file.ContentType, file.Name, out var extension, out var contentType))

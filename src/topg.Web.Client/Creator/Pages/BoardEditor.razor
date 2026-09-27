@@ -1,5 +1,4 @@
 @page "/create/{ProjectId:guid}/board/{BoardNumber:int}"
-@* S-3 Board editor (ui-concept.md): outline | board grid | inspector *@
 @implements IAsyncDisposable
 @inject ProjectSession Session
 @inject NavigationManager Navigation
@@ -98,7 +97,6 @@
     [Parameter]
     public Guid ProjectId { get; set; }
 
-    /// <summary>1-based board order.</summary>
     [Parameter]
     public int BoardNumber { get; set; }
 
@@ -119,7 +117,6 @@
             return;
         }
 
-        // Out-of-range board → first board.
         if (project.Boards.Count > 0 && CurrentBoard(project) is null)
         {
             Navigation.NavigateTo(CreatorLocation.Board(ProjectId, 1), replace: true);
@@ -152,10 +149,6 @@
         }
     }
 
-    /// <summary>
-    /// The route follows the selected item to its board: after selecting it from the validation panel, moving it to
-    /// another board, or undoing such a move.
-    /// </summary>
     private void OnSessionChanged()
     {
         // One change raises several events (autosave status, revalidation); navigate only once per follow.
@@ -223,7 +216,6 @@
         }
     }
 
-    /// <summary>UX-6 keyboard shortcuts, called from creator-editor.js.</summary>
     [JSInvokable]
     public async Task OnShortcut(string shortcut)
     {
@@ -250,7 +242,6 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    /// <summary>Alt+arrows: previous/next question in the column, or the same row in the neighbouring column.</summary>
     private void MoveSelection(string direction)
     {
         if (Session.Project is not { } project || CurrentBoard(project) is not { } board

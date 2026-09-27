@@ -1,4 +1,3 @@
-@* C-5 ValidationPanel (ui-concept.md): issues grouped by severity; clicking one navigates to its target. *@
 @if (Issues.Count == 0)
 {
     <div class="d-flex align-center gap-2 pa-3">
@@ -39,7 +38,6 @@ else
     [Parameter]
     public EventCallback<ValidationIssue> OnSelect { get; set; }
 
-    /// <summary>Embedded in a page (S-7) instead of the app bar popover: full width, taller.</summary>
     [Parameter]
     public bool Embedded { get; set; }
 
@@ -48,7 +46,6 @@ else
             .Select(g => (g.Item1, Issues.Where(i => i.Severity == g.Item2).ToList()))
             .Where(g => g.Item2.Count > 0);
 
-    /// <summary>"Board 2 › History › 300"</summary>
     private string Location(ValidationIssue issue) => issue.TargetKind switch
     {
         ValidationTargetKind.Question when Project.FindQuestion(issue.TargetId) is { } q =>

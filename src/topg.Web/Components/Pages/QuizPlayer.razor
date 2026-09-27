@@ -16,7 +16,6 @@ else
 {
     <div style="height: 100dvh; overflow: hidden; padding: 16px; gap: 16px; box-sizing: border-box; display: flex; flex-direction: column;">
 
-        @* Top row: controls (left) + board (right) — 2/3 of screen height *@
         <div style="flex: 2; min-height: 0; display: flex; flex-direction: row; gap: 16px;">
 
             <div style="flex: 0 0 33.333%; min-height: 0; display: flex;">
@@ -158,7 +157,6 @@ else
             }
             catch
             {
-                // When Player Session cant be established for whatever reason. Just move to the Join Screen
             }
         }
         NavigationManager.NavigateTo($"?joinCode={SessionKey}");

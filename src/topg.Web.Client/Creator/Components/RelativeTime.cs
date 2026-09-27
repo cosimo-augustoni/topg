@@ -4,11 +4,10 @@ namespace topg.Web.Client.Creator.Components;
 
 public static class RelativeTime
 {
-    /// <summary>Absolute local time like "27 Sep 2026, 11:06", independent of the browser language (the UI is English).</summary>
+    // Invariant culture instead of the browser language, because the UI is English.
     public static string Absolute(DateTimeOffset time) =>
         time.ToLocalTime().ToString("d MMM yyyy, HH:mm", CultureInfo.InvariantCulture);
 
-    /// <summary>"just now", "5 min ago", "3 h ago", "yesterday", otherwise the date ("Sep 12" / "Sep 12, 2025").</summary>
     public static string Format(DateTimeOffset time, DateTimeOffset? now = null)
     {
         var current = now ?? DateTimeOffset.Now;

@@ -3,7 +3,6 @@ using topg.Web.Client.Shared;
 
 namespace topg.Web.Client.Creator.Components;
 
-/// <summary>UX-3 iconography: the same icon and label for a concept everywhere in the creator (C-7).</summary>
 public static class CreatorIcons
 {
     public const string Board = Icons.Material.Outlined.GridView;

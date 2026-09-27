@@ -4,7 +4,6 @@ using topg.Web.Client.Creator.Storage;
 
 namespace topg.Web.Client.Creator.Settings;
 
-/// <summary>Loads and saves <see cref="CreatorSettings"/> in the IndexedDB <c>settings</c> store.</summary>
 public class CreatorSettingsService(ICreatorStorage storage)
 {
     private const string StorageKey = "creator-settings";
@@ -14,12 +13,10 @@ public class CreatorSettingsService(ICreatorStorage storage)
 
     public CreatorSettings Current { get; private set; } = new();
 
-    /// <summary>Set when the stored settings couldn't be loaded; the defaults are used instead.</summary>
     public string? LoadError { get; private set; }
 
     public event Action? Changed;
 
-    /// <summary>Loads the settings once. Safe to call from every page.</summary>
     public Task EnsureLoadedAsync() => _loading ??= LoadAsync();
 
     /// <summary>

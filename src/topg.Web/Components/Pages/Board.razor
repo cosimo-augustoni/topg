@@ -11,7 +11,6 @@
     }
     else
     {
-        @* Category header row *@
         <MudGrid Spacing="3" Style="flex-shrink: 0; margin-bottom: 20px;">
             @foreach (var categoryColumn in Columns)
             {
@@ -23,7 +22,6 @@
             }
         </MudGrid>
 
-        @* One MudGrid row per question row, each grows equally *@
         <MudStack Spacing="2" Style="flex: 1; min-height: 0;">
             @for (int row = 0; row < Columns.Max(c => c.Questions.Count); row++)
             {

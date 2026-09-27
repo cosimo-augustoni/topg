@@ -5,7 +5,6 @@ using topg.Web.Client.Creator.Validation;
 
 namespace topg.Web.Client.Creator.Components;
 
-/// <summary>C-5: go to the target of a validation issue and show its field errors (app bar popover and S-7).</summary>
 public class IssueNavigator(ProjectSession session, NavigationManager navigation)
 {
     public void GoTo(ValidationIssue issue)

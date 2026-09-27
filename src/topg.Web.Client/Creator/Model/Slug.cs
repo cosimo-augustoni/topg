@@ -4,7 +4,6 @@ using System.Text.RegularExpressions;
 
 namespace topg.Web.Client.Creator.Model;
 
-/// <summary>CDN folder slugs: lowercase letters, digits and single dashes.</summary>
 public static partial class Slug
 {
     public const string Fallback = "quiz";
@@ -14,7 +13,6 @@ public static partial class Slug
 
     public static bool IsValid(string? value) => value is not null && ValidPattern().IsMatch(value);
 
-    /// <summary>"Pub Quiz – Sept. 2026!" → "pub-quiz-sept-2026". German umlauts become ae/oe/ue, other accents are dropped.</summary>
     public static string FromName(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))

@@ -7,19 +7,10 @@ namespace topg.Web.Client.Creator.Export;
 
 public class ExportException(string message) : Exception(message);
 
-/// <summary>
-/// The download of S-7 (WI-15), laid out like the CDN:
-/// <code>
-/// {folder}-export.zip
-/// ├─ import.sql
-/// └─ {folder}/{hash}.{ext}   (only images the project references)
-/// </code>
-/// </summary>
 public static class ExportPackage
 {
     public static string FileName(QuizProject project) => $"{project.Folder.Trim()}-export.zip";
 
-    /// <exception cref="ExportException">An image is missing in this browser's storage.</exception>
     public static async Task<byte[]> BuildAsync(QuizProject project, ICreatorStorage storage, DateTimeOffset generatedAt)
     {
         var sql = SqlExport.Generate(project, generatedAt);
@@ -40,10 +31,9 @@ public static class ExportPackage
     }
 }
 
-/// <summary>Shared ZIP helpers for the export package and the project file.</summary>
 internal static class ZipImages
 {
-    /// <summary>The distinct images of the project with their bytes, in file name order (stable ZIP output).</summary>
+    // Sorted by file name so the ZIP output is stable.
     public static async Task<List<(ImageRef Image, byte[] Content)>> LoadAsync(QuizProject project, ICreatorStorage storage)
     {
         var result = new List<(ImageRef, byte[])>();
