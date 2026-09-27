@@ -21,6 +21,20 @@ namespace topg.Web.Templating.Data
                 .HasValue<TextQuestion>(QuestionType.Text)
                 .HasValue<SoundQuestion>(QuestionType.Sound)
                 .HasValue<ImageQuestion>(QuestionType.Image);
+
+            // The import script's "replace existing" deletes questions and relies on their hints going with them.
+            modelBuilder.Entity<TextQuestion>()
+                .HasMany(x => x.Hints)
+                .WithOne()
+                .HasForeignKey("QuestionId")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<QuestionHint>(hint =>
+            {
+                hint.ToTable("QuestionHints");
+                hint.HasIndex("QuestionId", nameof(QuestionHint.Order)).IsUnique();
+            });
         }
     }
 }

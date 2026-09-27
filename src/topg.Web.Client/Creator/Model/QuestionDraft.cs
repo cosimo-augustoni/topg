@@ -31,6 +31,28 @@ public class TextQuestionDraft : QuestionDraft
     public override QuestionType Type => QuestionType.Text;
 
     public string CorrectAnswer { get; set; } = "";
+
+    public const int MaxHints = 10;
+
+    // Null while the question has no hints; the first hint added decides the type.
+    public HintType? HintType { get; set; }
+
+    public List<HintDraft> Hints { get; set; } = [];
+
+    public override IEnumerable<ImageRef> Images() => Hints.Select(h => h.Image).OfType<ImageRef>();
+}
+
+public class HintDraft
+{
+    // The game tile is sized for this length: ten hints of 250 characters still fit on a 1920 × 1080 screen.
+    public const int MaxTextLength = 250;
+
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    // The hint text, or the caption of an image hint.
+    public string Text { get; set; } = "";
+
+    public ImageRef? Image { get; set; }
 }
 
 public class ImageQuestionDraft : QuestionDraft

@@ -1,4 +1,5 @@
-﻿@using topg.Web.Components.Shared
+﻿@using topg.Web.Client.Shared
+@using topg.Web.Components.Shared
 @using topg.Web.Quiz.Execution
 
 <MudSimpleTable Dense="true" Style="height: 90%" FixedHeader="true">
@@ -15,6 +16,39 @@
             <TextColumn>@TextQuestion.QuestionText</TextColumn>
             <VisibilityButtonColumn Toggled="@(TextQuestion.DisplayState.HasFlag(TextQuestionDisplayState.Question))" ToggledChanged="ToggleQuestionVisibility"></VisibilityButtonColumn>
     </tr>
+    @if (TextQuestion.Hints.Count > 0)
+    {
+        <tr class="hints-section">
+            <TextColumn>Hints</TextColumn>
+            <TextColumn>@(TextQuestion.HintType == HintType.Image ? "Image" : "Text") · @TextQuestion.Hints.Count(h => h.IsVisible) of @TextQuestion.Hints.Count shown</TextColumn>
+            <TextColumn></TextColumn>
+        </tr>
+        @for (var i = 0; i < TextQuestion.Hints.Count; i++)
+        {
+            var hint = TextQuestion.Hints[i];
+            var number = i + 1;
+            <tr>
+                <TextColumn>Hint @number</TextColumn>
+                <td class="hint-content">
+                    @if (TextQuestion.HintType == HintType.Image)
+                    {
+                        <div class="hint-thumb">
+                            @if (hint.ImageUri is not null)
+                            {
+                                <img src="@hint.ImageUri" alt="" />
+                            }
+                            <MudText Class="hint-clamp">@hint.Text</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudText Class="hint-clamp">@hint.Text</MudText>
+                    }
+                </td>
+                <VisibilityButtonColumn Toggled="hint.IsVisible" ToggledChanged="() => ToggleHintVisibility(hint)"></VisibilityButtonColumn>
+            </tr>
+        }
+    }
     <tr style="background-color: var(--mud-palette-primary)">
         <TextColumn>Answer</TextColumn>
         <TextColumn></TextColumn>
@@ -39,6 +73,11 @@
     private void ToggleQuestionVisibility()
     {
         QuizSession.UpdateQuestion(TextQuestion, question => question.DisplayState ^= TextQuestionDisplayState.Question);
+    }
+
+    private void ToggleHintVisibility(QuestionHint hint)
+    {
+        QuizSession.UpdateQuestion(hint, h => h.IsVisible = !h.IsVisible);
     }
 
 }

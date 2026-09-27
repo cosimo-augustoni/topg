@@ -32,6 +32,10 @@
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
     <script src="@Assets["js/audio.js"]"></script>
+    @if (!IsCreator)
+    {
+        <script src="@Assets["js/fit-text.js"]"></script>
+    }
 </body>
 
 </html>

@@ -1,0 +1,119 @@
+@inject ProjectSession Session
+@inject IDialogService Dialogs
+
+@{
+    var count = Question.Hints.Count;
+}
+
+<MudDivider />
+
+<div class="hints">
+    <div class="hints-head">
+        <MudText Typo="Typo.subtitle2">Hints</MudText>
+        @if (count > 0)
+        {
+            <span class="hint-count">@count / @TextQuestionDraft.MaxHints</span>
+            <MudSpacer />
+            <MudToggleGroup T="HintType" Value="Question.HintType ?? HintType.Text" ValueChanged="ChangeTypeAsync"
+                            Size="Size.Small" Outlined="true" Color="Color.Primary" aria-label="Hint type">
+                <MudToggleItem Value="HintType.Text" Text="Text" />
+                <MudToggleItem Value="HintType.Image" Text="Image" />
+            </MudToggleGroup>
+        }
+    </div>
+
+    @if (count == 0)
+    {
+        <div class="hints-empty">
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">No hints. The host reveals hints one by one during the game to narrow down the answer.</MudText>
+            <div class="d-flex gap-2 flex-wrap">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="() => Add(HintType.Text)">Text hint</MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="() => Add(HintType.Image)">Image hint</MudButton>
+            </div>
+        </div>
+    }
+    else
+    {
+        <ol class="hint-list">
+            @for (var i = 0; i < count; i++)
+            {
+                var hint = Question.Hints[i];
+                var number = i + 1;
+                <li class="hint" @key="hint.Id">
+                    <div class="hint-top">
+                        <MudText Typo="Typo.body2" Class="hint-number">Hint @number</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp" Size="Size.Small" Disabled="@(i == 0)"
+                                       OnClick="() => Move(hint, -1)" aria-label="@($"Move hint {number} up")" />
+                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown" Size="Size.Small" Disabled="@(i == count - 1)"
+                                       OnClick="() => Move(hint, 1)" aria-label="@($"Move hint {number} down")" />
+                        <MudIconButton Icon="@Icons.Material.Outlined.Delete" Size="Size.Small" Class="hint-delete"
+                                       OnClick="() => Remove(hint)" aria-label="@($"Delete hint {number}")" />
+                    </div>
+
+                    @if (Question.HintType == HintType.Image)
+                    {
+                        <ImageDropZone Label="Image" Required="true" UrlPrefix="@UrlPrefix"
+                                       Value="hint.Image" ValueChanged="v => Session.Change(_ => hint.Image = v)" />
+                        @if (hint.Image is null)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Error" Class="mt-n1">Hint @number has no image.</MudText>
+                        }
+                        <MudTextField T="string" Label="Caption (optional)"
+                                      Value="hint.Text" ValueChanged="v => Session.Change(_ => hint.Text = v)"
+                                      DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    }
+                    else
+                    {
+                        <MudTextField T="string" Value="hint.Text" ValueChanged="v => Session.Change(_ => hint.Text = v)"
+                                      DebounceInterval="300" Lines="2" Sizing="InputSizing.Auto" MaxLines="8"
+                                      MaxLength="HintDraft.MaxTextLength" Counter="HintDraft.MaxTextLength"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" aria-label="@($"Hint {number} text")"
+                                      Error="@string.IsNullOrWhiteSpace(hint.Text)" ErrorText="@($"Hint {number} has no text.")" />
+                    }
+                </li>
+            }
+        </ol>
+
+        <div class="d-flex align-center gap-2 flex-wrap">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
+                       Disabled="@(count >= TextQuestionDraft.MaxHints)" OnClick="() => Add(Question.HintType ?? HintType.Text)">Add hint</MudButton>
+            @if (count >= TextQuestionDraft.MaxHints)
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">A question can have at most @TextQuestionDraft.MaxHints hints.</MudText>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required TextQuestionDraft Question { get; set; }
+
+    [Parameter, EditorRequired]
+    public required string UrlPrefix { get; set; }
+
+    private void Add(HintType type) => Session.Change(_ => Question.AddHint(type));
+
+    private void Move(HintDraft hint, int offset) => Session.Change(_ => Question.MoveHint(hint, offset));
+
+    private void Remove(HintDraft hint) => Session.Change(_ => Question.RemoveHint(hint));
+
+    private async Task ChangeTypeAsync(HintType type)
+    {
+        if (type == Question.HintType)
+        {
+            return;
+        }
+
+        var count = Question.Hints.Count;
+        var current = Question.HintType == HintType.Image ? "image" : "text";
+        var target = type == HintType.Image ? "image" : "text";
+        if (!await Dialogs.ShowConfirmAsync($"Switch to {target} hints?",
+                $"The {count} {current} hint{(count == 1 ? "" : "s")} of this question will be removed.", "Switch type"))
+        {
+            return;
+        }
+
+        Session.Change(_ => Question.ChangeHintType(type));
+    }
+}

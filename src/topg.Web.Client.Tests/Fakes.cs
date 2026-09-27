@@ -119,6 +119,20 @@ public static class TestProjects
             AnswerType = AnswerType.Text,
         };
 
+    public static TextQuestionDraft TextHints(int points, params string[] hints) =>
+        new()
+        {
+            Points = points, QuestionText = "Which city?", CorrectAnswer = "Basel", HintType = HintType.Text,
+            Hints = [.. hints.Select(h => new HintDraft { Text = h })],
+        };
+
+    public static TextQuestionDraft ImageHints(int points, params (ImageRef? Image, string Caption)[] hints) =>
+        new()
+        {
+            Points = points, QuestionText = "Which country?", CorrectAnswer = "Switzerland", HintType = HintType.Image,
+            Hints = [.. hints.Select(h => new HintDraft { Image = h.Image, Text = h.Caption })],
+        };
+
     public static CategoryDraft Category(string name, params QuestionDraft[] questions) =>
         new() { Name = name, Questions = [.. questions] };
 

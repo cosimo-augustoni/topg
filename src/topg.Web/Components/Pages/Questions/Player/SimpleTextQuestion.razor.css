@@ -1,0 +1,20 @@
+/* Positioned against the question panel, like the header in docs/concepts/question-hints.html. */
+.hint-header {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 46px;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+    .hint-header span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }

@@ -189,7 +189,71 @@ public static class ProjectEditing
         project.FindQuestion(questionId) is { } location && location.Category.Questions.Remove(location.Question);
 
     public static bool WouldLoseData(QuestionDraft question, QuestionType newType) =>
-        question.Type != newType && question is ImageQuestionDraft image && image.Images().Any();
+        question.Type != newType && question switch
+        {
+            ImageQuestionDraft image => image.Images().Any(),
+            TextQuestionDraft text => text.Hints.Count > 0,
+            _ => false,
+        };
+
+    public static HintDraft? AddHint(this TextQuestionDraft question, HintType type)
+    {
+        if (question.Hints.Count >= TextQuestionDraft.MaxHints)
+        {
+            return null;
+        }
+
+        if (question.Hints.Count > 0 && question.HintType != type)
+        {
+            throw new InvalidOperationException("All hints of a question have the same type – switch the hint type first.");
+        }
+
+        var hint = new HintDraft();
+        question.HintType = type;
+        question.Hints.Add(hint);
+        return hint;
+    }
+
+    public static bool MoveHint(this TextQuestionDraft question, HintDraft hint, int offset)
+    {
+        var index = question.Hints.IndexOf(hint);
+        var target = index + offset;
+        if (index < 0 || target < 0 || target >= question.Hints.Count)
+        {
+            return false;
+        }
+
+        (question.Hints[index], question.Hints[target]) = (question.Hints[target], question.Hints[index]);
+        return true;
+    }
+
+    public static bool RemoveHint(this TextQuestionDraft question, HintDraft hint)
+    {
+        if (!question.Hints.Remove(hint))
+        {
+            return false;
+        }
+
+        // Without hints there is no type to keep, so the inspector offers both kinds again.
+        if (question.Hints.Count == 0)
+        {
+            question.HintType = null;
+        }
+
+        return true;
+    }
+
+    // A text hint can't become an image hint, so the old hints go and one empty hint of the new type takes their place.
+    public static void ChangeHintType(this TextQuestionDraft question, HintType type)
+    {
+        if (question.HintType == type)
+        {
+            return;
+        }
+
+        question.Hints = [new HintDraft()];
+        question.HintType = type;
+    }
 
     // The correct answer and the answer text are the same idea, so the value moves across.
     public static QuestionDraft ChangeQuestionType(this QuizProject project, QuestionDraft question, QuestionType newType)

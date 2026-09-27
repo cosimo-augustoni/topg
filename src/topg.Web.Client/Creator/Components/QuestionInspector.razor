@@ -77,6 +77,7 @@
                               Value="text.CorrectAnswer" ValueChanged="v => Session.Change(_ => text.CorrectAnswer = v)"
                               DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Error="@ForceError(text.CorrectAnswer)" ErrorText="Correct answer is required." />
+                <HintsEditor Question="text" UrlPrefix="@UrlPrefix" />
                 break;
 
             case ImageQuestionDraft image:
@@ -171,8 +172,11 @@
     private async Task ChangeTypeAsync(QuestionType type)
     {
         var question = Location.Question;
+        var lost = question is TextQuestionDraft
+            ? "The hints of this question will be removed. The correct answer is kept."
+            : "The images of this question will be removed. The answer text is kept.";
         if (ProjectEditing.WouldLoseData(question, type)
-            && !await Dialogs.ShowConfirmAsync("Switch type", "The images of this question will be removed. The answer text is kept.", "Switch type"))
+            && !await Dialogs.ShowConfirmAsync("Switch type", lost, "Switch type"))
         {
             return;
         }

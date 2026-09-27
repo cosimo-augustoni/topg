@@ -218,7 +218,7 @@ hr.div{border:0; border-top:1px solid var(--line); margin:2px 0; width:100%}
     <div class="decision"><dt>limit</dt><dd>10 hints per question</dd></div>
     <div class="decision"><dt>before reveal</dt><dd>Numbered placeholder, fixed slot</dd></div>
     <div class="decision"><dt>reveal</dt><dd>Host toggles each hint, any order</dd></div>
-    <div class="decision"><dt>question text</dt><dd>Compact header above hints</dd></div>
+    <div class="decision"><dt>question text</dt><dd>Compact header above hints; hints only show with it</dd></div>
     <div class="decision"><dt>text hint</dt><dd>Multi-line, max 250 characters</dd></div>
     <div class="decision"><dt>image hint</dt><dd>Image + optional caption</dd></div>
     <div class="decision"><dt>odd counts</dt><dd>Extra hint on the top row</dd></div>
@@ -311,7 +311,7 @@ hr.div{border:0; border-top:1px solid var(--line); margin:2px 0; width:100%}
       <ul>
         <li>All tiles are the same size. The column count of the longer row sets the width, and the shorter row is centered.</li>
         <li>A hidden tile shows its number, which helps the host match it to the host table. A shown tile shows only its content, without a number.</li>
-        <li>The question text becomes a one-line header (about 46 px), toggled independently as today.</li>
+        <li>The question text becomes a one-line header (about 46 px). While it is hidden, the hints are hidden too, placeholders included. Each hint keeps its own toggle and appears as set once the question text is shown.</li>
         <li>Text shrinks to fit its tile. Try “250-character texts” with 10 hints to see the worst case.</li>
       </ul>
     </div>
@@ -441,11 +441,12 @@ As a quiz author and host, I want to give a text question up to 10 hints (all te
 - [ ] Given hints 1 to 4 are hidden, when the host toggles Hint 3, then Hint 3 is shown on the player and spectator screens while Hints 1, 2 and 4 still show numbered placeholders.
 - [ ] Given Hint 3 is shown, when the host toggles it again, then it goes back to a numbered placeholder on all screens.
 - [ ] Given hints 1 and 2 are shown, when a spectator opens or reloads the spectator page, then hints 1 and 2 are shown and the others are placeholders.
-- [ ] Given a question with hints, when the host toggles the question text, then the question text shows or hides without changing hint visibility.
+- [ ] Given a question with hints and the question text hidden, then no hints and no placeholders are shown.
+- [ ] Given Hint 2 is toggled on while the question text is hidden, when the host shows the question text, then the hints appear with Hint 2 shown and the others as placeholders; hiding the question text again hides all hints without changing their toggles.
 
 ### Game: player and spectator display
 - [ ] Given a question with hints, then the question text is shown as a one-line header above the hints, not as the large centered text.
-- [ ] Given a question with hints, then every hint has a slot from the start. A hidden hint shows its number, and a shown hint shows only its content, without a number. Showing or hiding a hint never moves another hint.
+- [ ] Given a question with hints whose question text is shown, then every hint has a slot. A hidden hint shows its number, and a shown hint shows only its content, without a number. Showing or hiding a hint never moves another hint.
 - [ ] Given 1 to 3 text hints, then they are stacked vertically, full width, top-aligned, with equal row height and spacing.
 - [ ] Given 4 or 5 text hints, or 1 to 5 image hints, then they are shown in one row, centered horizontally and vertically.
 - [ ] Given 6 to 10 hints of either type, then they are shown in two rows, with the extra hint going to the top row (6 = 3 + 3, 7 = 4 + 3, 10 = 5 + 5). All tiles are the same size and the shorter row is centered.
@@ -552,7 +553,12 @@ function renderScreen(){
   const W = panel.offsetWidth - 32, top = 144, H = panel.offsetHeight - top - 16;
   const hasCaption = state.type === "image" && state.hints.some(h => h.caption && h.caption.trim());
   const L = layout(state.type, n, W, H, hasCaption);
-  let html = `<div class="s-header">${state.qVisible ? `<span>${esc(state.qText)}</span>` : ""}</div><div class="s-hints" style="top:${top}px;width:${W}px;height:${H}px">`;
+  if (!state.qVisible){
+    host.innerHTML = "";
+    document.getElementById("readout").innerHTML = `<span>question text hidden: hints hidden too</span><span>toggled on <b>${state.hints.filter(h => h.visible).length} / ${n}</b></span>`;
+    return;
+  }
+  let html = `<div class="s-header"><span>${esc(state.qText)}</span></div><div class="s-hints" style="top:${top}px;width:${W}px;height:${H}px">`;
   let minFs = Infinity;
   L.rects.forEach((r, i) => {
     const h = state.hints[i], pos = `left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px`;
