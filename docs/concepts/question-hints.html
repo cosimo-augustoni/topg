@@ -1,0 +1,757 @@
+<!-- UI concept for https://github.com/cosimo-augustoni/topg/issues/17 (question hints). Kept in the repo so implementers and agents can read it without access to the claude.ai artifact it was published as. -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs"; mermaid.initialize({ startOnLoad: true, theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default" });</script>
+</head>
+<body>
+<title>topg Question Hints</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&family=Roboto:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#f4f4f8; --surface:#ffffff; --surface-2:#f0eff6; --ink:#1c1b24; --muted:#5f5d70; --line:#dcdae6;
+  --accent:#5a4ed1; --accent-ink:#ffffff; --accent-soft:#ebe9fb; --error:#c02b2b; --warn:#9a6200;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+  /* The game always runs in MudBlazor's dark palette, whatever the page theme. */
+  --g-bg:#32333d; --g-paper:#373740; --g-text:rgba(255,255,255,.72); --g-strong:rgba(255,255,255,.9);
+  --g-primary:#776be7; --g-default:#4b4c57; --g-line:rgba(255,255,255,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#15151b; --surface:#1e1e27; --surface-2:#262532; --ink:#ecebf3; --muted:#a3a1b5; --line:#33323f;
+    --accent:#a59cff; --accent-ink:#15151b; --accent-soft:#2a2745; --error:#f08080; --warn:#e0b050;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#15151b; --surface:#1e1e27; --surface-2:#262532; --ink:#ecebf3; --muted:#a3a1b5; --line:#33323f;
+  --accent:#a59cff; --accent-ink:#15151b; --accent-soft:#2a2745; --error:#f08080; --warn:#e0b050;
+}
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:16px; line-height:1.55}
+.wrap{max-width:1320px; margin:0 auto; padding-inline:24px; padding-block:40px 80px; display:flex; flex-direction:column; gap:56px}
+@media (max-width:600px){ .wrap{padding-inline:16px; padding-block:24px 56px; gap:40px} }
+h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; letter-spacing:-.01em}
+h1{font-size:clamp(2rem,4vw,2.9rem); line-height:1.1}
+h2{font-size:1.6rem; line-height:1.2}
+h3{font-size:1.1rem}
+p{margin:0; max-width:68ch}
+code,.mono{font-family:var(--mono); font-size:.86em}
+.eyebrow{font-family:var(--mono); font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent)}
+.muted{color:var(--muted)}
+section{display:flex; flex-direction:column; gap:18px}
+.head{display:flex; flex-direction:column; gap:14px}
+
+/* decisions */
+.decisions{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.decision{background:var(--surface); padding:14px 16px; display:flex; flex-direction:column; gap:2px}
+.decision dt{font-size:.78rem; color:var(--muted); font-family:var(--mono); letter-spacing:.03em}
+.decision dd{margin:0; font-weight:600}
+
+/* toolbar */
+.toolbar{display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; padding:12px 14px; background:var(--surface); border:1px solid var(--line); border-radius:10px}
+.tgroup{display:flex; align-items:center; gap:8px}
+.tgroup > .lbl{font-size:.8rem; color:var(--muted); font-family:var(--mono)}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.seg button{border:0; background:transparent; color:var(--ink); padding:6px 12px; font:inherit; font-size:.9rem; cursor:pointer}
+.seg button + button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.btn{border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:8px; padding:6px 12px; font:inherit; font-size:.9rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn.danger{color:var(--error)}
+.stepper{display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:8px}
+.stepper button{border:0; background:transparent; color:var(--ink); width:32px; height:32px; font-size:1.1rem; cursor:pointer}
+.stepper button:disabled{opacity:.35; cursor:not-allowed}
+.stepper output{min-width:28px; text-align:center; font-variant-numeric:tabular-nums; font-weight:600}
+label.check{display:inline-flex; align-items:center; gap:6px; font-size:.9rem; cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,.dz:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* game stage */
+.stage{display:grid; grid-template-columns:minmax(0,1fr); gap:16px}
+@media (min-width:1180px){ .stage{grid-template-columns:minmax(0,1fr) 380px} }
+.screen-frame{display:flex; flex-direction:column; gap:8px}
+.screen-wrap{position:relative; width:100%; aspect-ratio:16/9; border-radius:8px; overflow:hidden; background:#000; box-shadow:0 0 0 1px var(--line)}
+.screen{position:absolute; left:0; top:0; width:1920px; height:1080px; transform-origin:0 0; background:var(--g-bg); color:var(--g-text); font-family:Roboto, "Segoe UI", sans-serif}
+.readout{display:flex; flex-wrap:wrap; gap:6px 18px; font-family:var(--mono); font-size:.78rem; color:var(--muted); font-variant-numeric:tabular-nums}
+.readout b{color:var(--ink); font-weight:500}
+
+.s-root{position:absolute; inset:0; padding:16px; display:flex; flex-direction:column; gap:16px}
+.s-top{flex:2; min-height:0; display:flex; gap:16px}
+.s-left{flex:0 0 33.333%; background:var(--g-paper); border-radius:4px; padding:16px; display:flex; flex-direction:column; gap:40px; box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.s-left .qname{font-size:1.5rem; color:var(--g-strong)}
+.s-buzz{width:120px; height:120px; border-radius:50%; background:#e0e0e0; color:#333; display:grid; place-items:center; font-weight:700; font-size:1.1rem; box-shadow:0 3px 6px rgba(0,0,0,.4)}
+.s-q{flex:1; min-width:0; position:relative; background:var(--g-paper); border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,.35); overflow:hidden}
+.s-banner{position:absolute; top:0; padding:8px 16px; font-weight:700; font-size:1.8rem; z-index:2}
+.s-banner.cat{left:0; background:var(--g-default); color:#fff}
+.s-banner.pts{right:0; background:var(--g-primary); color:#fff}
+.s-bottom{flex:1; min-height:0; background:var(--g-paper); border-radius:4px; padding:8px; display:flex; justify-content:space-evenly; align-items:center; box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.s-player{aspect-ratio:1; height:calc(100% - 16px); background:#3d3e48; border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.s-player .n{font-size:1.5rem; font-weight:700; color:var(--g-strong)}
+.s-player .sc{font-size:3rem; color:var(--g-strong)}
+.s-bigq{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:16px; text-align:center; font-size:96px; font-weight:700; line-height:1.15; color:var(--g-strong)}
+.s-header{position:absolute; left:16px; right:16px; top:64px; height:64px; display:flex; align-items:center; justify-content:center; font-size:46px; color:var(--g-strong); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.s-header span{overflow:hidden; text-overflow:ellipsis}
+.s-hints{position:absolute; left:16px}
+.tile{position:absolute; border-radius:6px; overflow:hidden}
+.tile.shown{background:rgba(255,255,255,.06); border:1px solid var(--g-line)}
+.tile.hidden{border:2px dashed rgba(255,255,255,.22); display:grid; place-items:center; color:rgba(255,255,255,.3); font-weight:700; background:rgba(0,0,0,.08)}
+.tile .ttext{position:absolute; inset:0; padding:16px; color:var(--g-strong); line-height:1.3; overflow:hidden; display:flex; align-items:center; justify-content:center; text-align:center; overflow-wrap:anywhere}
+.tile.row .ttext{padding:12px 24px; justify-content:flex-start; text-align:left}
+.tile .imgbox{position:absolute; left:0; right:0; top:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.18)}
+.tile .imgbox img{max-width:100%; max-height:100%; object-fit:contain; display:block}
+.tile .cap{position:absolute; left:0; right:0; bottom:0; height:40px; display:flex; align-items:center; justify-content:center; padding:0 10px; font-size:21px; color:var(--g-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+
+/* host panel */
+.host{background:var(--g-paper); color:var(--g-text); font-family:Roboto, "Segoe UI", sans-serif; border-radius:8px; padding:14px; display:flex; flex-direction:column; gap:10px; box-shadow:0 0 0 1px var(--line); align-self:start}
+.host-title{display:flex; justify-content:space-between; align-items:center; color:var(--g-strong); font-size:.95rem}
+.host-title small{font-family:var(--mono); font-size:.7rem; color:rgba(255,255,255,.5); letter-spacing:.06em; text-transform:uppercase}
+.host-scroll{max-height:560px; overflow:auto}
+.host table{width:100%; border-collapse:collapse; font-size:.85rem}
+.host th{text-align:left; font-weight:500; color:var(--g-strong); padding:6px 8px; border-bottom:1px solid var(--g-line); position:sticky; top:0; background:var(--g-paper)}
+.host td{padding:6px 8px; border-bottom:1px solid var(--g-line); vertical-align:middle}
+.host td.name{white-space:nowrap; color:var(--g-strong)}
+.host td.content{max-width:0; width:100%}
+.host .clamp{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.host tr.section td{background:var(--g-primary); color:#fff; font-weight:500}
+.host tr.section.hints td{background:#4d4a7a}
+.host tr.new td{box-shadow:inset 3px 0 0 #b9b2ff}
+.host .thumb{display:flex; align-items:center; gap:8px}
+.host .thumb img{width:48px; height:36px; object-fit:contain; background:rgba(0,0,0,.25); border-radius:2px; flex:none}
+.eye{border:0; background:transparent; color:rgba(255,255,255,.45); width:34px; height:34px; border-radius:50%; cursor:pointer; display:grid; place-items:center}
+.eye:hover{background:rgba(255,255,255,.08)}
+.eye[aria-pressed="true"]{color:#b9b2ff}
+.eye svg{width:20px; height:20px}
+.host .legend{font-size:.75rem; color:rgba(255,255,255,.55)}
+
+/* rules */
+.rules{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px}
+.rule{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px; display:flex; flex-direction:column; gap:8px}
+.rule ul{margin:0; padding-left:1.1em; display:flex; flex-direction:column; gap:4px}
+.matrix-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface)}
+.matrix{border-collapse:collapse; min-width:980px; width:100%}
+.matrix th,.matrix td{padding:10px 8px; text-align:center; border-bottom:1px solid var(--line)}
+.matrix tr:last-child td{border-bottom:0}
+.matrix th{font-family:var(--mono); font-size:.78rem; color:var(--muted); font-weight:500}
+.matrix th.rowh{text-align:left; padding-left:16px; color:var(--ink); font-family:var(--body); font-size:.95rem; font-weight:600; white-space:nowrap}
+.matrix svg{width:100%; max-width:120px; height:auto; display:block; margin:0 auto}
+.matrix .cap{font-family:var(--mono); font-size:.7rem; color:var(--muted); margin-top:4px}
+.mini-area{fill:var(--surface-2); stroke:var(--line)}
+.mini-tile{fill:var(--accent); opacity:.8}
+
+/* creator */
+.creator-grid{display:grid; grid-template-columns:minmax(0,440px) minmax(0,1fr); gap:28px; align-items:start}
+@media (max-width:900px){ .creator-grid{grid-template-columns:minmax(0,1fr)} }
+.inspector{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:14px; box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.insp-top{display:flex; flex-direction:column; gap:2px}
+.insp-top .t{font-weight:600; font-size:.9rem}
+.insp-top .crumb{font-size:.78rem; color:var(--muted)}
+.frow{display:flex; align-items:center; gap:12px}
+.frow .fl{width:84px; font-size:.88rem; color:var(--muted); flex:none}
+.field{display:flex; flex-direction:column; gap:4px}
+.field label{font-size:.78rem; color:var(--muted)}
+.field input,.field textarea{width:100%; font:inherit; font-size:.95rem; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:8px 10px; resize:vertical}
+.field textarea{min-height:64px}
+.field .meta{display:flex; justify-content:space-between; font-size:.75rem; color:var(--muted); font-variant-numeric:tabular-nums}
+.field .meta .err{color:var(--error)}
+.field.invalid textarea,.field.invalid input{border-color:var(--error)}
+hr.div{border:0; border-top:1px solid var(--line); margin:2px 0; width:100%}
+.hints-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.hints-head h3{font-family:var(--body); font-size:.95rem; font-weight:600}
+.count{font-family:var(--mono); font-size:.75rem; padding:2px 8px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-variant-numeric:tabular-nums}
+.spacer{flex:1}
+.empty{border:1px dashed var(--line); border-radius:8px; padding:16px; display:flex; flex-direction:column; gap:10px; align-items:flex-start}
+.empty p{font-size:.88rem; color:var(--muted)}
+.hint-list{display:flex; flex-direction:column; gap:10px; margin:0; padding:0; list-style:none}
+.hint{border:1px solid var(--line); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:8px; background:var(--surface)}
+.hint-top{display:flex; align-items:center; gap:4px}
+.hint-top .hn{font-weight:600; font-size:.88rem; flex:1}
+.icon-btn{border:0; background:transparent; color:var(--muted); width:30px; height:30px; border-radius:50%; cursor:pointer; display:grid; place-items:center}
+.icon-btn:hover:not(:disabled){background:var(--surface-2); color:var(--ink)}
+.icon-btn:disabled{opacity:.3; cursor:not-allowed}
+.icon-btn svg{width:18px; height:18px}
+.icon-btn.del:hover:not(:disabled){color:var(--error)}
+.dz{border:1.5px dashed var(--line); border-radius:8px; min-height:96px; display:flex; align-items:center; justify-content:center; gap:12px; padding:8px; cursor:pointer; color:var(--muted); font-size:.85rem; background:var(--surface-2)}
+.dz.filled{border-style:solid; justify-content:flex-start}
+.dz img{width:96px; height:72px; object-fit:contain; background:rgba(0,0,0,.2); border-radius:4px}
+.dz .fn{font-family:var(--mono); font-size:.75rem; color:var(--ink)}
+.dz.invalid{border-color:var(--error)}
+.confirm{border:1px solid var(--warn); background:color-mix(in srgb, var(--warn) 10%, var(--surface)); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:10px; font-size:.9rem}
+.confirm .acts{display:flex; gap:8px; justify-content:flex-end}
+.helper{font-size:.78rem; color:var(--muted)}
+.notes{display:flex; flex-direction:column; gap:14px}
+.notes ul{margin:0; padding-left:1.1em; display:flex; flex-direction:column; gap:8px; max-width:68ch}
+
+/* schema */
+.schema{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px; overflow-x:auto}
+.two{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; align-items:start}
+
+/* issue */
+.issue{background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.issue-bar{display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap}
+.issue-bar .t{font-weight:600; flex:1; min-width:200px}
+.label{font-family:var(--mono); font-size:.72rem; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--muted)}
+.issue pre{margin:0; padding:16px; max-height:560px; overflow:auto; font-family:var(--mono); font-size:.8rem; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere}
+@media (prefers-reduced-motion: no-preference){ .tile{transition:background .15s} }
+</style>
+
+<main class="wrap">
+
+<header class="head">
+  <span class="eyebrow">topg · feature concept</span>
+  <h1>Question hints</h1>
+  <p class="muted">A text question can carry up to ten hints. They are all text or all images, and the host reveals them in any order to narrow down the answer. This page is the reference for the GitHub issue: game layouts, host controls, creator editing and data model. The mockups are interactive and use the real proportions of a 1920 × 1080 player screen.</p>
+</header>
+
+<section aria-labelledby="dec">
+  <h2 id="dec">Decisions</h2>
+  <dl class="decisions">
+    <div class="decision"><dt>question types</dt><dd>Text questions only</dd></div>
+    <div class="decision"><dt>hint kind</dt><dd>All text or all images per question</dd></div>
+    <div class="decision"><dt>limit</dt><dd>10 hints per question</dd></div>
+    <div class="decision"><dt>before reveal</dt><dd>Numbered placeholder, fixed slot</dd></div>
+    <div class="decision"><dt>reveal</dt><dd>Host toggles each hint, any order</dd></div>
+    <div class="decision"><dt>question text</dt><dd>Compact header above hints</dd></div>
+    <div class="decision"><dt>text hint</dt><dd>Multi-line, max 250 characters</dd></div>
+    <div class="decision"><dt>image hint</dt><dd>Image + optional caption</dd></div>
+    <div class="decision"><dt>odd counts</dt><dd>Extra hint on the top row</dd></div>
+    <div class="decision"><dt>tile size</dt><dd>Uniform, shorter row centered</dd></div>
+    <div class="decision"><dt>scoring</dt><dd>Unchanged, host scores manually</dd></div>
+    <div class="decision"><dt>schema</dt><dd><code>HintType</code> on question + <code>QuestionHints</code></dd></div>
+  </dl>
+</section>
+
+<section aria-labelledby="game">
+  <div class="head">
+    <h2 id="game">Game screen</h2>
+    <p class="muted">Player and spectator pages share the question panel. Use the host panel on the right to show or hide hints, the same way the host does during a game. Hidden hints keep their slot and show their number, so revealing one never moves the others.</p>
+  </div>
+  <div class="toolbar" role="group" aria-label="Mockup controls">
+    <div class="tgroup"><span class="lbl">hints</span>
+      <div class="seg" id="typeSeg">
+        <button type="button" data-type="none">None</button>
+        <button type="button" data-type="text">Text</button>
+        <button type="button" data-type="image">Image</button>
+      </div>
+    </div>
+    <div class="tgroup"><span class="lbl">count</span>
+      <div class="stepper"><button type="button" id="dec1" aria-label="Fewer hints">−</button><output id="countOut">5</output><button type="button" id="inc1" aria-label="More hints">+</button></div>
+    </div>
+    <label class="check" id="longWrap"><input type="checkbox" id="longChk"> 250-character texts</label>
+    <label class="check" id="capWrap"><input type="checkbox" id="capChk" checked> Captions</label>
+    <div class="tgroup"><button class="btn" type="button" id="showAll">Show all</button><button class="btn" type="button" id="hideAll">Hide all</button></div>
+  </div>
+  <div class="stage">
+    <div class="screen-frame">
+      <div class="screen-wrap" id="screenWrap">
+        <div class="screen" id="screen">
+          <div class="s-root">
+            <div class="s-top">
+              <div class="s-left"><div class="qname">Friday Quiz Night</div><div class="s-buzz">BUZZ!</div></div>
+              <div class="s-q" id="qpanel">
+                <div class="s-banner cat">Swiss cities</div>
+                <div class="s-banner pts">400</div>
+                <div id="qcontent"></div>
+              </div>
+            </div>
+            <div class="s-bottom">
+              <div class="s-player"><span class="n">Anna</span><span class="sc">1200</span></div>
+              <div class="s-player"><span class="n">Ben</span><span class="sc">800</span></div>
+              <div class="s-player"><span class="n">Chiara</span><span class="sc">400</span></div>
+              <div class="s-player"><span class="n">Dario</span><span class="sc">0</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="readout" id="readout"></div>
+    </div>
+    <aside class="host" aria-label="Host question panel">
+      <div class="host-title"><span>Host · current question</span><small>/host</small></div>
+      <div class="host-scroll"><table id="hostTable"></table></div>
+      <div class="legend">The lighter rows are new. Everything else is the current <code>SimpleTextQuestion</code> table.</div>
+    </aside>
+  </div>
+</section>
+
+<section aria-labelledby="rules">
+  <div class="head">
+    <h2 id="rules">Layout rules</h2>
+    <p class="muted">The layout depends on the total number of hints, not on how many are shown. It is fixed from the moment the question opens.</p>
+  </div>
+  <div class="rules">
+    <div class="rule">
+      <h3>No hints</h3>
+      <p class="muted">Nothing changes. The question text is the large centered heading, as today.</p>
+    </div>
+    <div class="rule">
+      <h3>Text hints</h3>
+      <ul>
+        <li><b>1–3:</b> stacked vertically, full width, top-aligned. Every row is one third of the area, so rows keep the same height and spacing whatever the count.</li>
+        <li><b>4–5:</b> one row, centered horizontally and vertically.</li>
+        <li><b>6–10:</b> two rows; the top row gets <code>ceil(n / 2)</code>.</li>
+      </ul>
+    </div>
+    <div class="rule">
+      <h3>Image hints</h3>
+      <ul>
+        <li><b>1–5:</b> one row, centered horizontally and vertically.</li>
+        <li><b>6–10:</b> two rows; the top row gets <code>ceil(n / 2)</code>.</li>
+        <li>Tiles are 4:3 and images are fitted with <code>object-fit: contain</code>. If any hint has a caption, every tile gets a 40 px caption strip so the tiles stay the same height.</li>
+      </ul>
+    </div>
+    <div class="rule">
+      <h3>Shared</h3>
+      <ul>
+        <li>All tiles are the same size. The column count of the longer row sets the width, and the shorter row is centered.</li>
+        <li>A hidden tile shows its number, which helps the host match it to the host table. A shown tile shows only its content, without a number.</li>
+        <li>The question text becomes a one-line header (about 46 px), toggled independently as today.</li>
+        <li>Text shrinks to fit its tile. Try “250-character texts” with 10 hints to see the worst case.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="matrix-scroll">
+    <table class="matrix" id="matrix" aria-label="Layout for 1 to 10 hints"></table>
+  </div>
+</section>
+
+<section aria-labelledby="creator">
+  <div class="head">
+    <h2 id="creator">Creator inspector</h2>
+    <p class="muted">A new “Hints” section in the question inspector, below the correct answer. It is only shown for text questions. Edits here update the game screen above.</p>
+  </div>
+  <div class="creator-grid">
+    <div class="inspector" id="inspector"></div>
+    <div class="notes">
+      <h3>Behaviour</h3>
+      <ul>
+        <li><b>Empty:</b> “Text hint” and “Image hint” buttons. The first hint you add sets the type, so there's no type selector until one is needed.</li>
+        <li><b>With hints:</b> a Text / Image toggle in the section header. Switching with hints present asks for confirmation, then replaces them with one empty hint of the new type.</li>
+        <li><b>Order:</b> move buttons on each hint; numbers always follow the list. The order here is the order in the game.</li>
+        <li><b>Limit:</b> the counter shows <code>n / 10</code>; “Add hint” is disabled at 10.</li>
+        <li><b>Text:</b> multi-line field, capped at 250 characters, with a live counter.</li>
+        <li><b>Image:</b> the existing <code>ImageDropZone</code> plus an optional caption. Hint images are content-addressed like the others, so the export ZIP and the project file pick them up through <code>Images()</code>.</li>
+        <li><b>Validation (errors, block export):</b> “Hint 2 has no text.” and “Hint 1 has no image.” An empty caption is fine.</li>
+        <li><b>Question type change</b> from Text to Image with hints present uses the existing confirmation and says the hints will be removed.</li>
+        <li><b>Duplicate</b> copies the hints.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="model">
+  <div class="head">
+    <h2 id="model">Data model</h2>
+    <p class="muted">The hint type is stored once, on the question, so a mixed question can't be stored at all. Hints cascade with their question, which keeps the “replace existing” delete in <code>import.sql</code> working unchanged.</p>
+  </div>
+  <div class="two">
+    <div class="schema">
+<pre class="mermaid">
+erDiagram
+  Boards ||--o{ Questions : "BoardId"
+  Questions ||--o{ QuestionHints : "QuestionId, cascade"
+  Questions {
+    bigint Id PK
+    bigint BoardId FK
+    int QuestionType "TPH discriminator"
+    string TextQuestion_QuestionText
+    string CorrectAnswer
+    int HintType "new, nullable: 0 Text, 1 Image"
+  }
+  QuestionHints {
+    bigint Id PK
+    bigint QuestionId FK
+    int Order "unique per question"
+    string Text "hint text or image caption"
+    string ImageUri "empty for text hints"
+  }
+</pre>
+    </div>
+    <div class="notes">
+      <h3>Touch points</h3>
+      <ul>
+        <li><code>Shared/HintType.cs</code>: new enum used by both creator and game.</li>
+        <li><code>Templating</code>: <code>QuestionHint</code> record, <code>TextQuestion.Hints</code>, migration, <code>TemplateService</code> include.</li>
+        <li><code>Quiz/Execution</code>: runtime hints with <code>IsVisible</code>. A <code>[Flags]</code> enum can't hold ten independent toggles.</li>
+        <li><code>SqlExport</code>: questions with hints get a single-row insert <code>RETURNING "Id" INTO question_id</code>, then the hint insert. The batched insert stays for the rest, and <code>DollarQuoteTag</code> scans hint text too.</li>
+        <li>Golden files, <code>SqlImportTests</code>, validator, editing and project-file round-trip tests.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="issue">
+  <div class="head">
+    <h2 id="issue">GitHub issue draft</h2>
+    <p class="muted">Follows <code>docs/issues.md</code>. One issue, labelled for both areas.</p>
+  </div>
+  <div class="issue">
+    <div class="issue-bar">
+      <span class="t">Let quiz authors add revealable hints to text questions</span>
+      <span class="label">enhancement</span><span class="label">creator</span><span class="label">game</span>
+      <button class="btn" type="button" id="copyIssue">Copy markdown</button>
+    </div>
+    <pre id="issueText"></pre>
+  </div>
+</section>
+
+</main>
+
+<script type="text/plain" id="issueSrc">
+Title: Let quiz authors add revealable hints to text questions
+Labels: enhancement, creator, game
+
+## User story
+As a quiz author and host, I want to give a text question up to 10 hints (all text or all images) that the host reveals one by one, so that a single question can become a multi-part puzzle that narrows down the answer step by step.
+
+## Acceptance criteria
+
+### Creator: authoring hints
+- [ ] Given a text question without hints, when I open it in the inspector, then a "Hints" section shows "No hints" with the buttons "Text hint" and "Image hint".
+- [ ] Given an image question, when I open it in the inspector, then no "Hints" section is shown.
+- [ ] Given a text question without hints, when I click "Text hint" three times, then the section lists Hint 1, Hint 2 and Hint 3, each with a multi-line text field, and the counter shows "3 / 10".
+- [ ] Given a text question without hints, when I click "Image hint", then Hint 1 shows an image drop zone and an optional "Caption" field.
+- [ ] Given a text hint, when I type more than 250 characters, then the field stops accepting input at 250 and its counter shows "250 / 250".
+- [ ] Given a question with 10 hints, then "Add hint" is disabled and the counter shows "10 / 10".
+- [ ] Given hints A, B, C, when I move C up, then the order is A, C, B and they are renumbered Hint 1 to Hint 3.
+- [ ] Given hints A, B, C, when I delete B, then A and C remain as Hint 1 and Hint 2.
+- [ ] Given a question with 3 text hints, when I switch the hint type to Image, then a confirmation says the 3 hints will be removed; confirming replaces them with one empty image hint, cancelling keeps the 3 text hints.
+- [ ] Given a text question with hints, when I change the question type to Image, then a confirmation says the hints will be removed, and confirming removes them.
+- [ ] Given a question with hints, when I duplicate it, then the copy has the same hints in the same order.
+- [ ] Given a text hint with empty text, then validation shows the error "Hint 2 has no text." on that question and blocks export.
+- [ ] Given an image hint without an image, then validation shows the error "Hint 1 has no image." and blocks export. An empty caption is not an issue.
+- [ ] Given a project saved before this feature, when I open it or import its `.topgquiz` file, then it opens with no hints and no validation issues.
+- [ ] Given a project with image hints, when I export and re-import the `.topgquiz` file, then all hints, captions, order and hint images are restored.
+
+### Export and import
+- [ ] Given a project where one question has 3 image hints, when I export the package, then the ZIP contains the 3 hint images in the quiz folder and `import.sql` inserts the hints with their image URLs and captions in the authored order.
+- [ ] Given a quiz with hints that is already in the database and "replace existing" is on, when I run the new `import.sql`, then it succeeds and the old questions and hints are gone.
+- [ ] Given a question with hints whose text contains quotes, line breaks or the dollar-quote tag, when I run `import.sql`, then the hint text is stored unchanged.
+- [ ] Given a project without any hints, when I export it, then the question inserts in `import.sql` are unchanged from before this feature.
+
+### Game: host controls
+- [ ] Given the current question has no hints, then the host, player and spectator screens look exactly as they do today.
+- [ ] Given the current question has 4 hints, then the host's question table shows a "Hints" section between the question row and the answer section, with the rows Hint 1 to Hint 4. Each row shows the hint text (or a thumbnail and caption) and a visibility toggle, and all are hidden at first.
+- [ ] Given hints 1 to 4 are hidden, when the host toggles Hint 3, then Hint 3 is shown on the player and spectator screens while Hints 1, 2 and 4 still show numbered placeholders.
+- [ ] Given Hint 3 is shown, when the host toggles it again, then it goes back to a numbered placeholder on all screens.
+- [ ] Given hints 1 and 2 are shown, when a spectator opens or reloads the spectator page, then hints 1 and 2 are shown and the others are placeholders.
+- [ ] Given a question with hints, when the host toggles the question text, then the question text shows or hides without changing hint visibility.
+
+### Game: player and spectator display
+- [ ] Given a question with hints, then the question text is shown as a one-line header above the hints, not as the large centered text.
+- [ ] Given a question with hints, then every hint has a slot from the start. A hidden hint shows its number, and a shown hint shows only its content, without a number. Showing or hiding a hint never moves another hint.
+- [ ] Given 1 to 3 text hints, then they are stacked vertically, full width, top-aligned, with equal row height and spacing.
+- [ ] Given 4 or 5 text hints, or 1 to 5 image hints, then they are shown in one row, centered horizontally and vertically.
+- [ ] Given 6 to 10 hints of either type, then they are shown in two rows, with the extra hint going to the top row (6 = 3 + 3, 7 = 4 + 3, 10 = 5 + 5). All tiles are the same size and the shorter row is centered.
+- [ ] Given 10 text hints of 250 characters each at 1920 × 1080, then every hint's text fits inside its tile without being clipped and without a scrollbar.
+- [ ] Given image hints, then each image fits inside its tile without cropping or distortion, and a caption, if set, is shown below its image.
+
+## Out of scope
+- Hints on image or sound questions.
+- Mixing text and image hints in one question.
+- Changing the points of a question based on how many hints were revealed.
+- A "reveal next hint" button or forcing hints to be revealed in order.
+- Reveal animations.
+
+## Notes
+**UI concept (the reference for layout, host table and creator inspector):** `docs/concepts/question-hints.html` in the repo. It is a self-contained HTML page: open it in a browser for the interactive mockups, or read the source, where the layout rules, the tile-size algorithm (`layout()`) and the layout table for 1–10 hints are all defined. A live copy is at https://claude.ai/artifact/Qr86yvkCrMqRpVX7Es7niv (private to the repo owner; agents running under that account can read it with the Artifact tool). If the two ever differ, the repo file is authoritative.
+
+**Schema** (new migration, e.g. `AddQuestionHints`):
+- `Questions.HintType` (nullable int). Only set for text questions that have hints. `HintType` enum (`Text = 0`, `Image = 1`) goes in `topg.Web.Client/Shared` next to `QuestionType`, since both the creator and the game use it. Storing the type once on the question means a mixed question can't be stored at all.
+- New table `QuestionHints`: `Id` (bigint identity), `QuestionId` (FK → `Questions`, **cascade delete**), `Order` (int, unique per question), `Text` (text, not null: the hint text, or the caption of an image hint; empty = no caption), `ImageUri` (text, not null, empty for text hints, following the existing `AnswerImageUri` convention).
+- Domain: `QuestionHint` record, `TextQuestion.HintType` and `TextQuestion.Hints`. `TemplateService` needs `.ThenInclude(q => ((TextQuestion)q).Hints)`.
+
+**Export** (`SqlExport`): questions are inserted as multi-row `VALUES` today, which doesn't give us their ids. Questions with hints need their own `INSERT … RETURNING "Id" INTO question_id`, followed by the `QuestionHints` insert. Questions without hints can keep the batched insert, so existing golden files only change where hints exist. The "replace existing" delete already removes `Questions`, and the cascade takes the hints with it. `DollarQuoteTag` has to scan hint text too. Mirror everything in the golden files and in `SqlImportTests` (per `CLAUDE.md`).
+
+**Creator:** `TextQuestionDraft` gets `HintType?` and `List<HintDraft>` (`Id`, `Text`, `Image`). The JSON change only adds fields and missing hints deserialize as empty, so `CurrentSchemaVersion` can stay at 1. `TextQuestionDraft.Images()` must yield the hint images, because the export package, the project file and image storage all go through it. `ProjectEditing.WouldLoseData` / `ChangeQuestionType` must count hints as data that would be lost when switching away from text. `ProjectValidator` gets the two hint errors.
+
+**Game runtime:** display state is a `[Flags]` enum per question, which doesn't scale to 10 independent toggles. The execution `TextQuestion` gets a `Hints` list whose items have `bool IsVisible`, toggled through `QuizSession.UpdateQuestion` so every circuit re-renders. Both `Player/SimpleTextQuestion.razor` and a new hint grid component render from that state. The hint area is about 1210 × 520 px at 1920 × 1080.
+</script>
+<script>
+(function(){
+const SAMPLE = [
+  "It lies on a river that crosses the borders of three countries within its metro area.",
+  "Its carnival begins at exactly 4 a.m. on a Monday, with all city lights switched off.",
+  "It is home to Switzerland's oldest university, founded in 1460.",
+  "Two of the world's largest pharmaceutical companies have their headquarters here.",
+  "An international art fair founded here in 1970 carries its name, and now also runs in Miami and Hong Kong.",
+  "Its zoo, the \"Zolli\", is the oldest in Switzerland.",
+  "In summer, locals float down the river with their clothes packed in a waterproof, fish-shaped bag.",
+  "Its football club plays at St. Jakob-Park.",
+  "A certain tennis player with 20 Grand Slam titles grew up nearby.",
+  "The city's coat of arms shows a black bishop's staff."
+];
+const FILL = " Locals will tell you the ferries crossing the river have no engine at all: they are pulled across by the current along a steel cable, and the ride costs only a few francs.";
+const CAPTIONS = ["Carnival lantern","","Cable ferry","Old town roofs","","Red sandstone","Tram line 8","","Market square","Rhine swimmers"];
+const ASPECTS = [[4,3],[3,4],[16,9],[1,1],[4,3],[3,4],[16,9],[4,3],[1,1],[3,2]];
+const G = 16, CAP_H = 40;
+
+function scene(i){
+  const [aw,ah] = ASPECTS[i % ASPECTS.length], w = aw*100, h = ah*100, hue = (i*47+195)%360;
+  const m = `0,${h} ${w*.18},${h*.55} ${w*.34},${h*.7} ${w*.55},${h*.38} ${w*.78},${h*.66} ${w},${h*.5} ${w},${h}`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="hsl(${hue},55%,70%)"/><stop offset="1" stop-color="hsl(${(hue+30)%360},45%,38%)"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/><circle cx="${w*.72}" cy="${h*.28}" r="${Math.min(w,h)*.1}" fill="hsl(${(hue+180)%360},80%,85%)"/><polygon points="${m}" fill="hsl(${hue},30%,22%)" opacity=".85"/><text x="${w-10}" y="${h-10}" text-anchor="end" font-family="monospace" font-size="${Math.min(w,h)*.07}" fill="#fff" opacity=".8">hint-${i+1}.jpg · ${aw}:${ah}</text></svg>`;
+  return "data:image/svg+xml," + encodeURIComponent(svg);
+}
+function sampleHint(type, i){
+  return type === "text"
+    ? { text: state.long ? (SAMPLE[i] + FILL).slice(0,250) : SAMPLE[i], visible: i < 2 }
+    : { img: i, caption: state.captions ? CAPTIONS[i] : "", visible: i < 2 };
+}
+
+const state = { type: "text", hints: [], qText: "Which Swiss city are we looking for?", qVisible: true, long: false, captions: true, answer: "Basel", pending: null };
+state.hints = Array.from({length:5}, (_, i) => sampleHint("text", i));
+
+function rowsFor(type, n){
+  if (n === 0) return [];
+  if (type === "text" && n <= 3) return null;
+  return n <= 5 ? [n] : [Math.ceil(n/2), Math.floor(n/2)];
+}
+function layout(type, n, W, H, hasCaption){
+  const rects = [];
+  if (n === 0) return { rects, desc: "" };
+  const rows = rowsFor(type, n);
+  if (!rows){
+    const rowH = (H - 2*G) / 3;
+    for (let i = 0; i < n; i++) rects.push({ x:0, y:i*(rowH+G), w:W, h:rowH, row:true });
+    return { rects, desc: n + " stacked", tileW: W, tileH: rowH };
+  }
+  const cols = rows[0], R = rows.length;
+  const colW = (W - (cols-1)*G) / cols, rowH = (H - (R-1)*G) / R;
+  let w, h;
+  if (type === "image"){ const cap = hasCaption ? CAP_H : 0; w = Math.min(colW, (rowH - cap) * 4/3); h = w*3/4 + cap; }
+  else { w = colW; h = Math.min(rowH, colW); }
+  const blockH = R*h + (R-1)*G, top = (H - blockH) / 2;
+  let idx = 0;
+  rows.forEach((k, r) => {
+    const rowW = k*w + (k-1)*G, left = (W - rowW) / 2;
+    for (let c = 0; c < k; c++, idx++) rects.push({ x:left + c*(w+G), y:top + r*(h+G), w, h });
+  });
+  return { rects, desc: rows.join(" + "), tileW: w, tileH: h };
+}
+function fitFont(len, w, h, row){
+  const uw = row ? w - 48 : w - 32, uh = row ? h - 24 : h - 32;
+  const fs = Math.sqrt((uw * uh) / (Math.max(len, 1) * 0.5 * 1.3 * 1.18));
+  return Math.max(11, Math.min(row ? 40 : 34, Math.floor(fs)));
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+
+function renderScreen(){
+  const panel = document.getElementById("qpanel"), host = document.getElementById("qcontent");
+  const n = state.hints.length;
+  if (!state.type || n === 0){
+    host.innerHTML = state.qVisible ? `<div class="s-bigq">${esc(state.qText)}</div>` : "";
+    document.getElementById("readout").innerHTML = "<span>No hints: current layout, unchanged</span>";
+    return;
+  }
+  const W = panel.offsetWidth - 32, top = 144, H = panel.offsetHeight - top - 16;
+  const hasCaption = state.type === "image" && state.hints.some(h => h.caption && h.caption.trim());
+  const L = layout(state.type, n, W, H, hasCaption);
+  let html = `<div class="s-header">${state.qVisible ? `<span>${esc(state.qText)}</span>` : ""}</div><div class="s-hints" style="top:${top}px;width:${W}px;height:${H}px">`;
+  let minFs = Infinity;
+  L.rects.forEach((r, i) => {
+    const h = state.hints[i], pos = `left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px`;
+    if (!h.visible){
+      html += `<div class="tile hidden" style="${pos};font-size:${Math.round(Math.min(r.w, r.h)*.38)}px">${i+1}</div>`;
+      return;
+    }
+    if (state.type === "text"){
+      const fs = fitFont(h.text.length, r.w, r.h, r.row); minFs = Math.min(minFs, fs);
+      html += `<div class="tile shown${r.row ? " row" : ""}" style="${pos}"><div class="ttext" style="font-size:${fs}px">${esc(h.text)}</div></div>`;
+    } else {
+      const imgH = hasCaption ? r.h - CAP_H : r.h;
+      html += `<div class="tile shown" style="${pos}"><div class="imgbox" style="height:${imgH}px">${h.img != null ? `<img src="${scene(h.img)}" alt="Image hint ${i+1}">` : ""}</div>${hasCaption ? `<div class="cap">${esc(h.caption || "")}</div>` : ""}</div>`;
+    }
+  });
+  host.innerHTML = html + "</div>";
+  const f = v => Math.round(v);
+  document.getElementById("readout").innerHTML =
+    `<span>hint area <b>${f(W)} × ${f(H)} px</b></span><span>arrangement <b>${L.desc}</b></span><span>tile <b>${f(L.tileW)} × ${f(L.tileH)} px</b></span>` +
+    (state.type === "text" && minFs !== Infinity ? `<span>smallest shown text <b>${minFs} px</b></span>` : "") +
+    `<span>shown <b>${state.hints.filter(h => h.visible).length} / ${n}</b></span>`;
+}
+
+const EYE_ON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/></svg>';
+const EYE_OFF = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7a5 5 0 015 5c0 .65-.13 1.26-.36 1.83l2.92 2.92A11.8 11.8 0 0023 12c-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16A4.85 4.85 0 0112 7zM2 4.27l2.28 2.28.46.46A11.8 11.8 0 001 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55A2.82 2.82 0 009 12a3 3 0 003 3c.22 0 .44-.03.65-.08l1.55 1.55A4.97 4.97 0 0112 17a5 5 0 01-5-5c0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16a3 3 0 00-3-3l-.17.01z"/></svg>';
+const eye = (on, act, label) => `<button type="button" class="eye" aria-pressed="${on}" data-act="${act}" aria-label="${label}">${on ? EYE_ON : EYE_OFF}</button>`;
+
+function renderHost(){
+  const n = state.hints.length;
+  let rows = `<thead><tr><th>Name</th><th>Content</th><th>Visibility</th></tr></thead><tbody>`;
+  rows += `<tr><td class="name">Question Text</td><td class="content"><span class="clamp">${esc(state.qText)}</span></td><td>${eye(state.qVisible, "q", "Toggle question text")}</td></tr>`;
+  if (state.type && n){
+    rows += `<tr class="section hints new"><td>Hints</td><td>${state.type === "text" ? "Text" : "Image"} · ${state.hints.filter(h => h.visible).length} of ${n} shown</td><td></td></tr>`;
+    state.hints.forEach((h, i) => {
+      const content = state.type === "text"
+        ? `<span class="clamp">${esc(h.text) || "<i>empty</i>"}</span>`
+        : `<span class="thumb">${h.img != null ? `<img src="${scene(h.img)}" alt="">` : ""}<span class="clamp">${esc(h.caption || "")}</span></span>`;
+      rows += `<tr class="new"><td class="name">Hint ${i+1}</td><td class="content">${content}</td><td>${eye(h.visible, "h" + i, "Toggle hint " + (i+1))}</td></tr>`;
+    });
+  }
+  rows += `<tr class="section"><td>Answer</td><td></td><td></td></tr><tr><td class="name">Answer</td><td class="content">${esc(state.answer)}</td><td></td></tr></tbody>`;
+  document.getElementById("hostTable").innerHTML = rows;
+}
+
+function renderToolbar(){
+  document.querySelectorAll("#typeSeg button").forEach(b => b.setAttribute("aria-pressed", String((state.type || "none") === b.dataset.type)));
+  const n = state.hints.length;
+  document.getElementById("countOut").textContent = n;
+  document.getElementById("dec1").disabled = !state.type || n <= 1;
+  document.getElementById("inc1").disabled = !state.type || n >= 10;
+  document.getElementById("longWrap").hidden = state.type !== "text";
+  document.getElementById("capWrap").hidden = state.type !== "image";
+  document.getElementById("showAll").disabled = document.getElementById("hideAll").disabled = !state.type || !n;
+}
+
+const ICON = {
+  up:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.4 15.4L12 10.8l4.6 4.6L18 14l-6-6-6 6z"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.4 8.6L12 13.2l4.6-4.6L18 10l-6 6-6-6z"/></svg>',
+  del:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19a2 2 0 002 2h8a2 2 0 002-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
+  add:'<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>'
+};
+
+function renderCreator(){
+  const n = state.hints.length;
+  let h = `<div class="insp-top"><span class="t">Question</span><span class="crumb">Board 1 › Swiss cities › 400</span></div>
+  <div class="frow"><span class="fl">Type</span><div class="seg"><button type="button" aria-pressed="true">Text</button><button type="button" disabled>Image</button></div></div>
+  <div class="frow"><span class="fl">Answer via</span><div class="seg"><button type="button" aria-pressed="true">Buzzer</button><button type="button" disabled>Text</button></div></div>
+  <hr class="div">
+  <div class="field"><label for="cq">Question</label><textarea id="cq" data-bind="q" rows="2">${esc(state.qText)}</textarea></div>
+  <div class="field"><label for="ca">Correct answer</label><input id="ca" data-bind="a" value="${esc(state.answer)}"></div>
+  <hr class="div">
+  <div class="hints-head"><h3>Hints</h3>${n ? `<span class="count">${n} / 10</span>` : ""}<span class="spacer"></span>
+  ${n ? `<div class="seg" role="group" aria-label="Hint type"><button type="button" data-act="switch-text" aria-pressed="${state.type === "text"}">Text</button><button type="button" data-act="switch-image" aria-pressed="${state.type === "image"}">Image</button></div>` : ""}</div>`;
+  if (state.pending){
+    const kind = state.pending === "image" ? "image" : "text";
+    h += `<div class="confirm" role="alertdialog" aria-label="Switch hint type"><span><b>Switch to ${kind} hints?</b> The ${n} ${state.type} hint${n === 1 ? "" : "s"} of this question will be removed.</span><div class="acts"><button class="btn" type="button" data-act="cancel">Cancel</button><button class="btn primary" type="button" data-act="confirm">Switch type</button></div></div>`;
+  }
+  if (!n){
+    h += `<div class="empty"><p>No hints. The host reveals hints one by one during the game to narrow down the answer.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-act="add-text">${ICON.add}Text hint</button><button class="btn" type="button" data-act="add-image">${ICON.add}Image hint</button></div></div>`;
+  } else {
+    h += `<ol class="hint-list">`;
+    state.hints.forEach((x, i) => {
+      h += `<li class="hint"><div class="hint-top"><span class="hn">Hint ${i+1}</span>
+        <button type="button" class="icon-btn" data-act="up${i}" aria-label="Move hint ${i+1} up" ${i === 0 ? "disabled" : ""}>${ICON.up}</button>
+        <button type="button" class="icon-btn" data-act="down${i}" aria-label="Move hint ${i+1} down" ${i === n-1 ? "disabled" : ""}>${ICON.down}</button>
+        <button type="button" class="icon-btn del" data-act="del${i}" aria-label="Delete hint ${i+1}">${ICON.del}</button></div>`;
+      if (state.type === "text"){
+        const empty = !x.text.trim();
+        h += `<div class="field${empty ? " invalid" : ""}"><textarea id="ht${i}" data-bind="t${i}" maxlength="250" rows="2" aria-label="Hint ${i+1} text">${esc(x.text)}</textarea><div class="meta"><span class="err" id="he${i}">${empty ? `Hint ${i+1} has no text.` : ""}</span><span id="hc${i}">${x.text.length} / 250</span></div></div>`;
+      } else {
+        h += x.img != null
+          ? `<div class="dz filled" tabindex="0" role="button" data-act="clear${i}" aria-label="Remove image of hint ${i+1}"><img src="${scene(x.img)}" alt=""><span><span class="fn">hint-${x.img+1}.jpg</span><br><span class="helper">Click to remove</span></span></div>`
+          : `<div class="dz invalid" tabindex="0" role="button" data-act="pick${i}">Drop an image or click to choose</div><span class="helper" style="color:var(--error)">Hint ${i+1} has no image.</span>`;
+        h += `<div class="field"><input id="hcap${i}" data-bind="c${i}" value="${esc(x.caption || "")}" placeholder="Caption (optional)" aria-label="Hint ${i+1} caption"></div>`;
+      }
+      h += `</li>`;
+    });
+    h += `</ol><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="btn" type="button" data-act="add" ${n >= 10 ? "disabled" : ""}>${ICON.add}Add hint</button>${n >= 10 ? `<span class="helper">A question can have at most 10 hints.</span>` : ""}</div>`;
+  }
+  document.getElementById("inspector").innerHTML = h;
+}
+
+function renderMatrix(){
+  const W = 1211, H = 528;
+  let t = `<thead><tr><th></th>${Array.from({length:10}, (_, i) => `<th>${i+1}</th>`).join("")}</tr></thead><tbody>`;
+  for (const type of ["text", "image"]){
+    t += `<tr><th class="rowh" scope="row">${type === "text" ? "Text" : "Image"}</th>`;
+    for (let n = 1; n <= 10; n++){
+      const L = layout(type, n, W, H, false);
+      t += `<td><svg viewBox="-8 -8 ${W+16} ${H+16}" role="img" aria-label="${type} ${n}: ${L.desc}"><rect class="mini-area" x="-8" y="-8" width="${W+16}" height="${H+16}" rx="24"/>${L.rects.map(r => `<rect class="mini-tile" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="14"/>`).join("")}</svg><div class="cap">${L.desc}</div></td>`;
+    }
+    t += `</tr>`;
+  }
+  document.getElementById("matrix").innerHTML = t + "</tbody>";
+}
+
+function renderGame(){ renderScreen(); renderHost(); renderToolbar(); }
+function renderAll(){ renderGame(); renderCreator(); }
+
+function newHint(type){ return type === "text" ? { text:"", visible:false } : { img:null, caption:"", visible:false }; }
+function setCount(n){
+  const cur = state.hints.length;
+  if (n > cur) for (let i = cur; i < n; i++) state.hints.push(sampleHint(state.type, i));
+  else state.hints.length = n;
+}
+
+document.getElementById("typeSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const t = b.dataset.type === "none" ? null : b.dataset.type;
+  if (t === state.type) return;
+  const n = state.hints.length || 5;
+  state.type = t; state.pending = null; state.hints = [];
+  if (t) setCount(n);
+  renderAll();
+});
+document.getElementById("dec1").onclick = () => { setCount(state.hints.length - 1); renderAll(); };
+document.getElementById("inc1").onclick = () => { setCount(state.hints.length + 1); renderAll(); };
+document.getElementById("longChk").onchange = e => { state.long = e.target.checked; state.hints = state.hints.map((h, i) => ({ ...sampleHint("text", i), visible: h.visible })); renderAll(); };
+document.getElementById("capChk").onchange = e => { state.captions = e.target.checked; state.hints.forEach((h, i) => h.caption = state.captions ? CAPTIONS[i] : ""); renderAll(); };
+document.getElementById("showAll").onclick = () => { state.hints.forEach(h => h.visible = true); renderGame(); };
+document.getElementById("hideAll").onclick = () => { state.hints.forEach(h => h.visible = false); renderGame(); };
+document.getElementById("hostTable").addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const a = b.dataset.act;
+  if (a === "q") state.qVisible = !state.qVisible;
+  else { const h = state.hints[+a.slice(1)]; h.visible = !h.visible; }
+  renderGame();
+});
+
+const insp = document.getElementById("inspector");
+function act(a){
+  const n = state.hints.length, num = s => +a.slice(s.length);
+  if (a === "add-text" || a === "add-image"){ state.type = a.slice(4); state.hints.push(newHint(state.type)); }
+  else if (a === "add"){ if (n < 10) state.hints.push(newHint(state.type)); }
+  else if (a === "switch-text" || a === "switch-image"){ const t = a.slice(7); state.pending = t === state.type ? null : t; renderCreator(); return; }
+  else if (a === "cancel"){ state.pending = null; }
+  else if (a === "confirm"){ state.type = state.pending; state.pending = null; state.hints = [newHint(state.type)]; }
+  else if (a.startsWith("up")){ const i = num("up"); [state.hints[i-1], state.hints[i]] = [state.hints[i], state.hints[i-1]]; }
+  else if (a.startsWith("down")){ const i = num("down"); [state.hints[i+1], state.hints[i]] = [state.hints[i], state.hints[i+1]]; }
+  else if (a.startsWith("del")){ state.hints.splice(num("del"), 1); if (!state.hints.length){ state.pending = null; } }
+  else if (a.startsWith("pick")){ const i = num("pick"); state.hints[i].img = i; }
+  else if (a.startsWith("clear")){ state.hints[num("clear")].img = null; }
+  else return;
+  renderAll();
+}
+insp.addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (b && !b.disabled) act(b.dataset.act); });
+insp.addEventListener("keydown", e => { const b = e.target.closest(".dz[data-act]"); if (b && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); act(b.dataset.act); } });
+insp.addEventListener("input", e => {
+  const k = e.target.dataset.bind; if (!k) return;
+  const v = e.target.value;
+  if (k === "q") state.qText = v;
+  else if (k === "a") state.answer = v;
+  else if (k[0] === "t"){
+    const i = +k.slice(1); state.hints[i].text = v;
+    document.getElementById("hc" + i).textContent = v.length + " / 250";
+    document.getElementById("he" + i).textContent = v.trim() ? "" : `Hint ${i+1} has no text.`;
+    e.target.parentElement.classList.toggle("invalid", !v.trim());
+  }
+  else if (k[0] === "c") state.hints[+k.slice(1)].caption = v;
+  renderGame();
+});
+
+const wrap = document.getElementById("screenWrap"), screen = document.getElementById("screen");
+const fit = () => { screen.style.transform = `scale(${wrap.clientWidth / 1920})`; };
+new ResizeObserver(fit).observe(wrap); fit();
+
+const src = document.getElementById("issueSrc").textContent.replace(/^\n/, "");
+document.getElementById("issueText").textContent = src;
+document.getElementById("copyIssue").addEventListener("click", async e => {
+  const btn = e.currentTarget;
+  try { await navigator.clipboard.writeText(src); btn.textContent = "Copied"; }
+  catch { const r = document.createRange(); r.selectNodeContents(document.getElementById("issueText")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Selected, press Ctrl+C"; }
+  setTimeout(() => btn.textContent = "Copy markdown", 2000);
+});
+
+renderMatrix();
+renderAll();
+})();
+</script>
+
+</body>
+</html>
