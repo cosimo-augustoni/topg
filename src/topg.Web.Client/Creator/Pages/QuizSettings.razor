@@ -1,0 +1,109 @@
+@page "/create/{ProjectId:guid}/quiz"
+@* S-4 Quiz settings (ui-concept.md) *@
+@inject ProjectSession Session
+@inject CreatorSettingsService Settings
+@inject ICreatorStorage Storage
+@inject FileDownloader Downloader
+@inject ISnackbar Snackbar
+
+<PageTitle>Quiz settings · topg Creator</PageTitle>
+
+<ProjectScope ProjectId="ProjectId" Context="project">
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="py-6">
+        <MudText Typo="Typo.h6" Class="mb-4">Quiz settings</MudText>
+
+        <MudStack Spacing="4">
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.subtitle2" Class="section-title mb-3">General</MudText>
+                <MudTextField T="string" Label="Name" Required="true" Value="project.Name"
+                              ValueChanged="v => Session.Change(p => p.Name = v)" DebounceInterval="300"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" RequiredError="Quiz name is required."
+                              HelperText="Shown to the host when choosing a template." />
+            </MudPaper>
+
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.subtitle2" Class="section-title mb-3">Images / CDN</MudText>
+                <MudStack Spacing="3">
+                    <div class="d-flex align-start gap-2">
+                        <MudTextField T="string" Label="Base URL" Required="true" Value="project.BaseUrl"
+                                      ValueChanged="v => Session.Change(p => p.BaseUrl = v.Trim())" DebounceInterval="300"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="https://cdn.example.com/quiz"
+                                      Validation="@(new Func<string, string?>(CreatorValidation.BaseUrl))" />
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="mt-2 text-nowrap"
+                                   Disabled="@(string.IsNullOrEmpty(Settings.Current.DefaultBaseUrl) || Settings.Current.DefaultBaseUrl == project.BaseUrl)"
+                                   OnClick="() => Session.Change(p => p.BaseUrl = Settings.Current.DefaultBaseUrl)">Use default</MudButton>
+                    </div>
+                    <MudTextField T="string" Label="Folder" Required="true" Value="project.Folder"
+                                  ValueChanged="v => Session.Change(p => p.Folder = v.Trim())" DebounceInterval="300"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Validation="@(new Func<string, string?>(CreatorValidation.Folder))"
+                                  HelperText="The images are uploaded to this folder on the CDN." />
+                    <div>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Example image URL</MudText>
+                        <MudText Typo="Typo.body2" Class="monospace">@ImageRef.UrlPrefix(project.BaseUrl, project.Folder)3f9a1c0b2d4e5f60.png</MudText>
+                    </div>
+                    @if (project.LastExportedAt is { } exportedAt)
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true">
+                            Changing the base URL or folder changes all image URLs. This quiz was exported on
+                            @RelativeTime.Absolute(exportedAt) – upload the images again after exporting.
+                        </MudAlert>
+                    }
+                </MudStack>
+            </MudPaper>
+
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.subtitle2" Class="section-title mb-3">Database import</MudText>
+                <MudSwitch T="bool" Value="project.ReplaceExisting" ValueChanged="v => Session.Change(p => p.ReplaceExisting = v)"
+                           Color="Color.Primary" Label="Replace existing quizzes with the same name" />
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mt-1">
+                    @if (project.ReplaceExisting)
+                    {
+                        <text>The SQL first deletes every template named "@project.Name.Trim()" including its boards and questions.</text>
+                    }
+                    else
+                    {
+                        <text>The SQL only inserts. Importing twice creates two templates with the same name.</text>
+                    }
+                </MudText>
+            </MudPaper>
+
+            <MudPaper Outlined="true" Class="pa-4">
+                <MudText Typo="Typo.subtitle2" Class="section-title mb-3">Backup</MudText>
+                <div class="d-flex align-center gap-3">
+                    <MudText Typo="Typo.body2">
+                        Last project file export:
+                        @(project.LastProjectFileExportAt is { } at ? RelativeTime.Absolute(at) : "never")
+                    </MudText>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Download"
+                               OnClick="() => ExportProjectFileAsync(project)">
+                        Export project file
+                    </MudButton>
+                </div>
+            </MudPaper>
+        </MudStack>
+    </MudContainer>
+</ProjectScope>
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    protected override Task OnInitializedAsync() => Settings.EnsureLoadedAsync();
+
+    private async Task ExportProjectFileAsync(QuizProject project)
+    {
+        try
+        {
+            var bytes = await ProjectFile.CreateAsync(project, Storage);
+            await Downloader.DownloadAsync(ProjectFile.FileName(project), "application/zip", bytes);
+            Session.Change(p => p.LastProjectFileExportAt = DateTimeOffset.UtcNow);
+            Snackbar.Add($"{ProjectFile.FileName(project)} downloaded", Severity.Success);
+        }
+        catch (ExportException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+}

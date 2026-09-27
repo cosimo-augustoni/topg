@@ -1,0 +1,12 @@
+@page "/create/{ProjectId:guid}"
+@inject NavigationManager Navigation
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        Navigation.NavigateTo(CreatorLocation.Board(ProjectId, 1), replace: true);
+    }
+}

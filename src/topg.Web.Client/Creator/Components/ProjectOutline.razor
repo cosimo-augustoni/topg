@@ -1,0 +1,143 @@
+@* S-3 left pane: boards › categories (alphabetical) › questions (by points), in sync with the selection. *@
+@inject ProjectSession Session
+@inject NavigationManager Navigation
+
+<div class="d-flex flex-column" style="height: 100%">
+    <MudText Typo="Typo.subtitle2" Class="section-title px-3 pt-3 pb-1">Outline</MudText>
+    <div class="outline-tree">
+        <MudTreeView T="string" Dense="true" Hover="true" SelectionMode="SelectionMode.SingleSelection"
+                     SelectedValue="SelectedKey" SelectedValueChanged="OnSelected" Color="Color.Primary">
+            @for (var i = 0; i < Project.Boards.Count; i++)
+            {
+                var board = Project.Boards[i];
+                var number = i + 1;
+                <MudTreeViewItem T="string" Value="@($"b:{board.Id}")" @key="board.Id"
+                                 Expanded="IsExpanded(board.Id)" ExpandedChanged="e => SetExpanded(board.Id, e)">
+                    <Content>
+                        <MudTreeViewItemToggleButton Visible="board.Categories.Count > 0"
+                                                     Expanded="IsExpanded(board.Id)" ExpandedChanged="e => SetExpanded(board.Id, e)" />
+                        <MudIcon Icon="@CreatorIcons.Board" Size="Size.Small" Class="mr-2" />
+                        <MudText Typo="Typo.body2" Class="@(number == CurrentBoardNumber ? "font-weight-bold" : "")">Board @number</MudText>
+                        <MudSpacer />
+                        <ValidationBadge Issues="Session.IssuesInBoard(board.Id)" />
+                    </Content>
+                    <ChildContent>
+                        @foreach (var category in GameOrder.Categories(board))
+                        {
+                            <MudTreeViewItem T="string" Value="@($"c:{category.Id}")" @key="category.Id"
+                                             Expanded="IsExpanded(category.Id)" ExpandedChanged="e => SetExpanded(category.Id, e)">
+                                <Content>
+                                    <MudTreeViewItemToggleButton Visible="category.Questions.Count > 0"
+                                                                 Expanded="IsExpanded(category.Id)" ExpandedChanged="e => SetExpanded(category.Id, e)" />
+                                    <MudIcon Icon="@CreatorIcons.Category" Size="Size.Small" Class="mr-2" />
+                                    <MudText Typo="Typo.body2" Class="outline-label">@(string.IsNullOrWhiteSpace(category.Name) ? "(unnamed)" : category.Name)</MudText>
+                                    <MudSpacer />
+                                    <ValidationBadge Issues="Session.IssuesFor(category.Id)" />
+                                </Content>
+                                <ChildContent>
+                                    @foreach (var question in GameOrder.Questions(category))
+                                    {
+                                        <MudTreeViewItem T="string" Value="@($"q:{question.Id}")" @key="question.Id">
+                                            <Content>
+                                                <div class="outline-spacer"></div>
+                                                <QuestionTypeIcon Type="question.Type" />
+                                                <MudText Typo="Typo.body2" Class="ml-2">@question.Points</MudText>
+                                                <MudSpacer />
+                                                <ValidationBadge Issues="Session.IssuesFor(question.Id)" />
+                                            </Content>
+                                        </MudTreeViewItem>
+                                    }
+                                </ChildContent>
+                            </MudTreeViewItem>
+                        }
+                    </ChildContent>
+                </MudTreeViewItem>
+            }
+        </MudTreeView>
+    </div>
+    <div class="pa-2">
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" OnClick="OnAddBoard">Board</MudButton>
+    </div>
+</div>
+
+@code {
+    private readonly HashSet<Guid> _expanded = [];
+    private readonly HashSet<Guid> _collapsed = [];
+
+    [Parameter, EditorRequired]
+    public required QuizProject Project { get; set; }
+
+    [Parameter]
+    public int CurrentBoardNumber { get; set; }
+
+    [Parameter]
+    public EventCallback OnAddBoard { get; set; }
+
+    private string? SelectedKey => Session.Selection.Kind switch
+    {
+        EditorSelectionKind.Question => $"q:{Session.Selection.Id}",
+        EditorSelectionKind.Category => $"c:{Session.Selection.Id}",
+        _ => CurrentBoardNumber >= 1 && CurrentBoardNumber <= Project.Boards.Count ? $"b:{Project.Boards[CurrentBoardNumber - 1].Id}" : null,
+    };
+
+    protected override void OnParametersSet()
+    {
+        // Expand the path to the selection and the current board, unless the user collapsed it.
+        if (CurrentBoardNumber >= 1 && CurrentBoardNumber <= Project.Boards.Count)
+        {
+            AutoExpand(Project.Boards[CurrentBoardNumber - 1].Id);
+        }
+
+        if (Session.Selection.Kind == EditorSelectionKind.Question && Project.FindQuestion(Session.Selection.Id) is { } q)
+        {
+            AutoExpand(q.Board.Id);
+            AutoExpand(q.Category.Id);
+        }
+    }
+
+    private void AutoExpand(Guid id)
+    {
+        if (!_collapsed.Contains(id))
+        {
+            _expanded.Add(id);
+        }
+    }
+
+    private bool IsExpanded(Guid id) => _expanded.Contains(id);
+
+    private void SetExpanded(Guid id, bool expanded)
+    {
+        if (expanded)
+        {
+            _expanded.Add(id);
+            _collapsed.Remove(id);
+        }
+        else
+        {
+            _expanded.Remove(id);
+            _collapsed.Add(id);
+        }
+    }
+
+    private void OnSelected(string? key)
+    {
+        if (key is null || key == SelectedKey || !Guid.TryParse(key[2..], out var id))
+        {
+            return;
+        }
+
+        switch (key[0])
+        {
+            case 'b' when Project.FindBoard(id) is { } board:
+                Session.ClearSelection();
+                Navigation.NavigateTo(CreatorLocation.Board(Project.Id, Project.BoardNumber(board)));
+                break;
+            case 'c':
+                Session.Select(EditorSelection.Category(id));
+                break;
+            case 'q':
+                Session.Select(EditorSelection.Question(id));
+                break;
+        }
+    }
+}

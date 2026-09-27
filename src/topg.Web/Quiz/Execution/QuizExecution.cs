@@ -17,10 +17,11 @@ public class QuizExecution
     public QuizExecution(QuizTemplate template)
     {
         Name = template.Name;
-        Boards = template.Boards.Select(b => new Board
+        // The DB returns boards and questions in no guaranteed order, so apply the template's order explicitly.
+        Boards = template.Boards.OrderBy(b => b.Order).Select(b => new Board
         {
             Order = b.Order,
-            Questions = b.Questions.Select<Templating.DomainObjects.Question, Question>(q => q switch
+            Questions = b.Questions.OrderBy(q => q.Category).ThenBy(q => q.Order).Select<Templating.DomainObjects.Question, Question>(q => q switch
             {
                 Templating.DomainObjects.ImageQuestion imageQuestion => new ImageQuestion(imageQuestion),
                 Templating.DomainObjects.SoundQuestion soundQuestion => new SoundQuestion(soundQuestion),

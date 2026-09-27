@@ -1,0 +1,26 @@
+.sql-preview {
+    max-height: 360px;
+    overflow: auto;
+    margin: 0;
+    padding: 12px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre;
+    background-color: var(--mud-palette-background-gray);
+    border-radius: var(--mud-default-borderradius);
+}
+
+.export-thumbnail {
+    height: 40px;
+    width: 56px;
+    object-fit: contain;
+    display: block;
+}
+
+.next-steps {
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}

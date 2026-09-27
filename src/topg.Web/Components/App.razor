@@ -9,17 +9,42 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" />
     <link rel="stylesheet" href="@Assets["topg.Web.styles.css"]" />
+    @if (IsCreator)
+    {
+        <link rel="stylesheet" href="@Assets["creator.css"]" />
+    }
     <ImportMap />
     <link rel="icon" type="image/ico" href="favicon.ico" />
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer" />
-    <ReconnectModal />
+    @if (IsCreator)
+    {
+        <div class="creator-boot">Loading creator…</div>
+        <topg.Web.Client.CreatorRoutes @rendermode="PageRenderMode" />
+    }
+    else
+    {
+        <Routes @rendermode="PageRenderMode" />
+        <ReconnectModal />
+    }
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
     <script src="@Assets["js/audio.js"]"></script>
 </body>
 
 </html>
+
+@code {
+    // The quiz creator (/create) runs in the browser (WebAssembly) so drafts and images can stay local.
+    // Prerendering is disabled for it because it depends on browser-only APIs (IndexedDB).
+    private static readonly IComponentRenderMode CreatorRenderMode = new InteractiveWebAssemblyRenderMode(prerender: false);
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private bool IsCreator => HttpContext.Request.Path.StartsWithSegments("/create");
+
+    private IComponentRenderMode PageRenderMode => IsCreator ? CreatorRenderMode : InteractiveServer;
+}

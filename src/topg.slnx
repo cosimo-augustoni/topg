@@ -3,4 +3,7 @@
   <Project Path="topg.MigrationService/topg.MigrationService.csproj" />
   <Project Path="topg.ServiceDefaults/topg.ServiceDefaults.csproj" />
   <Project Path="topg.Web/topg.Web.csproj" />
+  <Project Path="topg.Web.Client/topg.Web.Client.csproj" />
+  <Project Path="topg.Web.Client.Tests/topg.Web.Client.Tests.csproj" />
+  <Project Path="topg.Web.IntegrationTests/topg.Web.IntegrationTests.csproj" />
 </Solution>

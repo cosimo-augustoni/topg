@@ -1,0 +1,6 @@
+@* Root component for everything under /create. Rendered in InteractiveWebAssembly by topg.Web's App.razor. *@
+<Router AppAssembly="typeof(CreatorRoutes).Assembly" NotFoundPage="typeof(Creator.Pages.CreatorNotFound)">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(CreatorLayout)" />
+    </Found>
+</Router>

@@ -1,0 +1,298 @@
+@page "/create"
+@* S-1 Projects (ui-concept.md) *@
+@inject ProjectStore Store
+@inject ProjectSession Session
+@inject ICreatorStorage Storage
+@inject CreatorSettingsService Settings
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject FileDownloader Downloader
+
+<PageTitle>Projects · topg Creator</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+        <MudText Typo="Typo.h6">Projects</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.Upload" OnClick="ImportAsync"
+                       Disabled="@(_storageError is not null)">Import</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="CreateAsync"
+                       Disabled="@(_storageError is not null)">New project</MudButton>
+        </MudStack>
+    </MudStack>
+
+    @if (_storageError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-3">
+            Browser storage is not available. Projects can't be saved. (@_storageError)
+        </MudAlert>
+    }
+    else if (!Settings.Current.ProjectsHintDismissed)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" ShowCloseIcon="true" CloseIconClicked="DismissHintAsync" Class="mb-3">
+            Projects are only stored in this browser. Export a project file to back up or move a quiz.
+        </MudAlert>
+    }
+
+    @if (_projects is { Count: 0 } && _storageError is null)
+    {
+        <MudPaper Outlined="true">
+            <EmptyState Icon="@Icons.Material.Outlined.Quiz" Title="No quizzes yet"
+                        Description="Create your first quiz or import a project file.">
+                <Actions>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="CreateAsync">New project</MudButton>
+                    <MudButton Variant="Variant.Text" OnClick="ImportAsync">Import</MudButton>
+                </Actions>
+            </EmptyState>
+        </MudPaper>
+    }
+    else if (_storageError is null)
+    {
+        <MudDataGrid T="ProjectSummary" Items="_projects" Loading="@(_projects is null)" Dense="true" Hover="true" Outlined="true" Elevation="0"
+                     RowClick="OnRowClick" QuickFilter="QuickFilter" SortMode="SortMode.Single" RowClass="project-row">
+            <ToolBarContent>
+                <MudTextField T="string" @bind-Value="_search" Placeholder="Search…" Adornment="Adornment.Start" Immediate="true"
+                              AdornmentIcon="@Icons.Material.Outlined.Search" IconSize="Size.Small" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Clearable="true" Class="mt-0" Style="max-width: 360px" />
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="p => p.Name" Title="Name">
+                    <CellTemplate>
+                        <div class="d-flex align-center gap-2">
+                            <MudText Typo="Typo.body2" Class="@(context.Item.IsCorrupt ? "mud-error-text" : "")">@context.Item.Name</MudText>
+                            <ValidationBadge Issues="context.Item.Issues" />
+                        </div>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="p => p.BoardCount" Title="Boards" HeaderStyle="width: 110px" CellStyle="text-align: right" />
+                <PropertyColumn Property="p => p.QuestionCount" Title="Questions" HeaderStyle="width: 120px" CellStyle="text-align: right" />
+                <PropertyColumn Property="p => p.UpdatedAt" Title="Last edited" InitialDirection="SortDirection.Descending" HeaderStyle="width: 160px">
+                    <CellTemplate>
+                        <MudTooltip Text="@RelativeTime.Absolute(context.Item.UpdatedAt)">
+                            <MudText Typo="Typo.body2">@RelativeTime.Format(context.Item.UpdatedAt)</MudText>
+                        </MudTooltip>
+                    </CellTemplate>
+                </PropertyColumn>
+                <TemplateColumn Sortable="false" HeaderStyle="width: 56px">
+                    <CellTemplate>
+                        <div @onclick:stopPropagation="true">
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AriaLabel="Project actions"
+                                     AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                                <MudMenuItem Icon="@Icons.Material.Outlined.OpenInNew" OnClick="() => Open(context.Item)" Disabled="context.Item.IsCorrupt">Open</MudMenuItem>
+                                <MudMenuItem Icon="@Icons.Material.Outlined.Edit" OnClick="() => Defer(() => RenameAsync(context.Item))" Disabled="context.Item.IsCorrupt">Rename</MudMenuItem>
+                                <MudMenuItem Icon="@Icons.Material.Outlined.ContentCopy" OnClick="() => Defer(() => DuplicateAsync(context.Item))" Disabled="context.Item.IsCorrupt">Duplicate</MudMenuItem>
+                                <MudMenuItem Icon="@Icons.Material.Outlined.Download" OnClick="() => Defer(() => ExportProjectFileAsync(context.Item))" Disabled="context.Item.IsCorrupt">Export project file</MudMenuItem>
+                                <MudDivider />
+                                <MudMenuItem Icon="@Icons.Material.Outlined.Delete" IconColor="Color.Error" OnClick="() => Defer(() => DeleteAsync(context.Item))">Delete</MudMenuItem>
+                            </MudMenu>
+                        </div>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+</MudContainer>
+
+@code {
+    private List<ProjectSummary>? _projects;
+    private string _search = "";
+    private string? _storageError;
+
+    private Func<ProjectSummary, bool> QuickFilter => p =>
+        string.IsNullOrWhiteSpace(_search) || p.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync()
+    {
+        // The list edits the store directly, so the editor session must not hold (and later overwrite) a project.
+        await Session.CloseAsync();
+        await Settings.EnsureLoadedAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _projects = (await Store.ListAsync()).ToList();
+            _storageError = null;
+        }
+        catch (JSException ex)
+        {
+            _storageError = ex.Message;
+        }
+    }
+
+    private void OnRowClick(DataGridRowClickEventArgs<ProjectSummary> args) => Open(args.Item);
+
+    private void Open(ProjectSummary project)
+    {
+        if (!project.IsCorrupt)
+        {
+            Navigation.NavigateTo(CreatorLocation.Project(project.Id));
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        var dialog = await Dialogs.ShowAsync<NewProjectDialog>("New quiz", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+        if (await dialog.Result is not { Canceled: false, Data: QuizProject project })
+        {
+            return;
+        }
+
+        try
+        {
+            await Store.SaveAsync(project);
+        }
+        catch (JSException ex)
+        {
+            Snackbar.Add($"The project could not be saved: {ex.Message}", Severity.Error);
+            return;
+        }
+
+        await RequestPersistenceOnceAsync();
+        Navigation.NavigateTo(CreatorLocation.Board(project.Id, 1));
+    }
+
+    /// <summary>With the first project, ask the browser to keep the data (clearing site data would delete drafts).</summary>
+    private async Task RequestPersistenceOnceAsync()
+    {
+        try
+        {
+            var estimate = await Storage.GetStorageEstimateAsync();
+            if (!estimate.Persisted && estimate.CanPersist)
+            {
+                await Storage.RequestPersistenceAsync();
+            }
+        }
+        catch (JSException)
+        {
+            // Not critical: the settings page shows the state and offers the request again.
+        }
+    }
+
+    private async Task ImportAsync()
+    {
+        var dialog = await Dialogs.ShowAsync<ImportProjectDialog>("Import project file",
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+        if (await dialog.Result is not { Canceled: false, Data: QuizProject project })
+        {
+            return;
+        }
+
+        await LoadAsync();
+        StateHasChanged();
+        Snackbar.Add($"Imported \"{project.Name}\"", Severity.Success, config =>
+        {
+            config.Action = "Open";
+            config.ActionColor = Color.Primary;
+            config.OnClick = _ =>
+            {
+                Navigation.NavigateTo(CreatorLocation.Project(project.Id));
+                return Task.CompletedTask;
+            };
+        });
+    }
+
+    private async Task ExportProjectFileAsync(ProjectSummary summary)
+    {
+        var project = await Store.GetAsync(summary.Id);
+        if (project is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var bytes = await ProjectFile.CreateAsync(project, Storage);
+            await Downloader.DownloadAsync(ProjectFile.FileName(project), "application/zip", bytes);
+        }
+        catch (ExportException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+            return;
+        }
+
+        // Bookkeeping only, so "last edited" stays as it is.
+        project.LastProjectFileExportAt = DateTimeOffset.UtcNow;
+        await Store.SaveAsync(project, touch: false);
+        Snackbar.Add($"{ProjectFile.FileName(project)} downloaded", Severity.Success);
+    }
+
+    private async Task RenameAsync(ProjectSummary summary)
+    {
+        var name = await Dialogs.ShowTextPromptAsync("Rename quiz", "Name", summary.Name);
+        if (name is null || name == summary.Name)
+        {
+            return;
+        }
+
+        await EditAsync(summary.Id, project => project.Name = name);
+    }
+
+    private async Task DuplicateAsync(ProjectSummary summary)
+    {
+        var project = await Store.GetAsync(summary.Id);
+        if (project is null)
+        {
+            return;
+        }
+
+        var copy = project.Duplicate();
+        await Store.SaveAsync(copy);
+        Snackbar.Add($"Created \"{copy.Name}\"", Severity.Success);
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(ProjectSummary summary)
+    {
+        var confirmed = await Dialogs.ShowConfirmAsync(
+            "Delete quiz",
+            $"\"{summary.Name}\" and the images only it uses are deleted from this browser. This can't be undone.",
+            "Delete",
+            destructive: true,
+            requiredText: summary.QuestionCount > 0 ? summary.Name : null);
+        if (!confirmed)
+        {
+            return;
+        }
+
+        await Store.DeleteAsync(summary.Id);
+        Snackbar.Add($"\"{summary.Name}\" deleted", Severity.Normal);
+        await LoadAsync();
+    }
+
+    private async Task EditAsync(Guid id, Action<QuizProject> edit)
+    {
+        var project = await Store.GetAsync(id);
+        if (project is null)
+        {
+            return;
+        }
+
+        edit(project);
+        await Store.SaveAsync(project);
+        await LoadAsync();
+    }
+
+    /// <summary>
+    /// Runs a menu action without making the menu wait for it, so the menu closes before a dialog opens.
+    /// It is not an event handler anymore, so Blazor doesn't re-render by itself afterwards.
+    /// </summary>
+    private void Defer(Func<Task> action) => _ = InvokeAsync(async () =>
+    {
+        try
+        {
+            await action();
+        }
+        catch (JSException ex)
+        {
+            Snackbar.Add($"Browser storage error: {ex.Message}", Severity.Error);
+        }
+
+        StateHasChanged();
+    });
+
+    private Task DismissHintAsync() => Settings.SaveAsync(Settings.Current with { ProjectsHintDismissed = true });
+}

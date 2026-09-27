@@ -1,0 +1,174 @@
+@* C-9 BoardGrid (ui-concept.md): the board as the game shows it – categories alphabetically, questions by points. *@
+@inject ProjectSession Session
+@inject CreatorSettingsService Settings
+@inject ImagePreviewCache Previews
+
+@if (Board.Categories.Count == 0)
+{
+    <MudPaper Outlined="true">
+        <EmptyState Icon="@CreatorIcons.Category" Title="This board has no categories">
+            <Actions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddCategory">Category</MudButton>
+            </Actions>
+        </EmptyState>
+    </MudPaper>
+}
+else
+{
+    var categories = GameOrder.Categories(Board);
+    <MudPaper Outlined="true" Class="board-grid-scroll">
+        <div class="board-grid" style="grid-template-columns: repeat(@Math.Max(ProjectValidator.MaxCategoriesPerBoard, categories.Count), minmax(140px, 1fr))">
+            @for (var column = 0; column < categories.Count; column++)
+            {
+                var category = categories[column];
+                var overflow = column >= ProjectValidator.MaxCategoriesPerBoard;
+                <div class="board-column" @key="category.Id">
+                    @CategoryHeader(category, overflow)
+                    @foreach (var question in GameOrder.Questions(category))
+                    {
+                        @QuestionCell(question)
+                    }
+                    <button type="button" class="add-cell" title="Add question" aria-label="@($"Add question to {category.Name}")"
+                            @onclick="() => AddQuestion(category)">
+                        <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                    </button>
+                </div>
+            }
+        </div>
+    </MudPaper>
+}
+
+@code {
+    private Guid? _editingCategoryId;
+    private string _editingName = "";
+
+    [Parameter, EditorRequired]
+    public required BoardDraft Board { get; set; }
+
+    private RenderFragment CategoryHeader(CategoryDraft category, bool overflow) => __builder =>
+    {
+        var selected = Session.Selection == EditorSelection.Category(category.Id);
+        var issues = Session.IssuesFor(category.Id);
+        <div class="@($"category-header {(selected ? "selected" : "")}")" id="@($"cell-{category.Id}")"
+             role="button" tabindex="0" title="Click to edit, double-click to rename"
+             @onclick="() => Session.Select(EditorSelection.Category(category.Id))"
+             @ondblclick="() => StartRename(category)">
+            @if (_editingCategoryId == category.Id)
+            {
+                <MudTextField T="string" @bind-Value="_editingName" Variant="Variant.Text" Margin="Margin.Dense" AutoFocus="true"
+                              Immediate="true" OnBlur="() => FinishRename(category)" OnKeyDown="e => OnRenameKey(e, category)"
+                              @onclick:stopPropagation="true" Class="mt-0" />
+            }
+            else
+            {
+                <MudText Typo="Typo.subtitle2" Class="category-name">
+                    @(string.IsNullOrWhiteSpace(category.Name) ? "(unnamed)" : category.Name)
+                </MudText>
+                <MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" Class="edit-hint" />
+            }
+            <ValidationBadge Issues="issues" />
+            @if (overflow)
+            {
+                <MudTooltip Text="Only 5 categories fit on the game board">
+                    <MudIcon Icon="@CreatorIcons.Warning" Color="Color.Warning" Size="Size.Small" Style="font-size: 16px" />
+                </MudTooltip>
+            }
+        </div>
+    };
+
+    private RenderFragment QuestionCell(QuestionDraft question) => __builder =>
+    {
+        var selected = Session.Selection == EditorSelection.Question(question.Id);
+        <div class="@($"question-cell {(selected ? "selected" : "")}")" id="@($"cell-{question.Id}")" @key="question.Id"
+             role="button" tabindex="0" aria-pressed="@selected"
+             @onclick="() => Session.Select(EditorSelection.Question(question.Id))"
+             @onkeydown="e => OnCellKey(e, question)">
+            <div class="d-flex align-center gap-1">
+                <MudText Typo="Typo.subtitle1" Class="points">@question.Points</MudText>
+                <QuestionTypeIcon Type="question.Type" />
+                <MudSpacer />
+                <ValidationBadge Issues="Session.IssuesFor(question.Id)" />
+            </div>
+            @if (question is ImageQuestionDraft { QuestionImage: { } image } && Previews.TryGetUrl(image.Hash) is { } url)
+            {
+                <img class="thumbnail" src="@url" alt="" />
+            }
+            else if (string.IsNullOrWhiteSpace(question.QuestionText))
+            {
+                <MudText Typo="Typo.caption" Class="empty-text">(empty)</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Class="question-text">@question.QuestionText</MudText>
+            }
+        </div>
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Start loading thumbnails; cells show them once the object URLs exist.
+        var pending = Board.Categories.SelectMany(c => c.Questions).OfType<ImageQuestionDraft>()
+            .Where(q => q.QuestionImage is not null)
+            .Select(q => Previews.GetUrlAsync(q.QuestionImage!.Hash))
+            .Where(t => !t.IsCompleted)
+            .ToList();
+        if (pending.Count > 0)
+        {
+            await Task.WhenAll(pending);
+        }
+    }
+
+    private void AddCategory()
+    {
+        CategoryDraft? category = null;
+        Session.Change(_ => category = Board.AddCategory());
+        Session.Select(EditorSelection.Category(category!.Id), focus: true);
+    }
+
+    private void AddQuestion(CategoryDraft category)
+    {
+        QuestionDraft? question = null;
+        Session.Change(_ => question = category.AddQuestion(Settings.Current.DefaultPoints));
+        Session.Select(EditorSelection.Question(question!.Id), focus: true);
+    }
+
+    private void StartRename(CategoryDraft category)
+    {
+        _editingCategoryId = category.Id;
+        _editingName = category.Name;
+    }
+
+    private void FinishRename(CategoryDraft category)
+    {
+        if (_editingCategoryId != category.Id)
+        {
+            return;
+        }
+
+        _editingCategoryId = null;
+        if (_editingName.Trim() != category.Name)
+        {
+            Session.Change(_ => category.Name = _editingName.Trim());
+        }
+    }
+
+    private void OnRenameKey(KeyboardEventArgs e, CategoryDraft category)
+    {
+        if (e.Key == "Enter")
+        {
+            FinishRename(category);
+        }
+        else if (e.Key == "Escape")
+        {
+            _editingCategoryId = null;
+        }
+    }
+
+    private void OnCellKey(KeyboardEventArgs e, QuestionDraft question)
+    {
+        if (e.Key is "Enter" or " ")
+        {
+            Session.Select(EditorSelection.Question(question.Id), focus: true);
+        }
+    }
+}

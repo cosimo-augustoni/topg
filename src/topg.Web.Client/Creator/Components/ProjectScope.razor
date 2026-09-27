@@ -1,0 +1,50 @@
+@* Opens the project of the route in the ProjectSession and shows loading / not found states for project pages. *@
+@implements IDisposable
+@inject ProjectSession Session
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (Session.Project is null)
+{
+    <EmptyState Icon="@Icons.Material.Outlined.SearchOff" Title="Project not found" Class="mt-8"
+                Description="@(Session.LoadError is null ? "It may have been deleted, or it was created in another browser." : $"The project could not be read: {Session.LoadError}")">
+        <Actions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="@CreatorLocation.Root">Back to projects</MudButton>
+        </Actions>
+    </EmptyState>
+}
+else
+{
+    @ChildContent(Session.Project)
+}
+
+@code {
+    private bool _loading = true;
+
+    [Parameter, EditorRequired]
+    public Guid ProjectId { get; set; }
+
+    [Parameter, EditorRequired]
+    public required RenderFragment<QuizProject> ChildContent { get; set; }
+
+    protected override void OnInitialized() => Session.Changed += OnSessionChanged;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Session.Project?.Id == ProjectId)
+        {
+            _loading = false;
+            return;
+        }
+
+        _loading = true;
+        await Session.OpenAsync(ProjectId);
+        _loading = false;
+    }
+
+    private void OnSessionChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Session.Changed -= OnSessionChanged;
+}

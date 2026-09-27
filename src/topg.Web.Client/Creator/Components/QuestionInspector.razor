@@ -1,0 +1,206 @@
+@* S-3a / S-3b Question inspector (ui-concept.md). Fields write to the model on input (debounced) and trigger the autosave. *@
+@inject ProjectSession Session
+@inject CreatorSettingsService Settings
+@inject IDialogService Dialogs
+@inject UndoSnackbar Undo
+
+@{
+    var question = Location.Question;
+    var issues = Session.IssuesFor(question.Id);
+}
+
+<div class="inspector" @key="question.Id">
+    <div class="d-flex align-center px-4 pt-3">
+        <MudText Typo="Typo.subtitle2" Class="section-title">Question</MudText>
+        <MudSpacer />
+        <MudTooltip Text="Close (Esc)">
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="Session.ClearSelection" aria-label="Close inspector" />
+        </MudTooltip>
+    </div>
+    <div class="d-flex align-center px-4 pb-2 gap-2">
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            Board @Location.BoardNumber › @CategoryName › @question.Points
+        </MudText>
+        <MudSpacer />
+        @if (issues.Count > 0)
+        {
+            <ValidationBadge Issues="issues" />
+            <MudText Typo="Typo.caption" Color="@(issues.Any(i => i.Severity == ValidationSeverity.Error) ? Color.Error : Color.Warning)">
+                @issues.Count issue@(issues.Count == 1 ? "" : "s")
+            </MudText>
+        }
+    </div>
+
+    <MudStack Spacing="3" Class="px-4 pb-4">
+        <div class="field-row">
+            <MudText Typo="Typo.body2" Class="field-label">Type</MudText>
+            <MudToggleGroup T="QuestionType" Value="question.Type" ValueChanged="ChangeTypeAsync" Size="Size.Small" Outlined="true" Color="Color.Primary">
+                @foreach (var type in SupportedTypes)
+                {
+                    <MudToggleItem Value="type">
+                        <span class="d-flex align-center gap-1"><MudIcon Icon="@CreatorIcons.For(type)" Size="Size.Small" />@CreatorIcons.Label(type)</span>
+                    </MudToggleItem>
+                }
+            </MudToggleGroup>
+        </div>
+        <div class="field-row">
+            <MudText Typo="Typo.body2" Class="field-label">Answer via</MudText>
+            <MudToggleGroup T="AnswerType" Value="question.AnswerType" ValueChanged="v => Session.Change(_ => question.AnswerType = v)"
+                            Size="Size.Small" Outlined="true" Color="Color.Primary">
+                @foreach (var type in Enum.GetValues<AnswerType>())
+                {
+                    <MudToggleItem Value="type">
+                        <span class="d-flex align-center gap-1"><MudIcon Icon="@CreatorIcons.For(type)" Size="Size.Small" />@CreatorIcons.Label(type)</span>
+                    </MudToggleItem>
+                }
+            </MudToggleGroup>
+        </div>
+        <div class="field-row">
+            <MudText Typo="Typo.body2" Class="field-label">Points</MudText>
+            <MudNumericField T="int" Value="question.Points" ValueChanged="v => Session.Change(_ => question.Points = v)"
+                             Min="1" Step="PointsStep" Variant="Variant.Outlined" Margin="Margin.Dense" DebounceInterval="300"
+                             Validation="@(new Func<int, string?>(p => p <= 0 ? "Points must be greater than 0." : null))" Style="max-width: 140px" />
+        </div>
+
+        <MudDivider />
+
+        <MudTextField T="string" @ref="_questionField" Label="@(question is ImageQuestionDraft ? "Question text" : "Question")"
+                      Required="true" RequiredError="Question text is required."
+                      Value="question.QuestionText" ValueChanged="v => Session.Change(_ => question.QuestionText = v)"
+                      DebounceInterval="300" Lines="4" Sizing="InputSizing.Auto" MaxLines="10"
+                      Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Error="@ForceError(question.QuestionText)" ErrorText="Question text is required." />
+
+        @switch (question)
+        {
+            case TextQuestionDraft text:
+                <MudTextField T="string" Label="Correct answer" Required="true" RequiredError="Correct answer is required."
+                              Value="text.CorrectAnswer" ValueChanged="v => Session.Change(_ => text.CorrectAnswer = v)"
+                              DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Error="@ForceError(text.CorrectAnswer)" ErrorText="Correct answer is required." />
+                break;
+
+            case ImageQuestionDraft image:
+                <ImageDropZone Label="Question image" Required="true" UrlPrefix="@UrlPrefix"
+                               Value="image.QuestionImage" ValueChanged="v => Session.Change(_ => image.QuestionImage = v)" />
+                @if (Session.ShowFieldErrors && image.QuestionImage is null)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error" Class="mt-n2">Question image is required.</MudText>
+                }
+                <div class="field-row">
+                    <MudText Typo="Typo.body2" Class="field-label">Display size</MudText>
+                    <MudToggleGroup T="ImageSize" Value="image.ImageSize" ValueChanged="v => Session.Change(_ => image.ImageSize = v)"
+                                    Size="Size.Small" Outlined="true" Color="Color.Primary">
+                        <MudToggleItem Value="ImageSize.Small" Text="S" />
+                        <MudToggleItem Value="ImageSize.Medium" Text="M" />
+                        <MudToggleItem Value="ImageSize.Large" Text="L" />
+                    </MudToggleGroup>
+                    <div class="size-visual" title="Relative width on the game screen">
+                        <div class="size-bar" style="width: @SizeWidth(image.ImageSize)"></div>
+                    </div>
+                </div>
+
+                <MudDivider />
+
+                <MudTextField T="string" Label="Answer text"
+                              Value="image.AnswerText" ValueChanged="v => Session.Change(_ => image.AnswerText = v)"
+                              DebounceInterval="300" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <ImageDropZone Label="Answer image (optional)" UrlPrefix="@UrlPrefix"
+                               Value="image.AnswerImage" ValueChanged="v => Session.Change(_ => image.AnswerImage = v)" />
+                break;
+        }
+
+        <MudDivider />
+
+        <div class="d-flex align-center gap-2 flex-wrap">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Outlined.ContentCopy" OnClick="Duplicate">Duplicate</MudButton>
+            <MudMenu Label="Move to…" Variant="Variant.Outlined" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowDropDown" Dense="true"
+                     Disabled="@(!MoveTargets.Any())">
+                @foreach (var target in MoveTargets)
+                {
+                    <MudMenuItem OnClick="() => Move(target.Category)">@target.Label</MudMenuItem>
+                }
+            </MudMenu>
+            <MudSpacer />
+            <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Outlined.Delete" OnClick="Delete">Delete</MudButton>
+        </div>
+    </MudStack>
+</div>
+
+@code {
+    private static readonly QuestionType[] SupportedTypes = [QuestionType.Text, QuestionType.Image];
+
+    private MudTextField<string>? _questionField;
+    private int _handledFocusRequest;
+
+    [Parameter, EditorRequired]
+    public required QuestionLocation Location { get; set; }
+
+    private QuizProject Project => Session.Project!;
+
+    private string CategoryName => string.IsNullOrWhiteSpace(Location.Category.Name) ? "(unnamed)" : Location.Category.Name.Trim();
+
+    private string UrlPrefix => ImageRef.UrlPrefix(Project.BaseUrl, Project.Folder);
+
+    /// <summary>Step of the default points list, e.g. 100.</summary>
+    private int PointsStep => Settings.Current.DefaultPoints is { Count: > 1 } p ? Math.Max(1, p[1] - p[0]) : 100;
+
+    private IEnumerable<(CategoryDraft Category, string Label)> MoveTargets =>
+        Project.Boards.SelectMany((board, i) => GameOrder.Categories(board)
+            .Where(c => c != Location.Category)
+            .Select(c => (c, $"Board {i + 1} › {(string.IsNullOrWhiteSpace(c.Name) ? "(unnamed)" : c.Name.Trim())}")));
+
+    /// <summary>MudBlazor shows required errors once a field is touched; opened from C-5 they show right away.</summary>
+    private bool ForceError(string value) => Session.ShowFieldErrors && string.IsNullOrWhiteSpace(value);
+
+    private static string SizeWidth(ImageSize size) => size switch
+    {
+        // Same relative widths as SimpleImageQuestion.razor.
+        ImageSize.Small => "40%",
+        ImageSize.Medium => "70%",
+        _ => "100%",
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Session.FocusRequest != _handledFocusRequest && _questionField is not null)
+        {
+            _handledFocusRequest = Session.FocusRequest;
+            await _questionField.FocusAsync();
+        }
+    }
+
+    private async Task ChangeTypeAsync(QuestionType type)
+    {
+        var question = Location.Question;
+        if (ProjectEditing.WouldLoseData(question, type)
+            && !await Dialogs.ShowConfirmAsync("Switch type", "The images of this question will be removed. The answer text is kept.", "Switch type"))
+        {
+            return;
+        }
+
+        Session.Change(project => project.ChangeQuestionType(question, type));
+    }
+
+    private void Duplicate()
+    {
+        QuestionDraft? copy = null;
+        Session.Change(_ => copy = Location.Category.DuplicateQuestion(Location.Question));
+        Session.Select(EditorSelection.Question(copy!.Id), focus: true);
+    }
+
+    private void Move(CategoryDraft target)
+    {
+        var question = Location.Question;
+        Session.ChangeWithUndo("move question", project => project.MoveQuestion(question, target));
+        Undo.Show($"Question moved to \"{target.Name.Trim()}\"");
+    }
+
+    private void Delete()
+    {
+        var id = Location.Question.Id;
+        Session.ChangeWithUndo("delete question", project => project.RemoveQuestion(id));
+        Session.ClearSelection();
+        Undo.Show("Question deleted");
+    }
+}

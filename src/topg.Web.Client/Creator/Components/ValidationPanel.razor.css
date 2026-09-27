@@ -1,0 +1,22 @@
+.validation-panel {
+    max-height: 420px;
+    overflow-y: auto;
+    min-width: 320px;
+    max-width: 440px;
+    padding-bottom: 8px;
+}
+
+.validation-panel.embedded {
+    max-width: none;
+    max-height: 480px;
+}
+
+.issue {
+    cursor: pointer;
+    align-items: flex-start;
+}
+
+    .issue:hover, .issue:focus-visible {
+        background-color: var(--mud-palette-action-default-hover);
+        outline: none;
+    }

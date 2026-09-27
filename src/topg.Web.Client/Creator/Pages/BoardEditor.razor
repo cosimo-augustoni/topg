@@ -1,0 +1,310 @@
+@page "/create/{ProjectId:guid}/board/{BoardNumber:int}"
+@* S-3 Board editor (ui-concept.md): outline | board grid | inspector *@
+@implements IAsyncDisposable
+@inject ProjectSession Session
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject UndoSnackbar Undo
+@inject ISnackbar Snackbar
+
+<PageTitle>@Title</PageTitle>
+
+<ProjectScope ProjectId="ProjectId" Context="project">
+    @{
+        var board = CurrentBoard(project);
+        var selectedQuestion = Session.Selection.Kind == EditorSelectionKind.Question ? project.FindQuestion(Session.Selection.Id) : null;
+        var selectedCategory = Session.Selection.Kind == EditorSelectionKind.Category ? project.FindCategory(Session.Selection.Id) : null;
+        var inspectorOpen = selectedQuestion is not null || selectedCategory is not null;
+    }
+    <div class="@($"board-editor {(Session.OutlineOpen ? "outline-open" : "")} {(inspectorOpen ? "inspector-open" : "")}")">
+        <aside class="pane outline-pane" aria-label="Outline">
+            <ProjectOutline Project="project" CurrentBoardNumber="BoardNumber" OnAddBoard="AddBoard" />
+        </aside>
+
+        <main class="pane board-pane">
+            @if (board is null)
+            {
+                <EmptyState Icon="@CreatorIcons.Board" Title="No boards yet" Description="A quiz is played board by board." Class="mt-8">
+                    <Actions>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddBoard">Board</MudButton>
+                    </Actions>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="d-flex align-center board-tabs">
+                    <MudTabs Elevation="0" Rounded="true" ActivePanelIndex="BoardNumber - 1" ActivePanelIndexChanged="GoToBoard"
+                             TabPanelsClass="d-none" MinimumTabWidth="100px" Class="flex-grow-1" Color="Color.Transparent">
+                        @for (var i = 0; i < project.Boards.Count; i++)
+                        {
+                            var tabBoard = project.Boards[i];
+                            var issues = Session.IssuesInBoard(tabBoard.Id);
+                            var number = i + 1;
+                            @* The count is part of the label: MudTabs clips overlapping BadgeData badges. *@
+                            <MudTabPanel @key="tabBoard.Id">
+                                <TabContent>
+                                    <span class="d-inline-flex align-center gap-2">
+                                        Board @number
+                                        <ValidationBadge Issues="issues" />
+                                    </span>
+                                </TabContent>
+                            </MudTabPanel>
+                        }
+                    </MudTabs>
+                    <MudTooltip Text="Add board">
+                        <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" OnClick="AddBoard" aria-label="Add board" />
+                    </MudTooltip>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AriaLabel="Board actions"
+                             AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                        <MudMenuItem Icon="@Icons.Material.Filled.ChevronLeft" Disabled="@(BoardNumber <= 1)" OnClick="() => MoveBoard(board, -1)">Move left</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.ChevronRight" Disabled="@(BoardNumber >= project.Boards.Count)" OnClick="() => MoveBoard(board, 1)">Move right</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Outlined.ContentCopy" OnClick="() => DuplicateBoard(board)">Duplicate board</MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Outlined.Delete" IconColor="Color.Error" OnClick="() => DeleteBoard(board)">Delete board</MudMenuItem>
+                    </MudMenu>
+                </div>
+
+                <div class="d-flex align-center my-2">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                        Categories are shown alphabetically and questions by points, like in the game.
+                    </MudText>
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="() => AddCategory(board)">Category</MudButton>
+                </div>
+
+                <BoardGrid Board="board" />
+            }
+        </main>
+
+        <aside class="pane inspector-pane" aria-label="Inspector">
+            @if (selectedQuestion is not null)
+            {
+                <QuestionInspector Location="selectedQuestion" />
+            }
+            else if (selectedCategory is not null)
+            {
+                <CategoryInspector Location="selectedCategory" />
+            }
+        </aside>
+    </div>
+</ProjectScope>
+
+@code {
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _shortcuts;
+    private DotNetObjectReference<BoardEditor>? _dotNetRef;
+    private bool _followingSelection;
+
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    /// <summary>1-based board order.</summary>
+    [Parameter]
+    public int BoardNumber { get; set; }
+
+    private string Title => Session.Project is { } p && p.Id == ProjectId
+        ? $"Board {BoardNumber} · {p.Name} · topg Creator"
+        : "topg Creator";
+
+    private BoardDraft? CurrentBoard(QuizProject project) =>
+        BoardNumber >= 1 && BoardNumber <= project.Boards.Count ? project.Boards[BoardNumber - 1] : null;
+
+    protected override void OnInitialized() => Session.Changed += OnSessionChanged;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Session.OpenAsync(ProjectId);
+        if (Session.Project is not { } project)
+        {
+            return;
+        }
+
+        // Out-of-range board → first board.
+        if (project.Boards.Count > 0 && CurrentBoard(project) is null)
+        {
+            Navigation.NavigateTo(CreatorLocation.Board(ProjectId, 1), replace: true);
+            return;
+        }
+
+        // The user navigated to another board (back button, typed URL): a selection elsewhere no longer applies.
+        // Navigations started by OnSessionChanged (following the selection) keep it.
+        var selectedBoard = Session.SelectedBoard();
+        if (selectedBoard is not null && selectedBoard != CurrentBoard(project) && !_followingSelection)
+        {
+            Session.ClearSelection();
+        }
+
+        _followingSelection = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./creator-editor.js");
+            _dotNetRef = DotNetObjectReference.Create(this);
+            _shortcuts = await _module.InvokeAsync<IJSObjectReference>("registerShortcuts", _dotNetRef);
+        }
+
+        if (_module is not null && Session.Selection.Kind != EditorSelectionKind.None)
+        {
+            await _module.InvokeVoidAsync("scrollIntoView", $"#cell-{Session.Selection.Id}");
+        }
+    }
+
+    /// <summary>
+    /// The route follows the selected item to its board: after selecting it from the validation panel, moving it to
+    /// another board, or undoing such a move.
+    /// </summary>
+    private void OnSessionChanged()
+    {
+        // One change raises several events (autosave status, revalidation); navigate only once per follow.
+        if (_followingSelection || Session.Project is not { } project || project.Id != ProjectId)
+        {
+            return;
+        }
+
+        if (Session.SelectedBoard() is { } board && board != CurrentBoard(project))
+        {
+            _followingSelection = true;
+            Navigation.NavigateTo(CreatorLocation.Board(ProjectId, project.BoardNumber(board)));
+        }
+    }
+
+    private void GoToBoard(int index)
+    {
+        if (index + 1 == BoardNumber)
+        {
+            return;
+        }
+
+        Session.ClearSelection();
+        Navigation.NavigateTo(CreatorLocation.Board(ProjectId, index + 1));
+    }
+
+    private void AddBoard()
+    {
+        Session.Change(project => project.AddBoard());
+        Session.ClearSelection();
+        Navigation.NavigateTo(CreatorLocation.Board(ProjectId, Session.Project!.Boards.Count));
+    }
+
+    private void AddCategory(BoardDraft board)
+    {
+        CategoryDraft? category = null;
+        Session.Change(_ => category = board.AddCategory());
+        Session.Select(EditorSelection.Category(category!.Id), focus: true);
+    }
+
+    private void MoveBoard(BoardDraft board, int offset)
+    {
+        Session.Change(project => project.MoveBoard(board, offset));
+        Navigation.NavigateTo(CreatorLocation.Board(ProjectId, Session.Project!.BoardNumber(board)), replace: true);
+    }
+
+    private void DuplicateBoard(BoardDraft board)
+    {
+        BoardDraft? copy = null;
+        Session.Change(project => copy = project.DuplicateBoard(board));
+        Session.ClearSelection();
+        Navigation.NavigateTo(CreatorLocation.Board(ProjectId, Session.Project!.BoardNumber(copy!)));
+        Snackbar.Add("Board duplicated", Severity.Normal);
+    }
+
+    private void DeleteBoard(BoardDraft board)
+    {
+        Session.ChangeWithUndo("delete board", project => project.Boards.Remove(board));
+        Session.ClearSelection();
+        Undo.Show($"Board {BoardNumber} deleted");
+        var count = Session.Project!.Boards.Count;
+        if (count > 0 && BoardNumber > count)
+        {
+            Navigation.NavigateTo(CreatorLocation.Board(ProjectId, count), replace: true);
+        }
+    }
+
+    /// <summary>UX-6 keyboard shortcuts, called from creator-editor.js.</summary>
+    [JSInvokable]
+    public async Task OnShortcut(string shortcut)
+    {
+        switch (shortcut)
+        {
+            case "save":
+                await Session.SaveNowAsync();
+                Snackbar.Add(Session.Autosave?.Status == SaveStatus.Failed ? "Not saved" : "Saved", Severity.Normal);
+                break;
+            case "undo":
+                Undo.UndoLast();
+                break;
+            case "export":
+                Navigation.NavigateTo(CreatorLocation.Export(ProjectId));
+                break;
+            case "escape":
+                Session.ClearSelection();
+                break;
+            case "up" or "down" or "left" or "right":
+                MoveSelection(shortcut);
+                break;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Alt+arrows: previous/next question in the column, or the same row in the neighbouring column.</summary>
+    private void MoveSelection(string direction)
+    {
+        if (Session.Project is not { } project || CurrentBoard(project) is not { } board
+            || Session.Selection.Kind != EditorSelectionKind.Question || project.FindQuestion(Session.Selection.Id) is not { } current)
+        {
+            return;
+        }
+
+        var columns = GameOrder.Categories(board);
+        var column = columns.ToList().IndexOf(current.Category);
+        var row = GameOrder.Questions(current.Category).ToList().IndexOf(current.Question);
+
+        (column, row) = direction switch
+        {
+            "up" => (column, row - 1),
+            "down" => (column, row + 1),
+            "left" => (column - 1, row),
+            _ => (column + 1, row),
+        };
+
+        if (column < 0 || column >= columns.Count)
+        {
+            return;
+        }
+
+        var questions = GameOrder.Questions(columns[column]);
+        if (questions.Count == 0 || row < 0 || (direction is "up" or "down" && row >= questions.Count))
+        {
+            return;
+        }
+
+        Session.Select(EditorSelection.Question(questions[Math.Min(row, questions.Count - 1)].Id));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Session.Changed -= OnSessionChanged;
+        try
+        {
+            if (_shortcuts is not null)
+            {
+                await _shortcuts.InvokeVoidAsync("dispose");
+                await _shortcuts.DisposeAsync();
+            }
+
+            if (_module is not null)
+            {
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+
+        _dotNetRef?.Dispose();
+    }
+}

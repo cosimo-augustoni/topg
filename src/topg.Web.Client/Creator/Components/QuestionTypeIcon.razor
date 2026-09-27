@@ -1,0 +1,19 @@
+@* C-7 QuestionTypeIcon (ui-concept.md, UX-3) *@
+<span class="d-inline-flex align-center gap-1" title="@CreatorIcons.Label(Type)">
+    <MudIcon Icon="@CreatorIcons.For(Type)" Size="Size" Color="Color.Secondary" />
+    @if (ShowLabel)
+    {
+        <MudText Typo="Typo.body2">@CreatorIcons.Label(Type)</MudText>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public QuestionType Type { get; set; }
+
+    [Parameter]
+    public bool ShowLabel { get; set; }
+
+    [Parameter]
+    public Size Size { get; set; } = Size.Small;
+}

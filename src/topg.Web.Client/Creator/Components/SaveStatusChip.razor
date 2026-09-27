@@ -1,0 +1,35 @@
+@* C-2 SaveStatusChip (ui-concept.md) *@
+<MudTooltip Text="@Tooltip">
+    @switch (Autosave.Status)
+    {
+        case SaveStatus.Saving:
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Inherit">
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Style="width: 14px; height: 14px" Class="mr-1" />
+                Saving…
+            </MudChip>
+            break;
+        case SaveStatus.Failed:
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Error" Icon="@Icons.Material.Outlined.CloudOff"
+                     OnClick="Autosave.SaveNowAsync">
+                Not saved
+            </MudChip>
+            break;
+        default:
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Inherit" Icon="@Icons.Material.Outlined.CloudDone">
+                Saved
+            </MudChip>
+            break;
+    }
+</MudTooltip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required ProjectAutosave Autosave { get; set; }
+
+    private string Tooltip => Autosave.Status switch
+    {
+        SaveStatus.Failed => $"{Autosave.Error} – click to retry",
+        SaveStatus.Saving => "Saving to this browser…",
+        _ => Autosave.LastSavedAt is { } at ? $"Saved in this browser at {at:HH:mm:ss}" : "Saved in this browser",
+    };
+}

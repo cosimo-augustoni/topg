@@ -1,0 +1,45 @@
+@* Single text field dialog, e.g. "Rename project". Returns the trimmed text. *@
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" @bind-Value="_value" Label="@Label" Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      AutoFocus="true" OnKeyDown="OnKeyDown" Error="@(_value.Trim().Length == 0)" ErrorText="Required" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="() => Dialog.Cancel()">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(_value.Trim().Length == 0)" OnClick="Save">@ConfirmText</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private string _value = "";
+
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required string Label { get; set; }
+
+    [Parameter]
+    public string InitialValue { get; set; } = "";
+
+    [Parameter]
+    public string ConfirmText { get; set; } = "Save";
+
+    protected override void OnInitialized() => _value = InitialValue;
+
+    private void Save()
+    {
+        if (_value.Trim().Length > 0)
+        {
+            Dialog.Close(DialogResult.Ok(_value.Trim()));
+        }
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            Save();
+        }
+    }
+}

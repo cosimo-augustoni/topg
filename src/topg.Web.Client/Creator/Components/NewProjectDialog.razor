@@ -1,0 +1,87 @@
+@* S-9 New project dialog (ui-concept.md). Returns the created (not yet saved) QuizProject. *@
+@inject CreatorSettingsService Settings
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form">
+        <MudStack Spacing="3">
+            <MudTextField T="string" Label="Name" Required="true" RequiredError="Quiz name is required."
+                          Value="_name" ValueChanged="OnNameChanged" Immediate="true"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" AutoFocus="true" />
+            <MudTextField T="string" @ref="_folderField" Label="CDN folder" Required="true" Value="_folder" ValueChanged="OnFolderChanged" Immediate="true"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Validation="@(new Func<string, string?>(CreatorValidation.Folder))"
+                          HelperText="Images are uploaded to this folder on the CDN." />
+            <MudTextField T="string" Label="Base URL" Required="true" @bind-Value="_baseUrl" Immediate="true"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="https://cdn.example.com/quiz"
+                          Validation="@(new Func<string, string?>(CreatorValidation.BaseUrl))" />
+            <div>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">Start with</MudText>
+                <MudRadioGroup T="bool" @bind-Value="_starter">
+                    <MudRadio T="bool" Value="true" Dense="true">1 board, 5 categories × @Settings.Current.DefaultPoints.Count questions</MudRadio>
+                    <MudRadio T="bool" Value="false" Dense="true">Empty</MudRadio>
+                </MudRadioGroup>
+            </div>
+        </MudStack>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="() => Dialog.Cancel()">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Create">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private string _name = "";
+    private string _folder = "";
+    private string _baseUrl = "";
+    private bool _folderEditedByHand;
+    private bool _starter = true;
+    private MudForm? _form;
+    private MudTextField<string>? _folderField;
+
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        _baseUrl = Settings.Current.DefaultBaseUrl;
+        _folder = Slug.FromName("");
+    }
+
+    private async Task OnNameChanged(string value)
+    {
+        _name = value;
+        if (!_folderEditedByHand)
+        {
+            _folder = Slug.FromName(value);
+            if (_folderField is not null)
+            {
+                await _folderField.ResetValidationAsync();
+            }
+        }
+    }
+
+    private void OnFolderChanged(string value)
+    {
+        _folder = value;
+        _folderEditedByHand = true;
+    }
+
+    private async Task Create()
+    {
+        await _form!.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        var project = QuizProject.Create(_name, _baseUrl);
+        project.Folder = _folder;
+        if (_starter)
+        {
+            project.AddStarterBoard(Settings.Current.DefaultPoints);
+        }
+
+        Dialog.Close(DialogResult.Ok(project));
+    }
+}

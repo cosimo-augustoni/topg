@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
+﻿using topg.Web.Client.Shared;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using topg.Web.Templating.DomainObjects;
 

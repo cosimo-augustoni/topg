@@ -1,0 +1,36 @@
+.image-drop-zone ::deep .drop-area {
+    border-style: dashed;
+    min-height: 120px;
+    justify-content: center;
+}
+
+.image-drop-zone ::deep .drag-over {
+    border-color: var(--mud-palette-primary);
+    border-style: dashed;
+    background-color: var(--mud-palette-action-default-hover);
+}
+
+.image-drop-zone ::deep .thumbnail {
+    position: relative;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--mud-palette-background-gray);
+    border-radius: var(--mud-default-borderradius);
+    overflow: hidden;
+}
+
+    .image-drop-zone ::deep .thumbnail img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+.image-drop-zone ::deep .url {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}

@@ -1,0 +1,11 @@
+/* Shown until the WebAssembly creator has rendered its layout (no prerendering for /create). */
+body:has(.mud-layout) .creator-boot {
+    display: none;
+}
+
+.creator-boot {
+    font-family: Roboto, sans-serif;
+    color: #888;
+    padding: 2rem;
+    text-align: center;
+}

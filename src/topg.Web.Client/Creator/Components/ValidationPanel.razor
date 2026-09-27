@@ -1,0 +1,68 @@
+@* C-5 ValidationPanel (ui-concept.md): issues grouped by severity; clicking one navigates to its target. *@
+@if (Issues.Count == 0)
+{
+    <div class="d-flex align-center gap-2 pa-3">
+        <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" Color="Color.Success" Size="Size.Small" />
+        <MudText Typo="Typo.body2">No problems found.</MudText>
+    </div>
+}
+else
+{
+    <div class="@($"validation-panel {(Embedded ? "embedded" : "")}")">
+        @foreach (var group in Groups)
+        {
+            <MudText Typo="Typo.subtitle2" Class="section-title px-3 pt-2 pb-1">@group.Title (@group.Items.Count)</MudText>
+            @foreach (var issue in group.Items)
+            {
+                <div class="issue d-flex gap-2 px-3 py-1" role="button" tabindex="0"
+                     @onclick="() => OnSelect.InvokeAsync(issue)"
+                     @onkeydown="e => OnKeyDown(e, issue)">
+                    <MudIcon Icon="@(issue.Severity == ValidationSeverity.Error ? CreatorIcons.Error : CreatorIcons.Warning)"
+                             Color="@(issue.Severity == ValidationSeverity.Error ? Color.Error : Color.Warning)" Size="Size.Small" />
+                    <div>
+                        <MudText Typo="Typo.body2">@issue.Message</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Location(issue)</MudText>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<ValidationIssue> Issues { get; set; }
+
+    [Parameter, EditorRequired]
+    public required QuizProject Project { get; set; }
+
+    [Parameter]
+    public EventCallback<ValidationIssue> OnSelect { get; set; }
+
+    /// <summary>Embedded in a page (S-7) instead of the app bar popover: full width, taller.</summary>
+    [Parameter]
+    public bool Embedded { get; set; }
+
+    private IEnumerable<(string Title, List<ValidationIssue> Items)> Groups =>
+        new[] { ("Errors", ValidationSeverity.Error), ("Warnings", ValidationSeverity.Warning) }
+            .Select(g => (g.Item1, Issues.Where(i => i.Severity == g.Item2).ToList()))
+            .Where(g => g.Item2.Count > 0);
+
+    /// <summary>"Board 2 › History › 300"</summary>
+    private string Location(ValidationIssue issue) => issue.TargetKind switch
+    {
+        ValidationTargetKind.Question when Project.FindQuestion(issue.TargetId) is { } q =>
+            $"Board {q.BoardNumber} › {CategoryName(q.Category)} › {q.Question.Points}",
+        ValidationTargetKind.Category when Project.FindCategory(issue.TargetId) is { } c =>
+            $"Board {c.BoardNumber} › {CategoryName(c.Category)}",
+        ValidationTargetKind.Board when Project.FindBoard(issue.TargetId) is { } b =>
+            $"Board {Project.BoardNumber(b)}",
+        _ => "Quiz settings",
+    };
+
+    private static string CategoryName(CategoryDraft category) =>
+        string.IsNullOrWhiteSpace(category.Name) ? "(unnamed)" : category.Name.Trim();
+
+    private Task OnKeyDown(KeyboardEventArgs e, ValidationIssue issue) =>
+        e.Key is "Enter" or " " ? OnSelect.InvokeAsync(issue) : Task.CompletedTask;
+}

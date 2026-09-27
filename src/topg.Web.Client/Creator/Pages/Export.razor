@@ -1,0 +1,282 @@
+@page "/create/{ProjectId:guid}/export"
+@* S-7 Export (ui-concept.md): Check → Review → Download *@
+@inject ProjectSession Session
+@inject ICreatorStorage Storage
+@inject ImagePreviewCache Previews
+@inject FileDownloader Downloader
+@inject IssueNavigator Issues
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+<PageTitle>Export · topg Creator</PageTitle>
+
+<ProjectScope ProjectId="ProjectId" Context="project">
+    <MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
+        <MudText Typo="Typo.h6" Class="mb-4">Export</MudText>
+
+        <MudStepper @bind-ActiveIndex="_step" NonLinear="false" ShowResetButton="false" OnPreviewInteraction="OnStepInteraction"
+                    CenterLabels="false">
+            <ChildContent>
+                <MudStep Title="Check" Completed="@(_step > 0)">
+                    <MudStack Spacing="3">
+                        @if (Session.ErrorCount > 0)
+                        {
+                            <MudAlert Severity="Severity.Error" Dense="true">
+                                @Plural(Session.ErrorCount, "error") must be fixed before exporting.
+                            </MudAlert>
+                        }
+                        @if (Session.WarningCount > 0)
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true">@Plural(Session.WarningCount, "warning")</MudAlert>
+                        }
+                        @if (Session.Issues.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Success" Dense="true">No problems found. The quiz is ready to export.</MudAlert>
+                        }
+                        else
+                        {
+                            <MudPaper Outlined="true">
+                                <ValidationPanel Issues="Session.Issues" Project="project" OnSelect="Issues.GoTo" Embedded="true" />
+                            </MudPaper>
+                        }
+                        @if (Session.ErrorCount == 0 && Session.WarningCount > 0)
+                        {
+                            <MudCheckBox T="bool" @bind-Value="_warningsReviewed" Color="Color.Primary" Label="I have reviewed the warnings" />
+                        }
+                    </MudStack>
+                </MudStep>
+
+                <MudStep Title="Review" Completed="@(_step > 1)">
+                    @if (_sql is not null)
+                    {
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12" md="4">
+                                <MudPaper Outlined="true" Class="pa-4">
+                                    <MudText Typo="Typo.subtitle2" Class="section-title mb-2">Summary</MudText>
+                                    <MudSimpleTable Dense="true" Elevation="0">
+                                        <tbody>
+                                            <tr><td>Name</td><td>@project.Name.Trim()</td></tr>
+                                            <tr><td>Boards</td><td>@project.Boards.Count</td></tr>
+                                            <tr><td>Questions</td><td>@project.AllQuestions().Count()</td></tr>
+                                            <tr><td>Images</td><td>@_images.Count (@ImageIntake.FormatSize(_images.Sum(i => i.Size)))</td></tr>
+                                            <tr><td>Replace existing</td><td>@(project.ReplaceExisting ? "yes" : "no")</td></tr>
+                                            <tr><td>Folder</td><td class="monospace">@project.Folder</td></tr>
+                                        </tbody>
+                                    </MudSimpleTable>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="12" md="8">
+                                <MudPaper Outlined="true" Class="pa-4">
+                                    <div class="d-flex align-center mb-2">
+                                        <MudText Typo="Typo.subtitle2" Class="section-title">SQL preview</MudText>
+                                        <MudSpacer />
+                                        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Outlined.ContentCopy" OnClick="CopySqlAsync">Copy</MudButton>
+                                    </div>
+                                    <pre class="sql-preview">@_sql</pre>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudPaper Outlined="true" Class="pa-4">
+                                    <MudText Typo="Typo.subtitle2" Class="section-title mb-2">Images</MudText>
+                                    @if (_images.Count == 0)
+                                    {
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary">This quiz has no images.</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudSimpleTable Dense="true" Hover="true" Elevation="0">
+                                            <thead><tr><th></th><th>File</th><th>Size</th><th>Used in</th></tr></thead>
+                                            <tbody>
+                                                @foreach (var image in _images)
+                                                {
+                                                    <tr>
+                                                        <td style="width: 64px">
+                                                            @if (Previews.TryGetUrl(image.Image.Hash) is { } url)
+                                                            {
+                                                                <img src="@url" alt="" class="export-thumbnail" />
+                                                            }
+                                                        </td>
+                                                        <td><span class="monospace">@image.Image.FileName</span><br /><MudText Typo="Typo.caption" Class="mud-text-secondary">@image.Image.OriginalFileName</MudText></td>
+                                                        <td>@ImageIntake.FormatSize(image.Size)</td>
+                                                        <td>
+                                                            @foreach (var use in image.UsedIn)
+                                                            {
+                                                                <MudLink Typo="Typo.body2" Class="d-block" OnClick="() => Issues.GoTo(use.Target)">@use.Label</MudLink>
+                                                            }
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </MudSimpleTable>
+                                    }
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+                    }
+                </MudStep>
+
+                <MudStep Title="Download">
+                    <MudStack Spacing="4" AlignItems="AlignItems.Start">
+                        @if (_error is not null)
+                        {
+                            <MudAlert Severity="Severity.Error">@_error</MudAlert>
+                        }
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" OnClick="() => DownloadAsync(project)"
+                                   StartIcon="@(_zipping ? null : Icons.Material.Filled.Download)" Disabled="_zipping">
+                            @if (_zipping)
+                            {
+                                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2" />
+                            }
+                            Download @ExportPackage.FileName(project)
+                        </MudButton>
+                        @if (project.LastExportedAt is { } exportedAt)
+                        {
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Last exported @RelativeTime.Absolute(exportedAt)</MudText>
+                        }
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Class="section-title mb-2">Next steps</MudText>
+                            <ol class="next-steps">
+                                <li>
+                                    <MudText Typo="Typo.body2">
+                                        Unzip it and upload the folder <b class="monospace">@project.Folder/</b> to
+                                        <b class="monospace">@project.BaseUrl.Trim().TrimEnd('/')</b>, so the images are at
+                                        <span class="monospace">@ImageRef.UrlPrefix(project.BaseUrl, project.Folder)…</span>
+                                    </MudText>
+                                </li>
+                                <li><MudText Typo="Typo.body2">Run <b class="monospace">@SqlExport.FileName</b> against the topg database.</MudText></li>
+                                <li><MudText Typo="Typo.body2">Start a game at <b class="monospace">/host</b> and choose "@project.Name.Trim()".</MudText></li>
+                            </ol>
+                        </div>
+                    </MudStack>
+                </MudStep>
+            </ChildContent>
+            <ActionContent Context="stepper">
+                <MudButton Variant="Variant.Text" Disabled="@(_step == 0)" OnClick="() => stepper.PreviousStepAsync()">Back</MudButton>
+                <MudSpacer />
+                @if (_step < 2)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!CanContinue)" OnClick="() => ContinueAsync(stepper)">
+                        Continue
+                    </MudButton>
+                }
+            </ActionContent>
+        </MudStepper>
+    </MudContainer>
+</ProjectScope>
+
+@code {
+    private int _step;
+    private bool _warningsReviewed;
+    private string? _sql;
+    private DateTimeOffset _generatedAt;
+    private List<ImageRow> _images = [];
+    private bool _zipping;
+    private string? _error;
+
+    private record ImageUse(string Label, ValidationIssue Target);
+
+    private record ImageRow(ImageRef Image, long Size, List<ImageUse> UsedIn);
+
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    /// <summary>Step ① is done with 0 errors and either no warnings or the checkbox ticked.</summary>
+    private bool CheckPassed => Session.ErrorCount == 0 && (Session.WarningCount == 0 || _warningsReviewed);
+
+    private bool CanContinue => _step switch
+    {
+        0 => CheckPassed,
+        1 => _sql is not null,
+        _ => false,
+    };
+
+    private async Task OnStepInteraction(StepperInteractionEventArgs args)
+    {
+        // Forward navigation needs a passed check; going back is always allowed.
+        if (args.StepIndex > 0 && !CheckPassed)
+        {
+            args.Cancel = true;
+            return;
+        }
+
+        if (args.StepIndex >= 1 && _sql is null)
+        {
+            await PrepareReviewAsync();
+        }
+    }
+
+    private async Task ContinueAsync(MudStepper stepper)
+    {
+        if (_step == 0)
+        {
+            await PrepareReviewAsync();
+        }
+
+        await stepper.NextStepAsync();
+    }
+
+    /// <summary>Builds the SQL (with the time used for the download too) and the image list.</summary>
+    private async Task PrepareReviewAsync()
+    {
+        var project = Session.Project!;
+        _generatedAt = DateTimeOffset.UtcNow;
+        _sql = SqlExport.Generate(project, _generatedAt);
+
+        var rows = new Dictionary<string, ImageRow>();
+        for (var b = 0; b < project.Boards.Count; b++)
+        {
+            foreach (var category in GameOrder.Categories(project.Boards[b]))
+            {
+                foreach (var question in GameOrder.Questions(category))
+                {
+                    foreach (var image in question.Images())
+                    {
+                        if (!rows.TryGetValue(image.Hash, out var row))
+                        {
+                            var stored = await Storage.GetImageAsync(image.Hash);
+                            rows[image.Hash] = row = new ImageRow(image, stored?.Size ?? 0, []);
+                            _ = Previews.GetUrlAsync(image.Hash);
+                        }
+
+                        var target = new ValidationIssue("", ValidationSeverity.Warning, ValidationTargetKind.Question, question.Id, project.Boards[b].Id, "");
+                        row.UsedIn.Add(new ImageUse($"Board {b + 1} › {category.Name.Trim()} › {question.Points}", target));
+                    }
+                }
+            }
+        }
+
+        _images = rows.Values.OrderBy(r => r.Image.FileName, StringComparer.Ordinal).ToList();
+    }
+
+    private async Task CopySqlAsync()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _sql);
+        Snackbar.Add("SQL copied", Severity.Normal);
+    }
+
+    private async Task DownloadAsync(QuizProject project)
+    {
+        _zipping = true;
+        _error = null;
+        StateHasChanged();
+        try
+        {
+            // Let the spinner render before the (synchronous) zipping blocks the UI thread.
+            await Task.Delay(50);
+            var bytes = await ExportPackage.BuildAsync(project, Storage, _generatedAt);
+            await Downloader.DownloadAsync(ExportPackage.FileName(project), "application/zip", bytes);
+            Session.Change(p => p.LastExportedAt = DateTimeOffset.UtcNow);
+            Snackbar.Add($"{ExportPackage.FileName(project)} downloaded", Severity.Success);
+        }
+        catch (Exception ex) when (ex is ExportException or JSException)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _zipping = false;
+        }
+    }
+
+    private static string Plural(int count, string word) => $"{count} {word}{(count == 1 ? "" : "s")}";
+}

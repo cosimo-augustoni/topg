@@ -1,4 +1,6 @@
-﻿namespace topg.Web.Templating.DomainObjects;
+﻿using topg.Web.Client.Shared;
+
+namespace topg.Web.Templating.DomainObjects;
 
 public record ImageQuestion : Question
 {
