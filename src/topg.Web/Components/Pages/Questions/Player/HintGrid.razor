@@ -1,0 +1,68 @@
+@using topg.Web.Client.Shared
+@using topg.Web.Quiz.Execution
+
+@{
+    var hints = Question.Hints;
+    var isImage = Question.HintType == HintType.Image;
+    var rows = RowsFor(isImage, hints.Count);
+    // Every tile gets the caption strip as soon as one hint has a caption, so all tiles stay the same height.
+    var hasCaption = isImage && hints.Any(h => !string.IsNullOrWhiteSpace(h.Text));
+    var arrangement = rows is null ? "stacked" : "grid";
+    var start = 0;
+}
+
+<div class="hint-area" style="--cols: @(rows?[0] ?? 1); --rows: @(rows?.Count ?? 3); --cap: @(hasCaption ? "40px" : "0px")">
+    <div class="hint-block @arrangement @(isImage ? "image" : "text")">
+        @foreach (var count in rows ?? Enumerable.Repeat(1, hints.Count))
+        {
+            <div class="hint-row">
+                @for (var i = start; i < start + count; i++)
+                {
+                    var hint = hints[i];
+                    if (!hint.IsVisible)
+                    {
+                        <div class="hint-tile hidden">@(i + 1)</div>
+                    }
+                    else if (isImage)
+                    {
+                        <div class="hint-tile shown">
+                            <div class="hint-image">
+                                @if (hint.ImageUri is not null)
+                                {
+                                    <img src="@hint.ImageUri" alt="Hint @(i + 1)" />
+                                }
+                            </div>
+                            @if (hasCaption)
+                            {
+                                <div class="hint-caption"><span>@hint.Text</span></div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="hint-tile shown">
+                            <div class="hint-text" data-fit-text="@(rows is null ? 40 : 34)"><span>@hint.Text</span></div>
+                        </div>
+                    }
+                }
+            </div>
+            start += count;
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public required TextQuestion Question { get; set; }
+
+    // Null means one text hint per full-width row. The layout depends on the total number of hints, not on how many
+    // are shown, so revealing a hint never moves another one.
+    public static IReadOnlyList<int>? RowsFor(bool isImage, int count) => count switch
+    {
+        0 => [],
+        <= 3 when !isImage => null,
+        <= 5 => [count],
+        _ => [(count + 1) / 2, count / 2],
+    };
+}

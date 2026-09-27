@@ -1,8 +1,21 @@
 ﻿@using topg.Web.Quiz.Execution
 
-@if (TextQuestion.DisplayState.HasFlag(TextQuestionDisplayState.Question))
+@if (TextQuestion.Hints.Count == 0)
 {
-    <MudText Typo="Typo.h1" Align="Align.Center" Style="font-weight: bold;">@TextQuestion.QuestionText</MudText>
+    @if (TextQuestion.DisplayState.HasFlag(TextQuestionDisplayState.Question))
+    {
+        <MudText Typo="Typo.h1" Align="Align.Center" Style="font-weight: bold;">@TextQuestion.QuestionText</MudText>
+    }
+}
+else
+{
+    <div class="hint-header">
+        @if (TextQuestion.DisplayState.HasFlag(TextQuestionDisplayState.Question))
+        {
+            <span>@TextQuestion.QuestionText</span>
+        }
+    </div>
+    <HintGrid Question="TextQuestion" />
 }
 
 @code {
