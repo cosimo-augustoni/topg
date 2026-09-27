@@ -1,0 +1,157 @@
+@* S-8 Import project file (ui-concept.md). The file is read and checked before Import is enabled. Returns the imported project. *@
+@inject ProjectStore Store
+@inject ICreatorStorage Storage
+@inject IDialogService Dialogs
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudFileUpload T="IBrowserFile" Accept="@ProjectFile.Extension" DragAndDrop="true" @bind-Dragging="_dragging"
+                           FilesChanged="ReadAsync" Disabled="_busy" SelectedTemplate="NoFileChip">
+                <CustomContent Context="upload">
+                    <MudPaper Outlined="true" Class="@($"import-drop pa-4 d-flex flex-column align-center gap-1 {(_dragging ? "drag-over" : "")}")">
+                        @if (_busy)
+                        {
+                            <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                            <MudText Typo="Typo.body2">Reading file…</MudText>
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Outlined.Upload" />
+                            <MudText Typo="Typo.body2">
+                                Drop a @ProjectFile.Extension file or
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="upload.OpenFilePickerAsync">Browse</MudButton>
+                            </MudText>
+                        }
+                    </MudPaper>
+                </CustomContent>
+            </MudFileUpload>
+
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@_error</MudAlert>
+            }
+
+            @if (_content is { } content)
+            {
+                <div class="d-flex align-start gap-2">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="mt-1" />
+                    <MudText Typo="Typo.body2">
+                        <b>@content.Project.Name</b> · @Plural(content.Project.Boards.Count, "board") ·
+                        @Plural(content.Project.AllQuestions().Count(), "question") ·
+                        @Plural(content.ImagesByHash.Count, "image") (@ImageIntake.FormatSize(content.ImageBytes)) ·
+                        saved @RelativeTime.Format(content.Project.UpdatedAt)
+                    </MudText>
+                </div>
+
+                @if (_existing is not null)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true">
+                        This project already exists in this browser ("@_existing.Name", edited @RelativeTime.Format(_existing.UpdatedAt)).
+                    </MudAlert>
+                    <MudRadioGroup T="bool" @bind-Value="_asCopy">
+                        <MudRadio T="bool" Value="true" Dense="true">Import as copy</MudRadio>
+                        <MudRadio T="bool" Value="false" Dense="true" Color="Color.Error">Overwrite existing</MudRadio>
+                    </MudRadioGroup>
+                }
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="() => Dialog.Cancel()">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(_content is null || _busy)" OnClick="ImportAsync">Import</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    /// <summary>The summary below replaces MudBlazor's default chip for the selected file.</summary>
+    private static readonly RenderFragment<IBrowserFile> NoFileChip = _ => _ => { };
+
+    private bool _dragging;
+    private bool _busy;
+    private string? _error;
+    private ProjectFileContent? _content;
+    private QuizProject? _existing;
+    private bool _asCopy = true;
+
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    private async Task ReadAsync(IBrowserFile? file)
+    {
+        if (file is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        _content = null;
+        _existing = null;
+        StateHasChanged();
+        try
+        {
+            if (file.Size > ProjectFile.MaxFileSize)
+            {
+                throw new ProjectFileException($"\"{file.Name}\" is {ImageIntake.FormatSize(file.Size)}. The maximum is {ImageIntake.FormatSize(ProjectFile.MaxFileSize)}.");
+            }
+
+            // ZipArchive needs a seekable stream; the browser stream isn't.
+            using var buffer = new MemoryStream((int)file.Size);
+            await using (var stream = file.OpenReadStream(ProjectFile.MaxFileSize))
+            {
+                await stream.CopyToAsync(buffer);
+            }
+
+            buffer.Position = 0;
+            _content = ProjectFile.Read(buffer);
+            _existing = await Store.GetAsync(_content.Project.Id);
+            _asCopy = true;
+        }
+        catch (ProjectFileException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception ex) when (ex is IOException or JSException)
+        {
+            _error = $"The file could not be read: {ex.Message}";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ImportAsync()
+    {
+        if (_content is null)
+        {
+            return;
+        }
+
+        var overwrite = _existing is not null && !_asCopy;
+        if (overwrite && !await Dialogs.ShowConfirmAsync("Overwrite project",
+                $"\"{_existing!.Name}\" in this browser is replaced by the version from the file. This can't be undone.",
+                "Overwrite", destructive: true))
+        {
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var project = await ProjectFile.ImportAsync(_content, asCopy: _existing is not null && _asCopy, Storage, Store);
+            Dialog.Close(DialogResult.Ok(project));
+        }
+        catch (JSException ex)
+        {
+            _error = $"The project could not be stored: {ex.Message}";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static string Plural(int count, string word) => $"{count} {word}{(count == 1 ? "" : "s")}";
+}

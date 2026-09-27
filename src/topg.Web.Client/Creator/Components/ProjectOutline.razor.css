@@ -1,0 +1,17 @@
+.outline-tree {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+    .outline-tree ::deep .outline-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .outline-tree .outline-spacer {
+        width: 24px;
+        flex-shrink: 0;
+    }

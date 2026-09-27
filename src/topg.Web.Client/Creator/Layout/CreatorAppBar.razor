@@ -1,0 +1,128 @@
+@* C-1 CreatorAppBar (ui-concept.md). *@
+@implements IDisposable
+@inject ProjectSession Session
+@inject IssueNavigator Issues
+
+<MudAppBar Dense="true" Elevation="0" Class="creator-appbar">
+    @if (IsBoardEditor)
+    {
+        <MudTooltip Text="@(Session.OutlineOpen ? "Hide outline" : "Show outline")">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="Session.ToggleOutline"
+                           aria-label="Toggle outline" />
+        </MudTooltip>
+    }
+
+    <MudLink Href="@CreatorLocation.Root" Typo="Typo.h6" Color="Color.Inherit" Underline="Underline.None">
+        topg Creator
+    </MudLink>
+
+    @if (Location.ProjectId is { } projectId)
+    {
+        @if (Project is not null)
+        {
+            <MudText Typo="Typo.subtitle1" Class="mx-2 mud-text-secondary project-name-separator">/</MudText>
+            <MudText Typo="Typo.subtitle1" Class="project-name" title="@Project.Name">
+                @(string.IsNullOrWhiteSpace(Project.Name) ? "Untitled quiz" : Project.Name)
+            </MudText>
+        }
+
+        <MudSpacer />
+        <nav class="d-flex gap-1" aria-label="Project sections">
+            @foreach (var section in Sections)
+            {
+                var active = Location.Section == section.Section;
+                <MudButton Href="@CreatorLocation.ForSection(projectId, section.Section)"
+                           Variant="@(active ? Variant.Filled : Variant.Text)"
+                           Color="@(active ? Color.Primary : Color.Inherit)"
+                           Size="Size.Small"
+                           aria-current="@(active ? "page" : null)">
+                    @section.Label
+                </MudButton>
+            }
+        </nav>
+    }
+
+    <MudSpacer />
+
+    @if (Project is not null && Session.Autosave is not null)
+    {
+        <MudMenu @ref="_issuesMenu" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" AriaLabel="Show problems">
+            <ActivatorContent Context="menu">
+                <MudTooltip Text="Problems">
+                    <div class="d-flex align-center gap-2 px-2 issues-summary" @onclick="menu.ToggleAsync">
+                        @if (Session.ErrorCount == 0 && Session.WarningCount == 0)
+                        {
+                            <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                        }
+                        @if (Session.ErrorCount > 0)
+                        {
+                            <span class="d-flex align-center"><MudIcon Icon="@CreatorIcons.Error" Color="Color.Error" Size="Size.Small" /><MudText Typo="Typo.body2" Class="ml-1">@Session.ErrorCount</MudText></span>
+                        }
+                        @if (Session.WarningCount > 0)
+                        {
+                            <span class="d-flex align-center"><MudIcon Icon="@CreatorIcons.Warning" Color="Color.Warning" Size="Size.Small" /><MudText Typo="Typo.body2" Class="ml-1">@Session.WarningCount</MudText></span>
+                        }
+                    </div>
+                </MudTooltip>
+            </ActivatorContent>
+            <ChildContent>
+                <ValidationPanel Issues="Session.Issues" Project="Project" OnSelect="GoToIssueAsync" />
+            </ChildContent>
+        </MudMenu>
+        <SaveStatusChip Autosave="Session.Autosave" />
+    }
+
+    <MudTooltip Text="@(IsDarkMode ? "Switch to light mode" : "Switch to dark mode")">
+        <MudIconButton Icon="@(IsDarkMode ? Icons.Material.Outlined.LightMode : Icons.Material.Outlined.DarkMode)"
+                       Color="Color.Inherit"
+                       OnClick="OnToggleDarkMode"
+                       aria-label="Toggle dark mode" />
+    </MudTooltip>
+    <MudTooltip Text="Settings">
+        <MudIconButton Icon="@Icons.Material.Outlined.Settings"
+                       Color="Color.Inherit"
+                       Href="@CreatorLocation.Settings"
+                       aria-label="Settings" />
+    </MudTooltip>
+</MudAppBar>
+
+@code {
+    private static readonly (CreatorSection Section, string Label)[] Sections =
+    [
+        (CreatorSection.Boards, "Boards"),
+        (CreatorSection.QuizSettings, "Quiz settings"),
+        (CreatorSection.Export, "Export"),
+    ];
+
+    private MudMenu? _issuesMenu;
+
+    [Parameter, EditorRequired]
+    public required CreatorLocation Location { get; set; }
+
+    [Parameter]
+    public bool IsDarkMode { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggleDarkMode { get; set; }
+
+    /// <summary>The open project, if it belongs to the current route.</summary>
+    private QuizProject? Project => Session.Project is { } project && project.Id == Location.ProjectId ? project : null;
+
+    private bool IsBoardEditor => Project is not null && Location.Section == CreatorSection.Boards;
+
+    protected override void OnInitialized() => Session.Changed += OnSessionChanged;
+
+    private void OnSessionChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task GoToIssueAsync(ValidationIssue issue)
+    {
+        if (_issuesMenu is not null)
+        {
+            await _issuesMenu.CloseMenuAsync();
+        }
+
+        Issues.GoTo(issue);
+    }
+
+    public void Dispose() => Session.Changed -= OnSessionChanged;
+}

@@ -1,0 +1,109 @@
+.board-grid {
+    display: grid;
+    gap: 8px;
+    padding: 8px;
+    min-width: min-content;
+}
+
+.board-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 40px;
+    padding: 4px 8px;
+    border-radius: var(--mud-default-borderradius);
+    border: 1px solid var(--mud-palette-lines-default);
+    background-color: var(--mud-palette-background-gray);
+    cursor: pointer;
+}
+
+    .category-header ::deep .category-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .category-header ::deep .edit-hint {
+        opacity: 0;
+        font-size: 16px;
+    }
+
+    .category-header:hover ::deep .edit-hint {
+        opacity: 0.6;
+    }
+
+.question-cell {
+    height: 88px;
+    padding: 6px 8px;
+    border-radius: var(--mud-default-borderradius);
+    border: 1px solid var(--mud-palette-lines-default);
+    background-color: var(--mud-palette-surface);
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+    .question-cell:hover, .category-header:hover {
+        background-color: var(--mud-palette-action-default-hover);
+    }
+
+    .question-cell.selected, .category-header.selected {
+        border: 2px solid var(--mud-palette-primary);
+    }
+
+    .question-cell:focus-visible, .category-header:focus-visible, .add-cell:focus-visible {
+        outline: 2px solid var(--mud-palette-primary);
+        outline-offset: 1px;
+    }
+
+    .question-cell ::deep .points {
+        font-weight: 700;
+    }
+
+    .question-cell ::deep .question-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.3;
+    }
+
+    .question-cell ::deep .empty-text {
+        font-style: italic;
+        opacity: 0.5;
+    }
+
+    .question-cell .thumbnail {
+        height: 48px;
+        max-width: 100%;
+        object-fit: contain;
+        align-self: flex-start;
+    }
+
+.add-cell {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--mud-palette-lines-inputs);
+    border-radius: var(--mud-default-borderradius);
+    background: transparent;
+    color: var(--mud-palette-text-secondary);
+    cursor: pointer;
+}
+
+    .add-cell:hover {
+        border-color: var(--mud-palette-primary);
+        color: var(--mud-palette-primary);
+    }

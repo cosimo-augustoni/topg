@@ -1,0 +1,30 @@
+@* C-8 EmptyState (ui-concept.md) *@
+<MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1" Class="@($"pa-8 {Class}")">
+    <MudIcon Icon="@Icon" Style="font-size: 48px; opacity: 0.4" />
+    <MudText Typo="Typo.subtitle1">@Title</MudText>
+    @if (Description is not null)
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary" Align="Align.Center">@Description</MudText>
+    }
+    @if (Actions is not null)
+    {
+        <div class="d-flex gap-2 mt-2">@Actions</div>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public required string Icon { get; set; }
+
+    [Parameter, EditorRequired]
+    public required string Title { get; set; }
+
+    [Parameter]
+    public string? Description { get; set; }
+
+    [Parameter]
+    public RenderFragment? Actions { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+}

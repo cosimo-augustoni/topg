@@ -1,0 +1,90 @@
+/* UX-5 / S-3: three panes. Implemented as a CSS grid inside the page instead of MudDrawers, so the panes exist only in
+   the editor and each scrolls on its own. */
+.board-editor {
+    display: grid;
+    grid-template-columns: 0 minmax(0, 1fr) 0;
+    /* Full height below the dense (48 px) app bar. */
+    height: calc(100vh - 48px);
+    overflow: hidden;
+}
+
+    .board-editor.outline-open {
+        grid-template-columns: 260px minmax(0, 1fr) 0;
+    }
+
+    .board-editor.inspector-open {
+        grid-template-columns: 0 minmax(0, 1fr) 400px;
+    }
+
+    .board-editor.outline-open.inspector-open {
+        grid-template-columns: 260px minmax(0, 1fr) 400px;
+    }
+
+.pane {
+    overflow-y: auto;
+    min-height: 0;
+    min-width: 0;
+}
+
+.outline-pane {
+    border-right: 1px solid var(--mud-palette-divider);
+    background-color: var(--mud-palette-surface);
+}
+
+.inspector-pane {
+    border-left: 1px solid var(--mud-palette-divider);
+    background-color: var(--mud-palette-surface);
+}
+
+.board-editor:not(.outline-open) .outline-pane,
+.board-editor:not(.inspector-open) .inspector-pane {
+    visibility: hidden;
+    border: none;
+}
+
+.board-pane {
+    padding: 8px 16px 16px;
+}
+
+.board-tabs {
+    border-bottom: 1px solid var(--mud-palette-divider);
+}
+
+/* Below 960 px the side panes overlay the board (UX-5 "drawers turn into overlays"). */
+@media (max-width: 959.98px) {
+    .board-editor,
+    .board-editor.outline-open,
+    .board-editor.inspector-open,
+    .board-editor.outline-open.inspector-open {
+        grid-template-columns: minmax(0, 1fr);
+        position: relative;
+    }
+
+    .board-pane {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .outline-pane, .inspector-pane {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        z-index: 5;
+        box-shadow: var(--mud-elevation-8);
+    }
+
+    .outline-pane {
+        left: 0;
+        width: 260px;
+    }
+
+    .inspector-pane {
+        right: 0;
+        width: min(400px, 100%);
+    }
+
+    /* Only one overlay at a time: the inspector wins over the outline. */
+    .board-editor.inspector-open .outline-pane {
+        visibility: hidden;
+    }
+}

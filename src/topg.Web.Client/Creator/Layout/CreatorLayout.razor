@@ -1,0 +1,82 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject CreatorSettingsService Settings
+@inject NavigationManager Navigation
+
+<MudThemeProvider @ref="_themeProvider" Theme="_theme" IsDarkMode="IsDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <CreatorAppBar Location="_location" IsDarkMode="IsDarkMode" OnToggleDarkMode="ToggleDarkModeAsync" />
+    <MudMainContent>
+        <CascadingValue Value="_location">
+            @Body
+        </CascadingValue>
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private readonly MudTheme _theme = CreatorTheme.Create();
+    private MudThemeProvider? _themeProvider;
+    private CreatorLocation _location = new(null, null);
+    private bool _systemIsDark = true;
+
+    private bool IsDarkMode => Settings.Current.Theme switch
+    {
+        ThemeMode.Light => false,
+        ThemeMode.System => _systemIsDark,
+        _ => true,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        UpdateLocation(Navigation.Uri);
+        Navigation.LocationChanged += OnLocationChanged;
+        Settings.Changed += OnSettingsChanged;
+        await Settings.EnsureLoadedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _themeProvider is not null)
+        {
+            _systemIsDark = await _themeProvider.GetSystemDarkModeAsync();
+            await _themeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChanged);
+            StateHasChanged();
+        }
+    }
+
+    private Task OnSystemDarkModeChanged(bool isDark)
+    {
+        _systemIsDark = isDark;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>The app bar toggle switches between an explicit light and dark theme.</summary>
+    private Task ToggleDarkModeAsync() =>
+        Settings.SaveAsync(Settings.Current with { Theme = IsDarkMode ? ThemeMode.Light : ThemeMode.Dark });
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        UpdateLocation(e.Location);
+        StateHasChanged();
+    }
+
+    private void OnSettingsChanged() => InvokeAsync(StateHasChanged);
+
+    private void UpdateLocation(string uri) => _location = CreatorLocation.Parse(Navigation.ToBaseRelativePath(uri));
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        Settings.Changed -= OnSettingsChanged;
+    }
+}

@@ -1,0 +1,213 @@
+@* C-3 ImageDropZone (ui-concept.md): upload or drop an image, store it by content hash and show the final CDN URL. *@
+@implements IAsyncDisposable
+@inject ImageIntake Intake
+@inject ICreatorStorage Storage
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+<div class="image-drop-zone">
+    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Label@(Required ? " *" : "")</MudText>
+
+    <MudFileUpload T="IBrowserFile" @ref="_upload" Accept="@ImageNaming.Accept" DragAndDrop="true" @bind-Dragging="_dragging"
+                   FilesChanged="OnFileSelectedAsync" Disabled="_busy">
+        <CustomContent Context="upload">
+            @if (Value is null)
+            {
+                <MudPaper Outlined="true" Class="@($"drop-area pa-4 d-flex flex-column align-center gap-1 {(_dragging ? "drag-over" : "")}")">
+                    @if (_busy)
+                    {
+                        <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                        <MudText Typo="Typo.body2">Processing image…</MudText>
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Outlined.Upload" />
+                        <MudText Typo="Typo.body2">
+                            Drop image here or
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="upload.OpenFilePickerAsync">Browse</MudButton>
+                        </MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">PNG, JPG, WEBP, GIF · max @ImageIntake.FormatSize(Intake.MaxFileSize)</MudText>
+                    }
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Outlined="true" Class="@($"pa-2 {(_dragging ? "drag-over" : "")}")">
+                    <div class="thumbnail">
+                        @if (_previewUrl is not null)
+                        {
+                            <img src="@_previewUrl" alt="@Value.OriginalFileName" />
+                        }
+                        @if (_busy)
+                        {
+                            <MudOverlay Visible="true" Absolute="true" DarkBackground="true">
+                                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                            </MudOverlay>
+                        }
+                    </div>
+                    <MudText Typo="Typo.caption" Class="d-block mt-1">@Details</MudText>
+                    <div class="d-flex align-center">
+                        <MudText Typo="Typo.caption" Class="url mud-text-secondary" title="@FinalUrl">@FinalUrl</MudText>
+                        <MudTooltip Text="Copy URL">
+                            <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy" Size="Size.Small" OnClick="CopyUrlAsync" aria-label="Copy URL" />
+                        </MudTooltip>
+                    </div>
+                    <div class="d-flex gap-2 mt-1">
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="upload.OpenFilePickerAsync" Disabled="_busy">Replace</MudButton>
+                        @if (!Required)
+                        {
+                            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="RemoveAsync" Disabled="_busy">Remove</MudButton>
+                        }
+                    </div>
+                </MudPaper>
+            }
+        </CustomContent>
+    </MudFileUpload>
+
+    @if (_error is not null)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Error">@_error</MudText>
+    }
+</div>
+
+@code {
+    private MudFileUpload<IBrowserFile>? _upload;
+    private bool _dragging;
+    private bool _busy;
+    private string? _error;
+    private string? _previewUrl;
+    private string? _previewHash;
+    private StoredImage? _stored;
+
+    [Parameter]
+    public ImageRef? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<ImageRef?> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool Required { get; set; }
+
+    [Parameter, EditorRequired]
+    public required string Label { get; set; }
+
+    /// <summary><c>{baseUrl}/{folder}/</c> of the project, see <see cref="ImageRef.UrlPrefix"/>.</summary>
+    [Parameter, EditorRequired]
+    public required string UrlPrefix { get; set; }
+
+    private string FinalUrl => Value is null ? "" : UrlPrefix + Value.FileName;
+
+    private string Details
+    {
+        get
+        {
+            if (Value is null)
+            {
+                return "";
+            }
+
+            var parts = new List<string> { Value.OriginalFileName };
+            if (_stored is not null)
+            {
+                parts.Add(ImageIntake.FormatSize(_stored.Size));
+                if (_stored is { Width: { } width, Height: { } height })
+                {
+                    parts.Add($"{width}×{height}");
+                }
+            }
+
+            return string.Join(" · ", parts);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Value?.Hash == _previewHash)
+        {
+            return;
+        }
+
+        await RevokePreviewAsync();
+        _error = null;
+        if (Value is not null)
+        {
+            _previewHash = Value.Hash;
+            _stored = await Storage.GetImageAsync(Value.Hash);
+            _previewUrl = await Storage.CreateObjectUrlAsync(Value.Hash);
+            if (_stored is null)
+            {
+                _error = "The image is missing in this browser's storage. Upload it again.";
+            }
+        }
+    }
+
+    private async Task OnFileSelectedAsync(IBrowserFile? file)
+    {
+        if (file is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        StateHasChanged();
+        try
+        {
+            var image = await Intake.ImportAsync(file);
+            await ValueChanged.InvokeAsync(image);
+        }
+        catch (ImageRejectedException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _error = "The image could not be stored.";
+            Snackbar.Add($"The image could not be stored: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+            // Allow selecting the same file again after Remove.
+            if (_upload is not null)
+            {
+                await _upload.ClearAsync();
+            }
+        }
+    }
+
+    private async Task RemoveAsync()
+    {
+        _error = null;
+        await ValueChanged.InvokeAsync(null);
+    }
+
+    private async Task CopyUrlAsync()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", FinalUrl);
+        Snackbar.Add("URL copied", Severity.Normal);
+    }
+
+    private async Task RevokePreviewAsync()
+    {
+        if (_previewUrl is not null)
+        {
+            await Storage.RevokeObjectUrlAsync(_previewUrl);
+        }
+
+        _previewUrl = null;
+        _previewHash = null;
+        _stored = null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await RevokePreviewAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+}

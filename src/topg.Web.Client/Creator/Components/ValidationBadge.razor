@@ -1,0 +1,53 @@
+@* C-4 ValidationBadge (ui-concept.md). With ChildContent it overlays a MudBadge, otherwise it renders an inline icon + count. *@
+@if (Issues.Count == 0)
+{
+    @ChildContent
+}
+else
+{
+    <MudTooltip>
+        <TooltipContent>
+            @foreach (var issue in Issues.Take(MaxTooltipLines))
+            {
+                <div>@issue.Message</div>
+            }
+            @if (Issues.Count > MaxTooltipLines)
+            {
+                <div>…</div>
+            }
+        </TooltipContent>
+        <ChildContent>
+            @if (ChildContent is not null)
+            {
+                <MudBadge Color="BadgeColor" Dot="@(Issues.Count == 1)" Content="@(Issues.Count > 1 ? Issues.Count : null)"
+                          Overlap="true" Bordered="false" Origin="Origin.TopRight">
+                    @ChildContent
+                </MudBadge>
+            }
+            else
+            {
+                <span class="d-inline-flex align-center" aria-label="@($"{Issues.Count} issues")">
+                    <MudIcon Icon="@(HasErrors ? CreatorIcons.Error : CreatorIcons.Warning)" Color="BadgeColor" Size="Size.Small" Style="font-size: 16px" />
+                    @if (Issues.Count > 1)
+                    {
+                        <MudText Typo="Typo.caption" Color="BadgeColor" Class="ml-1">@Issues.Count</MudText>
+                    }
+                </span>
+            }
+        </ChildContent>
+    </MudTooltip>
+}
+
+@code {
+    private const int MaxTooltipLines = 3;
+
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<ValidationIssue> Issues { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool HasErrors => Issues.Any(i => i.Severity == ValidationSeverity.Error);
+
+    private Color BadgeColor => HasErrors ? Color.Error : Color.Warning;
+}

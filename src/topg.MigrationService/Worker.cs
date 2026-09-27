@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using topg.Web.Client.Shared;
 using topg.Web.Templating.Data;
 using topg.Web.Templating.DomainObjects;
 

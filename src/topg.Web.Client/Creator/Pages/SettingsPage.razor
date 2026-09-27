@@ -1,0 +1,229 @@
+@page "/create/settings"
+@* S-2 Creator settings (ui-concept.md) *@
+@inject CreatorSettingsService Settings
+@inject ICreatorStorage Storage
+@inject ProjectStore Projects
+@inject ISnackbar Snackbar
+
+<PageTitle>Settings · topg Creator</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-6">
+    <MudText Typo="Typo.h6" Class="mb-4">Settings</MudText>
+
+    @if (Settings.LoadError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">
+            Settings could not be loaded, defaults are shown: @Settings.LoadError
+        </MudAlert>
+    }
+
+    <MudStack Spacing="4">
+        <MudPaper Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.subtitle2" Class="section-title mb-3">Defaults</MudText>
+            <MudStack Spacing="3">
+                <MudTextField T="string" Label="Default base URL" @bind-Value="_baseUrl" OnBlur="SaveBaseUrlAsync"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="https://cdn.example.com/quiz"
+                              Error="_baseUrlError is not null" ErrorText="@_baseUrlError"
+                              HelperText="Used for new projects. Existing projects keep their own URL." />
+                <MudTextField T="string" Label="Default points" @bind-Value="_points" OnBlur="SavePointsAsync"
+                              Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Error="_pointsError is not null" ErrorText="@_pointsError"
+                              HelperText="Points of new questions in a category, in order." />
+            </MudStack>
+        </MudPaper>
+
+        <MudPaper Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.subtitle2" Class="section-title mb-3">Appearance</MudText>
+            <div class="d-flex align-center gap-4">
+                <MudText Typo="Typo.body2">Theme</MudText>
+                <MudToggleGroup T="ThemeMode" Value="Settings.Current.Theme" ValueChanged="SaveThemeAsync"
+                                Size="Size.Small" Color="Color.Primary" Outlined="true">
+                    <MudToggleItem Value="ThemeMode.Dark" Text="Dark" />
+                    <MudToggleItem Value="ThemeMode.Light" Text="Light" />
+                    <MudToggleItem Value="ThemeMode.System" Text="System" />
+                </MudToggleGroup>
+            </div>
+        </MudPaper>
+
+        <MudPaper Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.subtitle2" Class="section-title mb-3">Storage</MudText>
+            @if (_storageError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">Browser storage is not available: @_storageError</MudAlert>
+            }
+            else if (_estimate is null)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else
+            {
+                <MudStack Spacing="3">
+                    @if (_estimate is { Usage: { } usage, Quota: { } quota and > 0 })
+                    {
+                        <div>
+                            <MudProgressLinear Value="@(100d * usage / quota)" Color="Color.Primary" Rounded="true" />
+                            <MudText Typo="Typo.body2" Class="mt-1">
+                                @ImageIntake.FormatSize(usage) of ~@ImageIntake.FormatSize(quota) used
+                            </MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">This browser does not report storage usage.</MudText>
+                    }
+
+                    <div class="d-flex align-center gap-2">
+                        <MudText Typo="Typo.body2">Persistent storage:</MudText>
+                        @if (_estimate.Persisted)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" />
+                            <MudText Typo="Typo.body2">granted</MudText>
+                        }
+                        else if (_estimate.CanPersist)
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">not granted</MudText>
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="RequestPersistenceAsync">Request</MudButton>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">not supported by this browser</MudText>
+                        }
+                    </div>
+
+                    <MudAlert Severity="Severity.Warning" Dense="true">
+                        Clearing browser data deletes all projects. Export project files regularly.
+                    </MudAlert>
+
+                    <div class="d-flex align-center gap-3">
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="CleanUpImagesAsync"
+                                   Disabled="@(_unused is null || _unused.Images.Count == 0 || _cleaning)">
+                            @if (_cleaning)
+                            {
+                                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2" />
+                            }
+                            Clean up unused images
+                        </MudButton>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@UnusedText</MudText>
+                    </div>
+                </MudStack>
+            }
+        </MudPaper>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private string _baseUrl = "";
+    private string _points = "";
+    private string? _baseUrlError;
+    private string? _pointsError;
+
+    private StorageEstimate? _estimate;
+    private UnusedImages? _unused;
+    private string? _unusedError;
+    private string? _storageError;
+    private bool _cleaning;
+
+    private string UnusedText => _unusedError is not null
+        ? _unusedError
+        : _unused switch
+        {
+            null => "",
+            { Images.Count: 0 } => "No unused images.",
+            var u => $"{u.Images.Count} unused image{(u.Images.Count == 1 ? "" : "s")} · {ImageIntake.FormatSize(u.TotalSize)}",
+        };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Settings.EnsureLoadedAsync();
+        _baseUrl = Settings.Current.DefaultBaseUrl;
+        _points = CreatorSettings.FormatPoints(Settings.Current.DefaultPoints);
+        await LoadStorageAsync();
+    }
+
+    private async Task LoadStorageAsync()
+    {
+        try
+        {
+            _estimate = await Storage.GetStorageEstimateAsync();
+        }
+        catch (JSException ex)
+        {
+            _storageError = ex.Message;
+            return;
+        }
+
+        try
+        {
+            _unused = await Projects.FindUnusedImagesAsync();
+            _unusedError = null;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or JSException)
+        {
+            _unused = null;
+            _unusedError = ex.Message;
+        }
+    }
+
+    private async Task SaveBaseUrlAsync()
+    {
+        var value = _baseUrl.Trim();
+        // Empty is allowed: new projects then start without a base URL.
+        _baseUrlError = value.Length == 0 || ProjectValidator.IsAbsoluteHttpUrl(value) ? null : "Must be an absolute http(s) URL.";
+        if (_baseUrlError is null && value != Settings.Current.DefaultBaseUrl)
+        {
+            await SaveAsync(Settings.Current with { DefaultBaseUrl = value });
+        }
+    }
+
+    private async Task SavePointsAsync()
+    {
+        _pointsError = CreatorSettings.TryParsePoints(_points, out var points);
+        if (_pointsError is null && !points.SequenceEqual(Settings.Current.DefaultPoints))
+        {
+            _points = CreatorSettings.FormatPoints(points);
+            await SaveAsync(Settings.Current with { DefaultPoints = points });
+        }
+    }
+
+    private Task SaveThemeAsync(ThemeMode theme) => SaveAsync(Settings.Current with { Theme = theme });
+
+    private async Task SaveAsync(CreatorSettings settings)
+    {
+        try
+        {
+            await Settings.SaveAsync(settings);
+            Snackbar.Add("Settings saved", Severity.Normal);
+        }
+        catch (JSException ex)
+        {
+            Snackbar.Add($"Settings could not be saved: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task RequestPersistenceAsync()
+    {
+        var granted = await Storage.RequestPersistenceAsync();
+        Snackbar.Add(granted ? "Persistent storage granted" : "The browser did not grant persistent storage", granted ? Severity.Success : Severity.Warning);
+        await LoadStorageAsync();
+    }
+
+    private async Task CleanUpImagesAsync()
+    {
+        _cleaning = true;
+        try
+        {
+            var removed = await Projects.DeleteUnusedImagesAsync();
+            Snackbar.Add($"Removed {removed.Images.Count} image{(removed.Images.Count == 1 ? "" : "s")} ({ImageIntake.FormatSize(removed.TotalSize)})", Severity.Success);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or JSException)
+        {
+            Snackbar.Add($"Images could not be cleaned up: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _cleaning = false;
+        }
+
+        await LoadStorageAsync();
+    }
+}

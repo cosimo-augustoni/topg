@@ -1,0 +1,93 @@
+/* Global styles of the quiz creator (/create). Component-specific styles live in *.razor.css. */
+
+/* UX-3: pane and section titles are uppercase subtitle2 with letter spacing. */
+.section-title {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* C-1 app bar */
+.creator-appbar {
+    border-bottom: 1px solid var(--mud-palette-divider);
+}
+
+.creator-appbar .project-name {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.creator-appbar .issues-summary {
+    cursor: pointer;
+    height: 32px;
+    border-radius: var(--mud-default-borderradius);
+}
+
+    .creator-appbar .issues-summary:hover {
+        background-color: var(--mud-palette-action-default-hover);
+    }
+
+/* C-9 board grid container (MudPaper, so not reachable from the component's scoped CSS) */
+.board-grid-scroll {
+    overflow-x: auto;
+}
+
+/* S-3a/b/c inspectors */
+.inspector .field-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.inspector .field-label {
+    width: 88px;
+    flex-shrink: 0;
+}
+
+.inspector .size-visual {
+    flex: 1;
+    height: 16px;
+    border: 1px dashed var(--mud-palette-lines-inputs);
+    border-radius: 3px;
+    padding: 2px;
+    min-width: 60px;
+}
+
+.inspector .size-bar {
+    height: 100%;
+    background-color: var(--mud-palette-primary);
+    opacity: 0.6;
+    border-radius: 2px;
+    transition: width 150ms ease;
+}
+
+.monospace {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    word-break: break-all;
+}
+
+.creator-appbar a,
+.creator-appbar .mud-button-label {
+    white-space: nowrap;
+}
+
+/* Below 960 px (UX-1 P1: usable, not optimized) the project name makes room for the section links. */
+@media (max-width: 959.98px) {
+    .creator-appbar .project-name,
+    .creator-appbar .project-name-separator {
+        display: none;
+    }
+}
+
+/* S-8 import drop area (inside a MudDialog, so not reachable from scoped CSS) */
+.import-drop {
+    border-style: dashed !important;
+    min-height: 110px;
+    justify-content: center;
+}
+
+    .import-drop.drag-over {
+        border-color: var(--mud-palette-primary) !important;
+        background-color: var(--mud-palette-action-default-hover);
+    }

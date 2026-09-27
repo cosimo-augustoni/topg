@@ -1,0 +1,131 @@
+@* S-3c Category inspector (ui-concept.md) *@
+@inject ProjectSession Session
+@inject CreatorSettingsService Settings
+@inject UndoSnackbar Undo
+
+@{
+    var category = Location.Category;
+}
+
+<div class="inspector" @key="category.Id">
+    <div class="d-flex align-center px-4 pt-3">
+        <MudText Typo="Typo.subtitle2" Class="section-title">Category</MudText>
+        <MudSpacer />
+        <MudTooltip Text="Close (Esc)">
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="Session.ClearSelection" aria-label="Close inspector" />
+        </MudTooltip>
+    </div>
+    <MudText Typo="Typo.caption" Class="mud-text-secondary px-4 pb-2 d-block">Board @Location.BoardNumber</MudText>
+
+    <MudStack Spacing="3" Class="px-4 pb-4">
+        <MudTextField T="string" @ref="_nameField" Label="Name" Required="true"
+                      Value="category.Name" ValueChanged="v => Session.Change(_ => category.Name = v)" DebounceInterval="300"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Unique on this board. Shown as column header."
+                      Validation="@(new Func<string, string?>(ValidateName))" />
+
+        <MudText Typo="Typo.body2">@Summary</MudText>
+
+        <MudDivider />
+
+        <div class="d-flex align-center gap-2">
+            <MudText Typo="Typo.body2">Add questions</MudText>
+            <MudTooltip Text="@($"Adds text questions for the missing values of {CreatorSettings.FormatPoints(Settings.Current.DefaultPoints)}")">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="FillDefaults" Disabled="@(MissingDefaults == 0)">
+                    Fill default points
+                </MudButton>
+            </MudTooltip>
+        </div>
+
+        <MudDivider />
+
+        <div class="d-flex align-center gap-2 flex-wrap">
+            <MudMenu Label="Move to board…" Variant="Variant.Outlined" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowDropDown" Dense="true"
+                     Disabled="@(Session.Project!.Boards.Count < 2)">
+                @for (var i = 0; i < Session.Project!.Boards.Count; i++)
+                {
+                    var board = Session.Project.Boards[i];
+                    if (board != Location.Board)
+                    {
+                        var number = i + 1;
+                        <MudMenuItem OnClick="() => Move(board, number)">Board @number</MudMenuItem>
+                    }
+                }
+            </MudMenu>
+            <MudSpacer />
+            <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Outlined.Delete" OnClick="Delete">
+                Delete category
+            </MudButton>
+        </div>
+    </MudStack>
+</div>
+
+@code {
+    private MudTextField<string>? _nameField;
+    private int _handledFocusRequest;
+
+    [Parameter, EditorRequired]
+    public required CategoryLocation Location { get; set; }
+
+    private string Summary
+    {
+        get
+        {
+            var points = Location.Category.Questions.Select(q => q.Points).ToList();
+            return points.Count switch
+            {
+                0 => "No questions",
+                1 => $"1 question · {points[0]}",
+                _ => $"{points.Count} questions · {points.Min()} – {points.Max()}",
+            };
+        }
+    }
+
+    private int MissingDefaults => Settings.Current.DefaultPoints.Except(Location.Category.Questions.Select(q => q.Points)).Count();
+
+    /// <summary>Same rules and texts as the validator (UX-7), checked while typing.</summary>
+    private string? ValidateName(string? name)
+    {
+        var trimmed = name?.Trim() ?? "";
+        if (trimmed.Length == 0)
+        {
+            return "Category name is required.";
+        }
+
+        return Location.Board.Categories.Any(c => c != Location.Category && c.Name.Trim() == trimmed)
+            ? $"Category \"{trimmed}\" exists twice on board {Location.BoardNumber}."
+            : null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Session.FocusRequest != _handledFocusRequest && _nameField is not null)
+        {
+            _handledFocusRequest = Session.FocusRequest;
+            if (Session.ShowFieldErrors)
+            {
+                await _nameField.ValidateAsync();
+            }
+
+            await _nameField.FocusAsync();
+            await _nameField.SelectAsync();
+        }
+    }
+
+    private void FillDefaults() => Session.Change(_ => Location.Category.FillDefaultPoints(Settings.Current.DefaultPoints));
+
+    private void Move(BoardDraft board, int number)
+    {
+        var category = Location.Category;
+        Session.ChangeWithUndo("move category", project => project.MoveCategory(category, board));
+        Undo.Show($"Category moved to board {number}");
+    }
+
+    private void Delete()
+    {
+        var category = Location.Category;
+        var count = category.Questions.Count;
+        Session.ChangeWithUndo("delete category", _ => Location.Board.Categories.Remove(category));
+        Session.ClearSelection();
+        Undo.Show(count == 0 ? "Category deleted" : $"Category and {count} question{(count == 1 ? "" : "s")} deleted");
+    }
+}

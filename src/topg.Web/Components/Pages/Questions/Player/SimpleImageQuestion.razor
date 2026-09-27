@@ -39,9 +39,9 @@
         // are set to height:100% so these percentages will be relative to the component's allocated height.
         return ImageQuestion.ImageSize switch
         {
-            Templating.DomainObjects.ImageSize.Large => "100%",
-            Templating.DomainObjects.ImageSize.Medium => "70%",
-            Templating.DomainObjects.ImageSize.Small => "40%",
+            Client.Shared.ImageSize.Large => "100%",
+            Client.Shared.ImageSize.Medium => "70%",
+            Client.Shared.ImageSize.Small => "40%",
             _ => "70%",
         };
     }
