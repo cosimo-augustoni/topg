@@ -135,7 +135,7 @@ public class ImagePixelationTests : IAsyncLifetime
         Assert.Equal("5", slider.GetAttribute("max"));
         Assert.Equal(["8", "16", "32", "64", "128", "Clear"], host.FindAll(".mud-slider-tickmarks .mud-typography").Select(label => label.TextContent.Trim()));
 
-        slider.Change("2");
+        slider.Input("2");
 
         Assert.Equal(2, question.PixelationStep);
     }

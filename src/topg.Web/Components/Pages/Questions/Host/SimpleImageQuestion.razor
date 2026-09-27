@@ -22,8 +22,7 @@
         <tr>
             <TextColumn>Pixelation</TextColumn>
             <td>
-                @* Not immediate: every step crossed while dragging would redraw every player and spectator screen. *@
-                <MudSlider T="int" Value="ImageQuestion.PixelationStep" ValueChanged="SetPixelationStep" Immediate="false"
+                <MudSlider T="int" Value="ImageQuestion.PixelationStep" ValueChanged="SetPixelationStep"
                            Min="0" Max="ImageQuestion.ClearStep" Step="1" TickMarks="true" TickMarkLabels="PixelationLabels"
                            Color="Color.Primary" Class="px-4" />
             </td>
