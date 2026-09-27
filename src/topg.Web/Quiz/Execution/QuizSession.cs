@@ -39,15 +39,25 @@ public class QuizSession
     public bool TryAddPlayer(string playerName, [NotNullWhen(true)] out string? playerId)
     {
         playerId = null;
-        if (Players.Any(p => p.Name == playerName))
+        // The player id is derived from the name, so it has to be normalized before the id is created.
+        playerName = playerName.Trim();
+        if (playerName.Length == 0)
             return false;
 
-        var nameBytes = Encoding.UTF8.GetBytes(playerName);
-        var hmacBytes = HMACSHA256.HashData(sessionSecret, nameBytes);
-        playerId = playerName + "." + Convert.ToHexString(hmacBytes);
+        Player player;
+        // Two players joining at once must not both pass the duplicate check.
+        lock (Players)
+        {
+            if (Players.Any(p => string.Equals(p.Name, playerName, StringComparison.OrdinalIgnoreCase)))
+                return false;
 
-        var player = new Player { Id = playerId, Name = playerName, Score = 0 };
-        Players.AddLast(player);
+            var nameBytes = Encoding.UTF8.GetBytes(playerName);
+            var hmacBytes = HMACSHA256.HashData(sessionSecret, nameBytes);
+            playerId = playerName + "." + Convert.ToHexString(hmacBytes);
+
+            player = new Player { Id = playerId, Name = playerName, Score = 0 };
+            Players.AddLast(player);
+        }
         ActivePlayer ??= player;
         SessionStateHasChanged();
         return true;

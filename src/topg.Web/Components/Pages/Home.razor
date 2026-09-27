@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using System.Diagnostics.CodeAnalysis
 @using topg.Web.Quiz.Management
 @inject NavigationManager NavigationManager
 @inject ProtectedLocalStorage ProtectedLocalStorage
@@ -12,8 +13,8 @@
     <MudItem>
         <MudPaper Class="pa-6" Elevation="4">
             <MudStack Spacing="3">
-                <MudTextField T="string" Required="true" @bind-Value="JoinCode" MaxLength="4" Label="Join Code" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Tag"></MudTextField>
-                <MudTextField T="string" Required="true" @bind-Value="Name" MaxLength="25" Label="Name" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person"></MudTextField>
+                <MudTextField T="string" Required="true" @bind-Value="JoinCode" @bind-Value:after="() => joinCodeError = null" Error="joinCodeError != null" ErrorText="@joinCodeError" MaxLength="4" Label="Join Code" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Tag"></MudTextField>
+                <MudTextField T="string" Required="true" @bind-Value="Name" @bind-Value:after="() => nameError = null" Error="nameError != null" ErrorText="@nameError" MaxLength="25" Label="Name" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person"></MudTextField>
                 <MudButton Variant="Variant.Filled" OnClick="Join" Color="Color.Primary" FullWidth="true">Join</MudButton>
             </MudStack>
         </MudPaper>
@@ -49,16 +50,45 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
+    private const string InvalidJoinCodeMessage = "Enter the 4-digit join code.";
+    private const string GameNotFoundMessage = "No game with this code was found.";
+    private const string MissingNameMessage = "Enter your name.";
+    private const string NameTakenMessage = "This name is already taken in this game.";
+
+    private string? joinCodeError;
+    private string? nameError;
+
+    protected override void OnInitialized()
+    {
+        // Players are sent here from /play/{code} when that game doesn't exist (or they aren't part of it yet).
+        if (IsValidJoinCode(JoinCode) && !SessionHandler.Sessions.ContainsKey(new SessionId(JoinCode)))
+            joinCodeError = GameNotFoundMessage;
+    }
+
+    private static bool IsValidJoinCode([NotNullWhen(true)] string? joinCode) =>
+        joinCode is { Length: 4 } && joinCode.All(char.IsAsciiDigit);
+
     private async Task Join()
     {
-        if (JoinCode is { Length: 4 } && !string.IsNullOrWhiteSpace(Name))
+        joinCodeError = IsValidJoinCode(JoinCode) ? null : InvalidJoinCodeMessage;
+        nameError = string.IsNullOrWhiteSpace(Name) ? MissingNameMessage : null;
+        if (joinCodeError != null || nameError != null)
+            return;
+
+        var name = Name!.Trim();
+        switch (SessionHandler.Join(new SessionId(JoinCode!), name, out var playerId))
         {
-            if (SessionHandler.Join(new SessionId(JoinCode), Name, out var playerId))
-            {
-                await ProtectedLocalStorage.SetAsync(SessionConstants.PlayerNameStorageId, Name);
-                await ProtectedLocalStorage.SetAsync(SessionConstants.PlayerSessionStorageId, playerId);
+            case JoinResult.Joined:
+                await ProtectedLocalStorage.SetAsync(SessionConstants.PlayerNameStorageId, name);
+                await ProtectedLocalStorage.SetAsync(SessionConstants.PlayerSessionStorageId, playerId!);
                 NavigationManager.NavigateTo($"/play/{JoinCode}");
-            }
+                break;
+            case JoinResult.GameNotFound:
+                joinCodeError = GameNotFoundMessage;
+                break;
+            case JoinResult.NameTaken:
+                nameError = NameTakenMessage;
+                break;
         }
     }
 }
