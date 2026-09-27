@@ -58,4 +58,22 @@ public static class ImageNaming
         normalizedContentType = "";
         return false;
     }
+
+    /// <summary>
+    /// Detects the type from the file signature. The browser derives its content type from the file name alone, so
+    /// a renamed or fake file would otherwise be stored and exported under a type it doesn't have.
+    /// </summary>
+    public static bool TryDetectType(ReadOnlySpan<byte> content, out string extension, out string contentType)
+    {
+        extension = content switch
+        {
+            [0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A, ..] => "png",
+            [0xFF, 0xD8, 0xFF, ..] => "jpg",
+            [(byte)'G', (byte)'I', (byte)'F', (byte)'8', (byte)'7' or (byte)'9', (byte)'a', ..] => "gif",
+            [(byte)'R', (byte)'I', (byte)'F', (byte)'F', _, _, _, _, (byte)'W', (byte)'E', (byte)'B', (byte)'P', ..] => "webp",
+            _ => "",
+        };
+        contentType = extension == "" ? "" : ContentTypesByExtension[extension];
+        return extension != "";
+    }
 }
