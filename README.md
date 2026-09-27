@@ -12,9 +12,10 @@ script.
 | `src/topg.AppHost` | Aspire app host (local run and Docker Compose publishing) |
 | `src/topg.Web` | The game (Blazor Server) and the host for the quiz creator |
 | `src/topg.Web.Client` | The quiz creator at `/create` (Blazor WebAssembly, runs entirely in the browser) |
-| `src/topg.MigrationService` | Applies the EF Core migrations on startup |
+| `src/topg.MigrationService` | Applies the EF Core migrations on startup. It never seeds or deletes quizzes |
 | `src/topg.Web.Client.Tests` | Unit tests of the creator (validation, storage, SQL golden files, project files) |
 | `src/topg.Web.IntegrationTests` | Runs the generated SQL against a real PostgreSQL (Testcontainers) and loads it like the game |
+| `samples` | Sample quizzes as project files, for test data |
 
 ## Running locally
 
@@ -23,6 +24,13 @@ dotnet run --project src/topg.AppHost
 ```
 
 This starts PostgreSQL (plus pgAdmin), the migration service and the web app. Docker must be running.
+
+A new database has no quizzes. For test data, import one of the sample project files from `samples/`
+(`science-nature.topgquiz`, `pop-culture-history.topgquiz`) with **Import** on the `/create` Projects page. Then
+export it and run `import.sql` as described in [Creating a quiz](#creating-a-quiz-create). The samples use the base
+URL `https://cdn.kallisto.li/topg`. To use another CDN, change the base URL in Quiz settings before exporting. The
+image question in "Pop Culture & History" only shows its images once the image folder from the export ZIP is uploaded
+to that CDN.
 
 Tests:
 

@@ -100,6 +100,28 @@ public class SqlImportTests(PostgresFixture db) : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task Pop_culture_sample_can_be_hosted_after_import()
+    {
+        Skip.If(db.DockerUnavailableReason is not null, db.DockerUnavailableReason);
+        var project = SampleProjects.Read("pop-culture-history.topgquiz");
+
+        await db.ExecuteScriptAsync(SqlExport.Generate(project, GeneratedAt));
+
+        await using var context = db.CreateContext();
+        var template = Assert.Single(await new TemplateService(context).GetAllTemplatesAsync());
+        Assert.Equal("Pop Culture & History", template.Name);
+        Assert.All(template.Boards, b => Assert.Equal(30, b.Questions.Count));
+        var image = Assert.Single(template.Boards.SelectMany(b => b.Questions).OfType<DomainImageQuestion>());
+        var draft = project.AllQuestions().OfType<ImageQuestionDraft>().Single();
+        Assert.Equal(draft.QuestionImage!.Url(project.BaseUrl, project.Folder), image.QuestionImageUri);
+        Assert.Equal(draft.AnswerImage!.Url(project.BaseUrl, project.Folder), image.AnswerImageUri);
+
+        var execution = new QuizExecution(template);
+        Assert.Contains(execution.CurrentBoard.Questions, q => q is Quiz.Execution.ImageQuestion);
+        Assert.True(execution.HasNextBoard);
+    }
+
+    [SkippableFact]
     public async Task Replace_mode_twice_leaves_exactly_one_template_without_orphans()
     {
         Skip.If(db.DockerUnavailableReason is not null, db.DockerUnavailableReason);
