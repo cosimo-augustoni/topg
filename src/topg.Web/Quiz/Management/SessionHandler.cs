@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using topg.Web.Quiz.Execution;
 using topg.Web.Templating.DomainObjects;
 
@@ -24,13 +23,13 @@ namespace topg.Web.Quiz.Management
             return sessionId;
         }
 
-        public bool Join(SessionId sessionId, string playerName, [NotNullWhen(true)] out string? playerId)
+        public JoinResult Join(SessionId sessionId, string playerName, out string? playerId)
         {
-            if (Sessions.TryGetValue(sessionId, out var session))
-                return session.TryAddPlayer(playerName, out playerId);
-
             playerId = null;
-            return false;
+            if (!Sessions.TryGetValue(sessionId, out var session))
+                return JoinResult.GameNotFound;
+
+            return session.TryAddPlayer(playerName, out playerId) ? JoinResult.Joined : JoinResult.NameTaken;
         }
     }
 }
