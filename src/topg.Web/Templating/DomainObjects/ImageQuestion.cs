@@ -9,4 +9,5 @@ public record ImageQuestion : Question
     public required string AnswerText { get; init; }
     public required string AnswerImageUri { get; init; }
     public required ImageSize ImageSize { get; init; }
+    public bool StartPixelated { get; init; }
 }
