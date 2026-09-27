@@ -1,4 +1,4 @@
-﻿using topg.Web.Client.Shared;
+using topg.Web.Client.Shared;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
@@ -16,6 +16,7 @@ public class QuizSession
     public required QuizExecution Quiz { get; init; }
     public BuzzerState BuzzerState { get; } = new();
     public TextInputState TextInputState { get; } = new();
+    public TimeProvider TimeProvider { private get; init; } = TimeProvider.System;
     public TimerState TimerState { get; } = new();
     public SoundEffectManager SoundEffectManager { get; } = new();
     public Player? ActivePlayer { get; private set; }
@@ -136,7 +137,7 @@ public class QuizSession
         if (TimerState.IsRunning)
             TimerState.Stop();
         else
-            TimerState.Start();
+            TimerState.Start(TimeProvider, SessionStateHasChanged);
 
         SessionStateHasChanged();
     }
@@ -212,23 +213,5 @@ public class QuizSession
     {
         player = Players.FirstOrDefault(p => p.Id == playerSession);
         return player != null;
-    }
-}
-
-public class TimerState
-{
-    private int running = 0;
-
-    public bool IsRunning => running == 1;
-    public int TimerDuration { get; set; } = 10;
-
-    public void Start()
-    {
-        Interlocked.Exchange(ref running, 1);
-    }
-
-    public void Stop()
-    {
-        Interlocked.Exchange(ref running, 0);
     }
 }
