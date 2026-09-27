@@ -22,6 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\samples\*.topgquiz" LinkBase="Samples" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\topg.MigrationService\topg.MigrationService.csproj" />
     <ProjectReference Include="..\topg.Web\topg.Web.csproj" />
     <ProjectReference Include="..\topg.Web.Client\topg.Web.Client.csproj" />
   </ItemGroup>
