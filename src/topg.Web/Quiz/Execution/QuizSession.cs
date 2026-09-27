@@ -79,6 +79,7 @@ public class QuizSession
     public void SelectQuestion(Question question)
     {
         Quiz.CurrentQuestionId = question.Id;
+        TextInputState.IsLocked = false;
 
         switch (question.AnswerType)
         {
@@ -107,6 +108,7 @@ public class QuizSession
         ControlDisplayState = ControlDisplayState.None;
         TextInputState.Clear();
         TextInputState.IsRevealed = false;
+        TextInputState.IsLocked = false;
         BuzzerState.UnlockBuzzer();
         TimerState.Stop();
 
@@ -153,7 +155,23 @@ public class QuizSession
 
     public void UpdateTextInput(Player player, string? text)
     {
+        // A debounced keystroke can arrive after the host locked the inputs, so the lock is enforced here and not only in the player's UI.
+        if (TextInputState.IsLocked)
+            return;
+
         TextInputState.UpdateTextInput(player, text);
+        SessionStateHasChanged();
+    }
+
+    public void LockTextInputs()
+    {
+        TextInputState.IsLocked = true;
+        SessionStateHasChanged();
+    }
+
+    public void UnlockTextInputs()
+    {
+        TextInputState.IsLocked = false;
         SessionStateHasChanged();
     }
 
