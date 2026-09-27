@@ -11,6 +11,7 @@ namespace topg.Web.Templating
             return await quizContext.Templates
                 .Include(x => x.Boards)
                 .ThenInclude(x => x.Questions)
+                .ThenInclude(x => ((TextQuestion)x).Hints)
                 .ToListAsync();
         }
     }
