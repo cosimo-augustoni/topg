@@ -16,6 +16,7 @@ public class QuizSession
     public required QuizExecution Quiz { get; init; }
     public BuzzerState BuzzerState { get; } = new();
     public TextInputState TextInputState { get; } = new();
+    public TimeProvider TimeProvider { private get; init; } = TimeProvider.System;
     public TimerState TimerState { get; } = new();
     public SoundEffectManager SoundEffectManager { get; } = new();
     public Player? ActivePlayer { get; private set; }
@@ -134,7 +135,7 @@ public class QuizSession
         if (TimerState.IsRunning)
             TimerState.Stop();
         else
-            TimerState.Start();
+            TimerState.Start(TimeProvider, SessionStateHasChanged);
 
         SessionStateHasChanged();
     }
@@ -199,18 +200,56 @@ public class QuizSession
 
 public class TimerState
 {
-    private int running = 0;
+    private readonly Lock gate = new();
+    private ITimer? expiryTimer;
+    // Identifies the current run so an expiry callback already queued for a stopped or restarted run is ignored.
+    private object? currentRun;
 
-    public bool IsRunning => running == 1;
+    public bool IsRunning
+    {
+        get
+        {
+            lock (gate)
+                return currentRun != null;
+        }
+    }
+
     public int TimerDuration { get; set; } = 10;
 
-    public void Start()
+    public void Start(TimeProvider timeProvider, Action onExpired)
     {
-        Interlocked.Exchange(ref running, 1);
+        lock (gate)
+        {
+            StopCore();
+            var run = new object();
+            currentRun = run;
+            expiryTimer = timeProvider.CreateTimer(_ => Expire(run, onExpired), null,
+                TimeSpan.FromSeconds(TimerDuration), Timeout.InfiniteTimeSpan);
+        }
     }
 
     public void Stop()
     {
-        Interlocked.Exchange(ref running, 0);
+        lock (gate)
+            StopCore();
+    }
+
+    private void Expire(object run, Action onExpired)
+    {
+        lock (gate)
+        {
+            if (currentRun != run)
+                return;
+            StopCore();
+        }
+
+        onExpired();
+    }
+
+    private void StopCore()
+    {
+        currentRun = null;
+        expiryTimer?.Dispose();
+        expiryTimer = null;
     }
 }
