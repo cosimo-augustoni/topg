@@ -58,7 +58,25 @@ public class ImageQuestion(Templating.DomainObjects.ImageQuestion question) : Qu
     public required ImageSize ImageSize { get; init; } = question.ImageSize;
     public ImageQuestionDisplayState DisplayState { get; set; }
 
-    public override void ResetDisplayState() => DisplayState = ImageQuestionDisplayState.None;
+    // Blocks across the image width, coarsest first. The steps get tuned after playtesting, so the slider, the starting
+    // step and the renderer all derive from this list, and the session stores an index into it rather than a count.
+    public static readonly int[] PixelationSteps = [8, 16, 32, 64, 128];
+
+    public static int ClearStep => PixelationSteps.Length;
+
+    public bool StartPixelated { get; init; } = question.StartPixelated;
+
+    public int StartStep => StartPixelated ? 0 : ClearStep;
+
+    public int PixelationStep { get; set; } = question.StartPixelated ? 0 : ClearStep;
+
+    public int? PixelationBlocks => PixelationStep < ClearStep ? PixelationSteps[PixelationStep] : null;
+
+    public override void ResetDisplayState()
+    {
+        DisplayState = ImageQuestionDisplayState.None;
+        PixelationStep = StartStep;
+    }
 }
 
 [Flags]

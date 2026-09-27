@@ -15,7 +15,15 @@
             <div style="position:relative; height:@GetInnerBoxHeight(); width:100%; max-width:100%; margin:0 auto; overflow:hidden; display:flex; align-items:center; justify-content:center;">
                 @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))
                 {
-                    <img src="@ImageQuestion.QuestionImageUri.ToString()" alt="Question Image" style="height:100%; max-width:100%; width:auto; object-fit:contain; display:block;" class="rounded-0" />
+                    @* No <img> while pixelated, so the sharp image never flashes up before the canvas is drawn. *@
+                    @if (ImageQuestion.PixelationBlocks is not null)
+                    {
+                        <canvas @ref="_canvas" aria-label="Question Image" style="height:100%; max-width:100%; width:auto; object-fit:contain; display:block; image-rendering:pixelated;" class="rounded-0"></canvas>
+                    }
+                    else
+                    {
+                        <img src="@ImageQuestion.QuestionImageUri.ToString()" alt="Question Image" style="height:100%; max-width:100%; width:auto; object-fit:contain; display:block;" class="rounded-0" />
+                    }
                 }
                 @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Answer))
                 {
@@ -28,8 +36,33 @@
 </MudStack>
 @code {
 
+    [Inject]
+    private IJSRuntime JS { get; set; } = null!;
+
     [Parameter]
     public required ImageQuestion ImageQuestion { get; set; }
+
+    private ElementReference _canvas;
+    private (string? CanvasId, Uri Image, int Blocks)? _drawn;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image) || ImageQuestion.PixelationBlocks is not { } blocks)
+        {
+            _drawn = null;
+            return;
+        }
+
+        // Every session change re-renders this component; only redraw when the canvas or what it shows changed.
+        var target = (_canvas.Id, ImageQuestion.QuestionImageUri, blocks);
+        if (_drawn == target)
+        {
+            return;
+        }
+
+        _drawn = target;
+        await JS.InvokeVoidAsync("pixelateImage", _canvas, ImageQuestion.QuestionImageUri.ToString(), blocks);
+    }
 
     private string GetInnerBoxHeight()
     {

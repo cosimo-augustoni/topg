@@ -133,6 +133,8 @@ public class SqlImportTests(PostgresFixture db) : IAsyncLifetime
         var execution = new QuizExecution(template);
         var imageQuestion = execution.CurrentBoard.Questions.OfType<Quiz.Execution.ImageQuestion>().Single(q => q.Points == 200);
         Assert.Null(imageQuestion.AnswerImageUri);
+        Assert.Equal(Quiz.Execution.ImageQuestion.ClearStep, imageQuestion.PixelationStep);
+        Assert.Equal(0, execution.CurrentBoard.Questions.OfType<Quiz.Execution.ImageQuestion>().Single(q => q.Points == 100).PixelationStep);
         Assert.True(execution.HasNextBoard);
     }
 

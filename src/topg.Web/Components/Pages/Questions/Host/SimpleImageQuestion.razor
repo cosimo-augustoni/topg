@@ -19,6 +19,16 @@
             <ImageColumn ImageUrl="@ImageQuestion.QuestionImageUri.ToString()"></ImageColumn>
             <VisibilityButtonColumn Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))" ToggledChanged="ToggleImageVisibility"></VisibilityButtonColumn>
         </tr>
+        <tr>
+            <TextColumn>Pixelation</TextColumn>
+            <td>
+                @* Not immediate: every step crossed while dragging would redraw every player and spectator screen. *@
+                <MudSlider T="int" Value="ImageQuestion.PixelationStep" ValueChanged="SetPixelationStep" Immediate="false"
+                           Min="0" Max="ImageQuestion.ClearStep" Step="1" TickMarks="true" TickMarkLabels="PixelationLabels"
+                           Color="Color.Primary" Class="px-4" />
+            </td>
+            <TextColumn></TextColumn>
+        </tr>
         <tr style="background-color: var(--mud-palette-primary)">
             <TextColumn>Answer</TextColumn>
             <TextColumn></TextColumn>
@@ -47,6 +57,13 @@
 
     [Parameter]
     public required ImageQuestion ImageQuestion { get; set; }
+
+    private static readonly string[] PixelationLabels = [.. ImageQuestion.PixelationSteps.Select(blocks => $"{blocks}"), "Clear"];
+
+    private void SetPixelationStep(int step)
+    {
+        QuizSession.UpdateQuestion(ImageQuestion, question => question.PixelationStep = step);
+    }
 
     private void ToggleImageVisibility()
     {
