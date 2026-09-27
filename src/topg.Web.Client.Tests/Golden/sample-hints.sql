@@ -30,8 +30,8 @@ Line 2', 'C:\path');
         (question_id, 1, 'Line 1
 Line 2', ''),
         (question_id, 2, 'C:\path', '');
-    INSERT INTO "Questions" ("BoardId", "QuestionType", "AnswerType", "Points", "Category", "QuestionText", "QuestionImageUri", "AnswerText", "AnswerImageUri", "ImageSize") VALUES
-        (board_id, 2, 1, 100, 'Animals', 'Which flag?', 'https://cdn.example.com/quiz/pub-quiz/807d0fbcae7c4b20.png', 'Switzerland', 'https://cdn.example.com/quiz/pub-quiz/0db52f4076c08251.png', 2);
+    INSERT INTO "Questions" ("BoardId", "QuestionType", "AnswerType", "Points", "Category", "QuestionText", "QuestionImageUri", "AnswerText", "AnswerImageUri", "ImageSize", "StartPixelated") VALUES
+        (board_id, 2, 1, 100, 'Animals', 'Which flag?', 'https://cdn.example.com/quiz/pub-quiz/807d0fbcae7c4b20.png', 'Switzerland', 'https://cdn.example.com/quiz/pub-quiz/0db52f4076c08251.png', 2, TRUE);
 
     -- Board 2
     INSERT INTO "Boards" ("TemplateId", "Order") VALUES (template_id, 1) RETURNING "Id" INTO board_id;
@@ -41,7 +41,7 @@ Line 2', ''),
         (question_id, 0, 'Red', 'https://cdn.example.com/quiz/pub-quiz/b1f51a511f1da0cd.png'),
         (question_id, 1, '', 'https://cdn.example.com/quiz/pub-quiz/018fa96a44715c90.png'),
         (question_id, 2, 'O''Brien''s cross', 'https://cdn.example.com/quiz/pub-quiz/b3986952b145da5f.png');
-    INSERT INTO "Questions" ("BoardId", "QuestionType", "AnswerType", "Points", "Category", "QuestionText", "QuestionImageUri", "AnswerText", "AnswerImageUri", "ImageSize") VALUES
-        (board_id, 2, 0, 300, 'Second', 'No answer image', 'https://cdn.example.com/quiz/pub-quiz/807d0fbcae7c4b20.png', '', '', 1);
+    INSERT INTO "Questions" ("BoardId", "QuestionType", "AnswerType", "Points", "Category", "QuestionText", "QuestionImageUri", "AnswerText", "AnswerImageUri", "ImageSize", "StartPixelated") VALUES
+        (board_id, 2, 0, 300, 'Second', 'No answer image', 'https://cdn.example.com/quiz/pub-quiz/807d0fbcae7c4b20.png', '', '', 1, FALSE);
 END
 $topg$;

@@ -37,7 +37,7 @@ public static class ExportFixtures
                 Category("Animals", new ImageQuestionDraft
                 {
                     Points = 100, QuestionText = "Which flag?", QuestionImage = flag, AnswerText = "Switzerland",
-                    AnswerImage = answer, ImageSize = ImageSize.Large, AnswerType = AnswerType.Text,
+                    AnswerImage = answer, ImageSize = ImageSize.Large, AnswerType = AnswerType.Text, StartPixelated = true,
                 }),
             ],
         });
@@ -288,6 +288,42 @@ public class ProjectFileTests
         var question = imported!.AllQuestions().OfType<TextQuestionDraft>().Single(q => q.HintType == HintType.Image);
         Assert.Equal(["Red", "", "O'Brien's cross"], question.Hints.Select(h => h.Text));
         Assert.All(question.Hints, h => Assert.True(target.Images.ContainsKey(h.Image!.Hash)));
+    }
+
+    [Fact]
+    public async Task Round_trip_keeps_start_pixelated()
+    {
+        var project = await ExportFixtures.Sample(_source);
+        var file = await ProjectFile.CreateAsync(project, _source);
+
+        var target = new InMemoryCreatorStorage();
+        var targetStore = new ProjectStore(target);
+        await ProjectFile.ImportAsync(Read(file), asCopy: false, target, targetStore);
+
+        var imported = await targetStore.GetAsync(project.Id);
+        Assert.Equal([true, false], imported!.AllQuestions().OfType<ImageQuestionDraft>().Select(q => q.StartPixelated));
+    }
+
+    [Fact]
+    public async Task File_saved_before_start_pixelated_existed_imports_with_the_flag_off()
+    {
+        var project = await ExportFixtures.Sample(_source);
+        var json = JsonNode.Parse(CreatorJson.Serialize(project))!;
+        var removed = 0;
+        foreach (var question in json["boards"]!.AsArray().SelectMany(b => b!["categories"]!.AsArray()).SelectMany(c => c!["questions"]!.AsArray()))
+        {
+            removed += question!.AsObject().Remove("startPixelated") ? 1 : 0;
+        }
+
+        Assert.Equal(2, removed);
+        var entries = project.AllImages().DistinctBy(i => i.Hash)
+            .Select(i => ($"images/{i.FileName}", _source.Images[i.Hash].Content))
+            .Prepend(("project.json", Encoding.UTF8.GetBytes(json.ToJsonString())))
+            .ToArray();
+
+        var imported = Read(Zip(entries)).Project;
+
+        Assert.All(imported.AllQuestions().OfType<ImageQuestionDraft>(), q => Assert.False(q.StartPixelated));
     }
 
     [Fact]

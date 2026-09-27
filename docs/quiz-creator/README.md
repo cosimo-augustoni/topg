@@ -58,8 +58,8 @@ Clicking an issue selects the affected item.
 - **Questions:** add a question in a category cell (it gets the next value from the default points list),
   duplicate, move to another category, delete, and change the type (asks for confirmation when data would be lost).
 - **Text question inspector (S-3a):** question text, correct answer, answer type (buzzer / text), points.
-- **Image question inspector (S-3b):** question text, question image (required), display size S/M/L, answer text,
-  answer image (optional). Grid cells show a thumbnail of the question image.
+- **Image question inspector (S-3b):** question text, question image (required), display size S/M/L, "Start pixelated"
+  switch, answer text, answer image (optional). Grid cells show a thumbnail of the question image.
 - **Selection** is shared by the grid, outline, route and inspector, and lives in `ProjectSession`.
 - **Undo:** destructive edits take a snapshot first and show an Undo snackbar.
 - **Shortcuts:** `Ctrl+S` save, `Ctrl+E` export, `Ctrl+Z` undo (outside text fields), `Alt+Arrow` move the selection,
