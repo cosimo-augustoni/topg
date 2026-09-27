@@ -6,7 +6,7 @@ using topg.Web.Client.Shared;
 namespace topg.Web.Client.Creator.Export;
 
 /// <summary>
-/// Turns a project into a PostgreSQL script for the live database (WI-14). The script is one <c>DO</c> block, so it
+/// Turns a project into a PostgreSQL script for the live database. The script is one <c>DO</c> block, so it
 /// runs atomically, and it captures the generated ids with <c>RETURNING … INTO</c>.
 /// Table and column names follow <c>QuizContextModelSnapshot.cs</c>:
 /// Templates(Name) → Boards(TemplateId, Order) → Questions (TPH, discriminator <c>QuestionType</c>).

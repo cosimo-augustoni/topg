@@ -1,7 +1,7 @@
 # Quiz Creator – UI/UX Concept
 
 UI specification for `/create`, which runs in `topg.Web.Client` (WASM) and uses MudBlazor.
-Work items in [work-items.md](work-items.md) refer to the sections here by ID (`UX-*`, `S-*`, `C-*`).
+How the creator works today is described in [README.md](README.md). Sections here have IDs (`UX-*`, `S-*`, `C-*`) so they can be referenced.
 
 **How to use this document (for implementers and agents)**
 - Each screen (`S-*`) has a **route**, a **wireframe**, a **component tree** with the MudBlazor components to use,
@@ -251,7 +251,7 @@ MudContainer MaxWidth=Large Class="py-6"
 | Row click / Open | Navigate to `/create/{id}` |
 | Rename | Inline `MudDialog` with one text field, prefilled, Enter to save |
 | Duplicate | Copy with a new id and name "… (copy)", then show a snackbar |
-| Export project file | Download `{folder}.topgquiz` (WI-16) |
+| Export project file | Download `{folder}.topgquiz` |
 | Delete | `C-6` destructive, typing the name is required if the project has ≥ 1 question |
 
 **Acceptance:** list sorted by last edited (desc). The search filters by name. All menu actions work without a reload.
@@ -478,13 +478,13 @@ selection are always in sync. The grid ordering matches `Board.razor` for the sa
 ```
 - `MudContainer MaxWidth=Medium`, one `MudPaper Outlined` per section, `MudSwitch Color=Primary` for replace mode.
 - The example URL updates live and uses `Typo.body2` monospace (`font-family: monospace`).
-- Track `LastExportedAt` / `LastProjectFileExportAt` on the project (WI-04) so the warnings and "last export" can show.
+- Track `LastExportedAt` / `LastProjectFileExportAt` on the project so the warnings and "last export" can show.
 
 ---
 
 ### S-5 · Preview — out of scope
 
-A full-screen game-style preview was planned here (WI-13) and dropped: the editor grid already shows the game's
+A full-screen game-style preview was planned here and dropped: the editor grid already shows the game's
 category and question order, so a separate preview adds little. The number S-5 is kept free so the other screen
 numbers stay stable.
 
@@ -554,7 +554,7 @@ numbers stay stable.
 
 ## UX-7 · Validation message catalog
 
-Use these texts so the UI stays consistent (the WI-04 validator produces them; `{…}` are placeholders).
+Use these texts so the UI stays consistent (`ProjectValidator` produces them; `{…}` are placeholders).
 
 | Code | Severity | Target | Message |
 |---|---|---|---|

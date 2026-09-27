@@ -72,6 +72,12 @@ SQL against real migrations and loads it like the game does).
 `topg.AppHost` also publishes Docker Compose for Docker Swarm (overlay networks `topg_internal` and external `topg`,
 container registry from `REGISTRY_ENDPOINT`/`REGISTRY_REPOSITORY`, Postgres data bind mount via `PostgresDataPath`).
 
+## Backlog
+
+Bugs and features are tracked as GitHub issues. Before writing or refining an issue, read `docs/issues.md`, which
+defines the required structure (user story, Given/When/Then acceptance criteria, labels). Before implementing an
+issue, treat its acceptance criteria as the definition of done.
+
 ## Comments
 
 Only write a comment when it explains **why** the code behaves the way it does: a constraint, a workaround, a

@@ -10,7 +10,7 @@ using DomainTextQuestion = topg.Web.Templating.DomainObjects.TextQuestion;
 namespace topg.Web.IntegrationTests;
 
 /// <summary>
-/// WI-18: the generated import.sql against the real schema (EF migrations), read back the way the game reads it.
+/// Runs the generated import.sql against the real schema (EF migrations), read back the way the game reads it.
 /// Catches wrong column names, relative image URIs and enum mismatches.
 /// </summary>
 [Collection(PostgresCollection.Name)]
