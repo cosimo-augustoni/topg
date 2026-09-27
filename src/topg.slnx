@@ -6,4 +6,5 @@
   <Project Path="topg.Web.Client/topg.Web.Client.csproj" />
   <Project Path="topg.Web.Client.Tests/topg.Web.Client.Tests.csproj" />
   <Project Path="topg.Web.IntegrationTests/topg.Web.IntegrationTests.csproj" />
+  <Project Path="topg.Web.Tests/topg.Web.Tests.csproj" />
 </Solution>

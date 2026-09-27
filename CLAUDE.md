@@ -23,6 +23,8 @@ UPDATE_GOLDEN=1 dotnet test src/topg.Web.Client.Tests                           
 
 - Integration tests (`topg.Web.IntegrationTests`) use Testcontainers PostgreSQL and `[SkippableFact]`; without Docker
   they are skipped, not failed.
+- `topg.Web.Tests` holds bUnit tests for the game's Razor components. MudBlazor services only support async
+  disposal, so test classes own a `BunitContext` and dispose it in `IAsyncLifetime.DisposeAsync`.
 - Golden files live in `src/topg.Web.Client.Tests/Golden`. A missing golden file is written and the test fails once.
   After an intended change to SQL output, regenerate with `UPDATE_GOLDEN=1` and review the git diff.
 - EF migrations live in `src/topg.Web/Migrations`; `QuizContextFactory` provides the design-time context, e.g.

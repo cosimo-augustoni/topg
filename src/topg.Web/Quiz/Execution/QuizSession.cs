@@ -20,6 +20,7 @@ public class QuizSession
     public TimerState TimerState { get; } = new();
     public SoundEffectManager SoundEffectManager { get; } = new();
     public Player? ActivePlayer { get; private set; }
+    public TurnDirection TurnDirection { get; private set; } = TurnDirection.Forward;
     public LinkedList<Player> Players { get; } = [];
 
     public ControlDisplayState ControlDisplayState
@@ -69,12 +70,21 @@ public class QuizSession
             return;
 
         var activePlayerNode = Players.Find(ActivePlayer);
-        SetActivePlayer(activePlayerNode?.Next?.Value ?? Players.First?.Value);
+        var nextPlayerNode = TurnDirection == TurnDirection.Forward
+            ? activePlayerNode?.Next ?? Players.First
+            : activePlayerNode?.Previous ?? Players.Last;
+        SetActivePlayer(nextPlayerNode?.Value);
     }
 
     public void SetActivePlayer(Player? player)
     {
         ActivePlayer = player;
+        SessionStateHasChanged();
+    }
+
+    public void SetTurnDirection(TurnDirection turnDirection)
+    {
+        TurnDirection = turnDirection;
         SessionStateHasChanged();
     }
 
