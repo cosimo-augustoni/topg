@@ -85,7 +85,8 @@
     inset: 0;
     padding: 16px;
     display: flex;
-    align-items: center;
+    /* Below the minimum font size a long hint can still overflow a small screen; "safe" keeps its start visible. */
+    align-items: safe center;
     justify-content: center;
     text-align: center;
     color: rgba(255, 255, 255, 0.9);
