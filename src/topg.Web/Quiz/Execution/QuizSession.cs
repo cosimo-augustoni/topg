@@ -124,6 +124,24 @@ public class QuizSession
     public void MarkCurrentQuestionAsAnswered()
     {
         Quiz.CurrentQuestion?.IsAnswered = true;
+        CloseCurrentQuestion();
+
+        AdvanceActivePlayer();
+
+        SessionStateHasChanged();
+    }
+
+    public void ReturnToBoard()
+    {
+        // The question stays selectable, so it has to look untouched when it is opened again.
+        Quiz.CurrentQuestion?.ResetDisplayState();
+        CloseCurrentQuestion();
+
+        SessionStateHasChanged();
+    }
+
+    private void CloseCurrentQuestion()
+    {
         Quiz.CurrentQuestionId = null;
 
         ControlDisplayState = ControlDisplayState.None;
@@ -132,10 +150,6 @@ public class QuizSession
         TextInputState.IsLocked = false;
         BuzzerState.UnlockBuzzer();
         TimerState.Stop();
-
-        AdvanceActivePlayer();
-
-        SessionStateHasChanged();
     }
 
     public void AdjustPlayerScore(Player player, int points)

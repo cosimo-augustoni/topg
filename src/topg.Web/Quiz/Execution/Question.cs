@@ -13,6 +13,10 @@ public abstract class Question(Templating.DomainObjects.Question question)
     public int Order { get; init; } = question.Order;
     public AnswerType AnswerType { get; init; } = question.AnswerType;
     public bool IsAnswered { get; set; } = false;
+
+    public virtual void ResetDisplayState()
+    {
+    }
 }
 
 [method: SetsRequiredMembers]
@@ -21,6 +25,8 @@ public class TextQuestion(Templating.DomainObjects.TextQuestion question) : Ques
     public required string QuestionText { get; init; } = question.QuestionText;
     public required string CorrectAnswer { get; init; } = question.CorrectAnswer;
     public TextQuestionDisplayState DisplayState { get; set; } = TextQuestionDisplayState.None;
+
+    public override void ResetDisplayState() => DisplayState = TextQuestionDisplayState.None;
 }
 
 [method: SetsRequiredMembers]
@@ -32,6 +38,8 @@ public class ImageQuestion(Templating.DomainObjects.ImageQuestion question) : Qu
     public required Uri? AnswerImageUri { get; init; } = string.IsNullOrEmpty(question.AnswerImageUri) ? null : new Uri(question.AnswerImageUri);
     public required ImageSize ImageSize { get; init; } = question.ImageSize;
     public ImageQuestionDisplayState DisplayState { get; set; }
+
+    public override void ResetDisplayState() => DisplayState = ImageQuestionDisplayState.None;
 }
 
 [Flags]
