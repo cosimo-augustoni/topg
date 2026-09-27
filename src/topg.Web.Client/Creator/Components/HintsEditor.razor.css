@@ -1,0 +1,65 @@
+.hints {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.hints-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.hint-count {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--mud-palette-primary) 14%, transparent);
+    color: var(--mud-palette-primary);
+}
+
+.hints-empty {
+    border: 1px dashed var(--mud-palette-lines-default);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.hint-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.hint {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hint-top {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+    .hint-top ::deep .hint-number {
+        font-weight: 600;
+        flex: 1;
+    }
+
+    .hint-top ::deep .hint-delete:hover {
+        color: var(--mud-palette-error);
+    }

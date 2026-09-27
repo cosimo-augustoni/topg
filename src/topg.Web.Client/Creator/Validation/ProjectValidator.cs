@@ -1,4 +1,5 @@
 using topg.Web.Client.Creator.Model;
+using topg.Web.Client.Shared;
 
 namespace topg.Web.Client.Creator.Validation;
 
@@ -118,6 +119,22 @@ public static class ProjectValidator
                 case ImageQuestionDraft { QuestionImage: null }:
                     Add(question, "question.image.missing", ValidationSeverity.Error, "Question image is required.");
                     break;
+            }
+
+            if (question is TextQuestionDraft textQuestion)
+            {
+                for (var i = 0; i < textQuestion.Hints.Count; i++)
+                {
+                    var hint = textQuestion.Hints[i];
+                    if (textQuestion.HintType == HintType.Image && hint.Image is null)
+                    {
+                        Add(question, "question.hint.image.missing", ValidationSeverity.Error, $"Hint {i + 1} has no image.");
+                    }
+                    else if (textQuestion.HintType != HintType.Image && string.IsNullOrWhiteSpace(hint.Text))
+                    {
+                        Add(question, "question.hint.text.empty", ValidationSeverity.Error, $"Hint {i + 1} has no text.");
+                    }
+                }
             }
 
             if (question.Points <= 0)
