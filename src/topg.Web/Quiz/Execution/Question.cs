@@ -28,7 +28,7 @@ public class ImageQuestion(Templating.DomainObjects.ImageQuestion question) : Qu
     public required string QuestionText { get; init; } = question.QuestionText;
     public required Uri QuestionImageUri { get; init; } = new Uri(question.QuestionImageUri);
     public required string AnswerText { get; init; } = question.AnswerText;
-    public required Uri AnswerImageUri { get; init; } = new Uri(question.AnswerImageUri);
+    public required Uri? AnswerImageUri { get; init; } = string.IsNullOrEmpty(question.AnswerImageUri) ? null : new Uri(question.AnswerImageUri);
     public required ImageSize ImageSize { get; init; } = question.ImageSize;
     public ImageQuestionDisplayState DisplayState { get; set; }
 }

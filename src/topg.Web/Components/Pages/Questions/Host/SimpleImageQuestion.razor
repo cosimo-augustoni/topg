@@ -24,11 +24,14 @@
             <TextColumn></TextColumn>
             <TextColumn></TextColumn>
         </tr>
-        <tr>
-            <TextColumn>Answer Image</TextColumn>
-            <ImageColumn ImageUrl="@ImageQuestion.AnswerImageUri.ToString()"></ImageColumn>
-            <VisibilityButtonColumn Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Answer))" ToggledChanged="ToggleAnswerVisibility"></VisibilityButtonColumn>
-        </tr>
+        @if (ImageQuestion.AnswerImageUri != null)
+        {
+            <tr>
+                <TextColumn>Answer Image</TextColumn>
+                <ImageColumn ImageUrl="@ImageQuestion.AnswerImageUri.ToString()"></ImageColumn>
+                <VisibilityButtonColumn Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Answer))" ToggledChanged="ToggleAnswerVisibility"></VisibilityButtonColumn>
+            </tr>
+        }
         <tr>
             <TextColumn>Answer</TextColumn>
             <TextColumn>@ImageQuestion.AnswerText</TextColumn>

@@ -21,7 +21,7 @@
                 }
                 @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Answer))
                 {
-                    <img src="@ImageQuestion.AnswerImageUri.ToString()" alt="Answer Image" style="position:absolute; top:0; left:50%; transform:translateX(-50%); height:100%; max-width:100%; width:auto; object-fit:contain; display:block;" class="rounded-0" />
+                    <img src="@ImageQuestion.AnswerImageUri?.ToString()" alt="Answer Image" style="position:absolute; top:0; left:50%; transform:translateX(-50%); height:100%; max-width:100%; width:auto; object-fit:contain; display:block;" class="rounded-0" />
                 }
             </div>
         </div>
