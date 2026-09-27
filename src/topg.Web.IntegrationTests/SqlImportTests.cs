@@ -245,6 +245,7 @@ public class SqlImportTests(PostgresFixture db) : IAsyncLifetime
 
         var execution = new QuizExecution(template);
         Assert.Contains(execution.CurrentBoard.Questions, q => q is Quiz.Execution.TextQuestion { HintType: HintType.Image });
+        Assert.True(Assert.Single(template.Boards.SelectMany(b => b.Questions).OfType<DomainImageQuestion>()).StartPixelated);
         Assert.True(execution.HasNextBoard);
     }
 

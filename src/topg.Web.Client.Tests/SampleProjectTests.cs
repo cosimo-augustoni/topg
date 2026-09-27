@@ -57,6 +57,18 @@ public class SampleProjectTests
     }
 
     [Fact]
+    public void Hints_sample_has_a_flag_that_starts_pixelated_and_is_revealed_sharp()
+    {
+        var content = Read("guess-with-hints.topgquiz");
+
+        var question = Assert.Single(content.Project.AllQuestions().OfType<ImageQuestionDraft>());
+        Assert.True(question.StartPixelated);
+        Assert.Equal("Thailand", question.AnswerText);
+        Assert.Equal(question.QuestionImage!.Hash, question.AnswerImage!.Hash);
+        Assert.Contains(question.QuestionImage.Hash, content.ImagesByHash.Keys);
+    }
+
+    [Fact]
     public void Image_question_of_the_pop_culture_sample_carries_its_images()
     {
         var content = Read("pop-culture-history.topgquiz");
