@@ -22,6 +22,12 @@ namespace topg.Web.Templating.Data
                 .HasValue<SoundQuestion>(QuestionType.Sound)
                 .HasValue<ImageQuestion>(QuestionType.Image);
 
+            // Only image questions have this column, so it is nullable in the shared table. Import scripts exported
+            // before the flag existed leave it out, and the default keeps those rows loadable as a non-nullable bool.
+            modelBuilder.Entity<ImageQuestion>()
+                .Property(x => x.StartObscured)
+                .HasDefaultValue(false);
+
             // The import script's "replace existing" deletes questions and relies on their hints going with them.
             modelBuilder.Entity<TextQuestion>()
                 .HasMany(x => x.Hints)

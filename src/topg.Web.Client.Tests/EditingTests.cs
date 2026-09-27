@@ -286,6 +286,21 @@ public class ProjectSessionTests
     }
 
     [Fact]
+    public async Task Start_obscured_is_saved_and_reloaded()
+    {
+        var (session, project) = await OpenValid();
+        var question = new ImageQuestionDraft { Points = 500, QuestionText = "Which flag?" };
+        session.Change(p => p.Boards[0].Categories[0].Questions.Add(question));
+        Assert.False(question.StartObscured);
+
+        session.Change(_ => question.StartObscured = true);
+        await session.CloseAsync();
+
+        var reloaded = await new ProjectStore(_storage).GetAsync(project.Id);
+        Assert.True(reloaded!.AllQuestions().OfType<ImageQuestionDraft>().Single(q => q.Id == question.Id).StartObscured);
+    }
+
+    [Fact]
     public async Task Close_flushes_pending_changes_to_the_store()
     {
         var (session, project) = await OpenValid();

@@ -32,7 +32,8 @@ export it and run `import.sql` as described in [Creating a quiz](#creating-a-qui
 URL `https://cdn.kallisto.li/topg`. To use another CDN, change the base URL in Quiz settings before exporting. The
 image question in "Pop Culture & History" and the flag hints in "Guess with Hints" only show their images once the
 image folder from the export ZIP is uploaded to that CDN. "Guess with Hints" uses text and image hints with every hint
-count from 1 to 10, so it doubles as a check of the hint layouts.
+count from 1 to 10, so it doubles as a check of the hint layouts. Its "Flags" question for 300 points starts obscured,
+so it also shows the slider that swirls the image.
 
 Tests:
 

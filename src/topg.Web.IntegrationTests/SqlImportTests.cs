@@ -47,7 +47,7 @@ public class SqlImportTests(PostgresFixture db) : IAsyncLifetime
                         new ImageQuestionDraft
                         {
                             Points = 100, QuestionText = "Which flag?", QuestionImage = Image("0123456789abcdef"), AnswerText = "CH",
-                            AnswerImage = Image("fedcba9876543210"), ImageSize = ImageSize.Large,
+                            AnswerImage = Image("fedcba9876543210"), ImageSize = ImageSize.Large, StartObscured = true,
                         },
                         new ImageQuestionDraft { Points = 200, QuestionText = "No answer image", QuestionImage = Image("0123456789abcdef") },
                     ],
@@ -124,13 +124,37 @@ public class SqlImportTests(PostgresFixture db) : IAsyncLifetime
         Assert.Equal("https://cdn.example.com/quiz/pub-quiz/0123456789abcdef.png", image.QuestionImageUri);
         Assert.Equal("https://cdn.example.com/quiz/pub-quiz/fedcba9876543210.png", image.AnswerImageUri);
         Assert.Equal(ImageSize.Large, image.ImageSize);
-        Assert.Equal("", board1.Questions.OfType<DomainImageQuestion>().Single(q => q.Points == 200).AnswerImageUri);
+        Assert.True(image.StartObscured);
+        var withoutAnswerImage = board1.Questions.OfType<DomainImageQuestion>().Single(q => q.Points == 200);
+        Assert.Equal("", withoutAnswerImage.AnswerImageUri);
+        Assert.False(withoutAnswerImage.StartObscured);
 
         // The game converts the data on hosting; this throws for relative URIs or unknown types.
         var execution = new QuizExecution(template);
         var imageQuestion = execution.CurrentBoard.Questions.OfType<Quiz.Execution.ImageQuestion>().Single(q => q.Points == 200);
         Assert.Null(imageQuestion.AnswerImageUri);
+        Assert.Equal(Quiz.Execution.ImageQuestion.ClearStep, imageQuestion.ObscureStep);
+        Assert.Equal(0, execution.CurrentBoard.Questions.OfType<Quiz.Execution.ImageQuestion>().Single(q => q.Points == 100).ObscureStep);
         Assert.True(execution.HasNextBoard);
+    }
+
+    [SkippableFact]
+    public async Task Script_exported_before_start_obscured_existed_imports_with_the_flag_off()
+    {
+        Skip.If(db.DockerUnavailableReason is not null, db.DockerUnavailableReason);
+        var script = SqlExport.Generate(Sample(), GeneratedAt)
+            .Replace(", \"StartObscured\")", ")")
+            .Replace(", TRUE)", ")")
+            .Replace(", FALSE)", ")");
+        Assert.DoesNotContain("StartObscured", script);
+
+        await db.ExecuteScriptAsync(script);
+
+        await using var context = db.CreateContext();
+        var template = Assert.Single(await new TemplateService(context).GetAllTemplatesAsync());
+        var images = template.Boards.SelectMany(b => b.Questions).OfType<DomainImageQuestion>().ToList();
+        Assert.Equal(2, images.Count);
+        Assert.All(images, q => Assert.False(q.StartObscured));
     }
 
     [SkippableFact]
@@ -221,6 +245,7 @@ public class SqlImportTests(PostgresFixture db) : IAsyncLifetime
 
         var execution = new QuizExecution(template);
         Assert.Contains(execution.CurrentBoard.Questions, q => q is Quiz.Execution.TextQuestion { HintType: HintType.Image });
+        Assert.True(Assert.Single(template.Boards.SelectMany(b => b.Questions).OfType<DomainImageQuestion>()).StartObscured);
         Assert.True(execution.HasNextBoard);
     }
 

@@ -64,6 +64,7 @@ public class ImageQuestionDraft : QuestionDraft
     public string AnswerText { get; set; } = "";
     public ImageRef? AnswerImage { get; set; }
     public ImageSize ImageSize { get; set; } = ImageSize.Medium;
+    public bool StartObscured { get; set; }
 
     public override IEnumerable<ImageRef> Images()
     {

@@ -19,6 +19,15 @@
             <ImageColumn ImageUrl="@ImageQuestion.QuestionImageUri.ToString()"></ImageColumn>
             <VisibilityButtonColumn Toggled="@(ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Image))" ToggledChanged="ToggleImageVisibility"></VisibilityButtonColumn>
         </tr>
+        <tr>
+            <TextColumn>Obscured</TextColumn>
+            <td>
+                <MudSlider T="int" Value="ImageQuestion.ObscureStep" ValueChanged="SetObscureStep"
+                           Min="0" Max="ImageQuestion.ClearStep" Step="1" TickMarks="true" TickMarkLabels="ObscureLabels"
+                           Color="Color.Primary" Class="px-4 pb-6" />
+            </td>
+            <TextColumn></TextColumn>
+        </tr>
         <tr style="background-color: var(--mud-palette-primary)">
             <TextColumn>Answer</TextColumn>
             <TextColumn></TextColumn>
@@ -47,6 +56,15 @@
 
     [Parameter]
     public required ImageQuestion ImageQuestion { get; set; }
+
+    // Counts down to "Clear", so the host reads how strongly the image is still hidden.
+    private static readonly string[] ObscureLabels =
+        [.. Enumerable.Range(0, ImageQuestion.ClearStep).Select(step => $"{ImageQuestion.ClearStep - step}"), "Clear"];
+
+    private void SetObscureStep(int step)
+    {
+        QuizSession.UpdateQuestion(ImageQuestion, question => question.ObscureStep = step);
+    }
 
     private void ToggleImageVisibility()
     {
