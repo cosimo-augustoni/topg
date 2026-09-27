@@ -19,11 +19,15 @@
                     break;
             }
         </div>
-        <MudStack Row="true" Justify="Justify.FlexEnd" Style="margin-top: 0.6rem">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" Style="margin-top: 0.6rem">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       StartIcon="@Icons.Material.Filled.ArrowBack"
+                       OnClick="ReturnToBoard">Back to board</MudButton>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        EndIcon="@Icons.Material.Filled.ArrowForward"
-                       OnClick="MarkAsAnswered">Weiter</MudButton>
+                       OnClick="MarkAsAnswered">Next</MudButton>
         </MudStack>
 
     </MudPaper>
@@ -41,5 +45,10 @@
     private void MarkAsAnswered()
     {
         QuizSession.MarkCurrentQuestionAsAnswered();
+    }
+
+    private void ReturnToBoard()
+    {
+        QuizSession.ReturnToBoard();
     }
 }
