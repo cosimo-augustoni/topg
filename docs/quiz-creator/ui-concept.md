@@ -265,14 +265,16 @@ MudContainer MaxWidth=Large Class="py-6"
 │ Name *          [ Pub Quiz Sept             ] │
 │ CDN folder *    [ pub-quiz-sept             ] │ ← auto-slug until edited by hand
 │ Base URL *      [ https://cdn.example.com/q ] │ ← prefilled from settings
-│ Start with      (•) 1 board, 5 categories × 5 │
+│ Start with      (•) 2 boards, 5 categories × 5│
+│                     questions, second board   │
+│                     double points             │
 │                 ( ) Empty                     │
 │                         [Cancel] [Create]     │
 └───────────────────────────────────────────────┘
 ```
 - `MudForm` with `MudTextField`s. Folder validated with `^[a-z0-9]+(-[a-z0-9]+)*$`, base URL as an absolute http(s) URL.
-- "1 board, 5 × 5" creates categories "Category 1…5", each with text questions worth 100–500 and empty texts.
-  These get validation errors on purpose, so they show what still needs to be filled in.
+- "2 boards, 5 × 5" creates two boards, each with categories "Category 1…5" and empty text questions. Board 1 uses
+  the default points (100–500), board 2 doubles them (200–1000). "Empty" creates no boards. These get validation errors on purpose, so they show what still needs to be filled in.
 - Create → saves and navigates to `/create/{id}/board/1`.
 
 ---

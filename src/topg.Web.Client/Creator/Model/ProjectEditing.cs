@@ -14,8 +14,14 @@ public static class ProjectEditing
 {
     public const int StarterCategoryCount = 5;
 
-    /// <summary>S-9 "1 board, 5 categories × 5": empty text questions so the validation shows what is left to do.</summary>
-    public static void AddStarterBoard(this QuizProject project, IReadOnlyList<int> points)
+    // Mirrors the Jeopardy / Double Jeopardy rounds. The questions stay empty so the validation shows what is left to do.
+    public static void AddStarterBoards(this QuizProject project, IReadOnlyList<int> points)
+    {
+        project.AddStarterBoard(points);
+        project.AddStarterBoard(points.Select(p => p * 2).ToList());
+    }
+
+    private static void AddStarterBoard(this QuizProject project, IReadOnlyList<int> points)
     {
         var board = project.AddBoard();
         for (var i = 1; i <= StarterCategoryCount; i++)
