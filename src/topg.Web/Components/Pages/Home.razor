@@ -50,6 +50,11 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
+    private const string InvalidJoinCodeMessage = "Enter the 4-digit join code.";
+    private const string GameNotFoundMessage = "No game with this code was found.";
+    private const string MissingNameMessage = "Enter your name.";
+    private const string NameTakenMessage = "This name is already taken in this game.";
+
     private string? joinCodeError;
     private string? nameError;
 
@@ -60,15 +65,13 @@
             joinCodeError = GameNotFoundMessage;
     }
 
-    private const string GameNotFoundMessage = "No game with this code was found.";
-
     private static bool IsValidJoinCode([NotNullWhen(true)] string? joinCode) =>
         joinCode is { Length: 4 } && joinCode.All(char.IsAsciiDigit);
 
     private async Task Join()
     {
-        joinCodeError = IsValidJoinCode(JoinCode) ? null : "Enter the 4-digit join code.";
-        nameError = string.IsNullOrWhiteSpace(Name) ? "Enter your name." : null;
+        joinCodeError = IsValidJoinCode(JoinCode) ? null : InvalidJoinCodeMessage;
+        nameError = string.IsNullOrWhiteSpace(Name) ? MissingNameMessage : null;
         if (joinCodeError != null || nameError != null)
             return;
 
@@ -84,7 +87,7 @@
                 joinCodeError = GameNotFoundMessage;
                 break;
             case JoinResult.NameTaken:
-                nameError = "This name is already taken in this game.";
+                nameError = NameTakenMessage;
                 break;
         }
     }
