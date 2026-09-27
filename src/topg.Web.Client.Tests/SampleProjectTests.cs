@@ -1,6 +1,7 @@
 using topg.Web.Client.Creator.Export;
 using topg.Web.Client.Creator.Model;
 using topg.Web.Client.Creator.Validation;
+using topg.Web.Client.Shared;
 
 namespace topg.Web.Client.Tests;
 
@@ -21,9 +22,22 @@ public class SampleProjectTests
     }
 
     [Fact]
-    public void Every_former_seed_quiz_has_a_sample()
+    public void Every_former_seed_quiz_and_the_hints_quiz_have_a_sample()
     {
-        Assert.Equal(["pop-culture-history.topgquiz", "science-nature.topgquiz"], SampleFileNames());
+        Assert.Equal(["guess-with-hints.topgquiz", "pop-culture-history.topgquiz", "science-nature.topgquiz"], SampleFileNames());
+    }
+
+    [Fact]
+    public void Hints_sample_covers_every_hint_count_of_both_types_and_carries_the_hint_images()
+    {
+        var content = Read("guess-with-hints.topgquiz");
+        var questions = content.Project.AllQuestions().OfType<TextQuestionDraft>().Where(q => q.Hints.Count > 0).ToList();
+
+        Assert.All(new[] { HintType.Text, HintType.Image }, type => Assert.Equal(
+            Enumerable.Range(1, TextQuestionDraft.MaxHints),
+            questions.Where(q => q.HintType == type).Select(q => q.Hints.Count).Distinct().Order()));
+        Assert.Contains(questions, q => q.HintType == HintType.Image && q.Hints.All(h => h.Text.Length > 0));
+        Assert.Equal(content.Project.AllImages().Select(i => i.Hash).Distinct().Order(), content.ImagesByHash.Keys.Order());
     }
 
     [Theory]

@@ -207,6 +207,24 @@ public class SqlImportTests(PostgresFixture db) : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task Hints_sample_can_be_hosted_after_import()
+    {
+        Skip.If(db.DockerUnavailableReason is not null, db.DockerUnavailableReason);
+        var project = SampleProjects.Read("guess-with-hints.topgquiz");
+
+        await db.ExecuteScriptAsync(SqlExport.Generate(project, GeneratedAt));
+
+        await using var context = db.CreateContext();
+        var template = Assert.Single(await new TemplateService(context).GetAllTemplatesAsync());
+        var expected = project.AllQuestions().OfType<TextQuestionDraft>().Sum(q => q.Hints.Count);
+        Assert.Equal(expected, template.Boards.SelectMany(b => b.Questions).OfType<DomainTextQuestion>().Sum(q => q.Hints.Count));
+
+        var execution = new QuizExecution(template);
+        Assert.Contains(execution.CurrentBoard.Questions, q => q is Quiz.Execution.TextQuestion { HintType: HintType.Image });
+        Assert.True(execution.HasNextBoard);
+    }
+
+    [SkippableFact]
     public async Task Replace_mode_twice_leaves_exactly_one_template_without_orphans()
     {
         Skip.If(db.DockerUnavailableReason is not null, db.DockerUnavailableReason);

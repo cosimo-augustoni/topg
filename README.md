@@ -26,11 +26,13 @@ dotnet run --project src/topg.AppHost
 This starts PostgreSQL (plus pgAdmin), the migration service and the web app. Docker must be running.
 
 A new database has no quizzes. For test data, import one of the sample project files from `samples/`
-(`science-nature.topgquiz`, `pop-culture-history.topgquiz`) with **Import** on the `/create` Projects page. Then
+(`science-nature.topgquiz`, `pop-culture-history.topgquiz`, `guess-with-hints.topgquiz`) with **Import** on the
+`/create` Projects page. Then
 export it and run `import.sql` as described in [Creating a quiz](#creating-a-quiz-create). The samples use the base
 URL `https://cdn.kallisto.li/topg`. To use another CDN, change the base URL in Quiz settings before exporting. The
-image question in "Pop Culture & History" only shows its images once the image folder from the export ZIP is uploaded
-to that CDN.
+image question in "Pop Culture & History" and the flag hints in "Guess with Hints" only show their images once the
+image folder from the export ZIP is uploaded to that CDN. "Guess with Hints" uses text and image hints with every hint
+count from 1 to 10, so it doubles as a check of the hint layouts.
 
 Tests:
 
