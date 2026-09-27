@@ -15,7 +15,7 @@ public class ImageIntake(ICreatorStorage storage)
 
     public async Task<ImageRef> ImportAsync(IBrowserFile file, CancellationToken cancellationToken = default)
     {
-        if (!ImageNaming.TryResolveType(file.ContentType, file.Name, out var extension, out var contentType))
+        if (!ImageNaming.TryResolveType(file.ContentType, file.Name, out _, out _))
         {
             throw new ImageRejectedException($"\"{file.Name}\" is not a supported image. Use PNG, JPG, WEBP or GIF.");
         }
@@ -32,6 +32,11 @@ public class ImageIntake(ICreatorStorage storage)
         }
 
         var content = buffer.ToArray();
+        if (!ImageNaming.TryDetectType(content, out var extension, out var contentType))
+        {
+            throw new ImageRejectedException($"\"{file.Name}\" is not a valid image. Use PNG, JPG, WEBP or GIF.");
+        }
+
         var hash = ImageNaming.ComputeHash(content);
         await storage.PutImageAsync(hash, extension, contentType, content);
 
