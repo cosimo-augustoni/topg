@@ -18,6 +18,7 @@ public class QuizSession
     public TextInputState TextInputState { get; } = new();
     public TimeProvider TimeProvider { private get; init; } = TimeProvider.System;
     public TimerState TimerState { get; } = new();
+    public BonusPointsState BonusPointsState { get; } = new();
     public SoundEffectManager SoundEffectManager { get; } = new();
     public Player? ActivePlayer { get; private set; }
     public TurnDirection TurnDirection { get; private set; } = TurnDirection.Forward;
@@ -175,6 +176,28 @@ public class QuizSession
 
         SessionStateHasChanged();
     }
+
+    public void SetBonusPoints(bool isEnabled, int lastQuestions)
+    {
+        BonusPointsState.IsEnabled = isEnabled;
+        BonusPointsState.LastQuestions = Math.Max(1, lastQuestions);
+        SessionStateHasChanged();
+    }
+
+    // Derived on every read rather than stored, so changing the setting or answering a question updates all tiles at
+    // once, and answered questions fall back to their normal points.
+    public bool HasBonus(Question question) =>
+        BonusPointsState.IsEnabled
+        && !question.IsAnswered
+        && Quiz.CurrentBoard.UnansweredCount <= BonusPointsState.LastQuestions;
+
+    public int PointsFor(Question question) =>
+        HasBonus(question)
+            ? (int)Math.Round(question.Points * BonusPointsState.Multiplier, MidpointRounding.AwayFromZero)
+            : question.Points;
+
+    public int QuestionsUntilBonus =>
+        Math.Max(0, Quiz.CurrentBoard.UnansweredCount - BonusPointsState.LastQuestions);
 
     public void RevealTextInput()
     {

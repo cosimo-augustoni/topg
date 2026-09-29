@@ -4,7 +4,9 @@
 {
     <MudPaper Style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; position: relative;" Elevation="4">
 
-        <QuestionContextBanners Question="QuizSession.Quiz.CurrentQuestion"></QuestionContextBanners>
+        <QuestionContextBanners Question="QuizSession.Quiz.CurrentQuestion"
+                                Points="QuizSession.PointsFor(QuizSession.Quiz.CurrentQuestion)"
+                                HasBonus="QuizSession.HasBonus(QuizSession.Quiz.CurrentQuestion)"></QuestionContextBanners>
 
         <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; padding-top: 2.8rem">
             @switch (QuizSession.Quiz.CurrentQuestion)
