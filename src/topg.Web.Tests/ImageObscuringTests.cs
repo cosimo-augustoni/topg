@@ -175,8 +175,22 @@ public class ImageObscuringTests : IAsyncLifetime
 
         Session.UpdateQuestion(question, q => q.DisplayState |= ImageQuestionDisplayState.Text);
 
-        spectator.WaitForAssertion(() => Assert.NotEmpty(spectator.FindAll("._question-text")));
+        spectator.WaitForAssertion(() => Assert.NotEmpty(spectator.FindAll(".question-text")));
         Assert.Equal([Levels[0]], DrawnLevels());
+    }
+
+    [Fact]
+    public void The_question_text_is_fitted_into_its_row_instead_of_kept_on_one_line()
+    {
+        var question = Open(Sharp, showImage: true);
+        Session.UpdateQuestion(question, q => q.DisplayState |= ImageQuestionDisplayState.Text);
+
+        var spectator = RenderSpectator();
+
+        var text = spectator.Find("[data-fit-text]");
+        Assert.Equal("48", text.GetAttribute("data-fit-text"));
+        Assert.Equal("Which flag?", text.FirstElementChild!.TextContent);
+        Assert.DoesNotContain("nowrap", spectator.Markup);
     }
 
     [Fact]
