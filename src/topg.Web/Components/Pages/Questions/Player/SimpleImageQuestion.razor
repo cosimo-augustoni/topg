@@ -2,12 +2,10 @@
 @using topg.Web.Quiz.Execution
 
 <MudStack Spacing="4" Style="height:100%; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; width: 100%; padding-top: 3rem">
-    <div style="--top-row-height: 4rem; height:var(--top-row-height); flex: 0 0 var(--top-row-height); min-height: 0; display:flex; align-items:center; justify-content:center; padding:0 1rem; box-sizing:border-box; overflow:hidden;">
+    <div class="question-row">
         @if (ImageQuestion.DisplayState.HasFlag(ImageQuestionDisplayState.Text))
         {
-            <div class="_question-text" style="width:100%; text-align:center; line-height:1; height:100%; display:flex; align-items:center; justify-content:center;">
-                <MudText Style="display:block; width:100%; height:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:clamp(12px, calc(var(--top-row-height) * 0.8), 48px) !important;">@ImageQuestion.QuestionText</MudText>
-            </div>
+            <div class="question-text" data-fit-text="48"><span>@ImageQuestion.QuestionText</span></div>
         }
     </div>
 
